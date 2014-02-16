@@ -1,0 +1,8 @@
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\bin\Debug\WebSocketListener.TestConsoleHost.exe.config
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\obj\Debug\WebSocketListener.TestConsoleHost.csprojResolveAssemblyReference.cache
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\bin\Debug\WebSocketListener.TestConsoleHost.exe
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\bin\Debug\WebSocketListener.TestConsoleHost.pdb
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\bin\Debug\vtortola.WebSocketListener.dll
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\bin\Debug\vtortola.WebSocketListener.pdb
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\obj\Debug\WebSocketListener.TestConsoleHost.exe
+C:\Users\vtortola\Documents\GitHub\WebSocketListener\WebSocketListener.TestConsoleHost\obj\Debug\WebSocketListener.TestConsoleHost.pdb

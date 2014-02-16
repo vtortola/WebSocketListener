@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSocketListener", "vtortola.WebSocketListener.csproj", "{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListener.TestConsoleHost", "..\WebSocketListener.TestConsoleHost\WebSocketListener.TestConsoleHost.csproj", "{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}"
+EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "WebSocketListener.Web", "http://localhost:1217", "{11BB7DB8-610E-41C6-9C37-1B23CC153F07}"
+	ProjectSection(WebsiteProperties) = preProject
+		UseIISExpress = "true"
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_1217"
+		Debug.AspNetCompiler.PhysicalPath = "..\..\WebSocketListener.Web\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_1217\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_1217"
+		Release.AspNetCompiler.PhysicalPath = "..\..\WebSocketListener.Web\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_1217\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		SlnRelativePath = "..\..\WebSocketListener.Web\"
+		DefaultWebSiteLanguage = "Visual C#"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11BB7DB8-610E-41C6-9C37-1B23CC153F07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11BB7DB8-610E-41C6-9C37-1B23CC153F07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11BB7DB8-610E-41C6-9C37-1B23CC153F07}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{11BB7DB8-610E-41C6-9C37-1B23CC153F07}.Release|Any CPU.Build.0 = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
