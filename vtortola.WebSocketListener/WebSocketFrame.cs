@@ -50,7 +50,7 @@ namespace vtortola.WebSockets
             for (int i = offset; i < count + offset; i++)
                 array[i] = (Byte)(array[i] ^ _key[_keyCursor++ % 4]);
         }
-
+         
         public WebSocketFrame(Byte[] data, WebSocketFrameOption option)
         {
             Header = new WebSocketFrameHeader((UInt64)data.Length, false, option);

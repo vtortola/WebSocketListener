@@ -38,8 +38,7 @@ namespace vtortola.WebSockets
                 for (int i = 0; i < 8; i++)
                     ui64[i] = header[9-i];
 
-                // if it is bigger... well, fuck
-                ContentLength = BitConverter.ToUInt64(ui64,0);
+                ContentLength = (UInt64)BitConverter.ToUInt64(ui64, 0);
                 HeaderLength = 10;
             }
             else
@@ -59,7 +58,7 @@ namespace vtortola.WebSockets
                 arrayMaker.Add((Byte)(contentLength));
                 HeaderLength = 2;
             }
-            else if (contentLength < UInt16.MaxValue)
+            else if (contentLength < UInt16.MaxValue) 
             {
                 arrayMaker.Add(126);
                 Byte[] i16 = BitConverter.GetBytes((UInt16)contentLength).Reverse().ToArray();

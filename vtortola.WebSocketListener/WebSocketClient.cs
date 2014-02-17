@@ -95,7 +95,7 @@ namespace vtortola.WebSockets
                 else
                     throw new WebSocketException("WebSocket option not supported " + frame.Header.Option.ToString());
             }
-            else
+            else 
                 throw new WebSocketException("Partial frames not supported yet.");
         }
 

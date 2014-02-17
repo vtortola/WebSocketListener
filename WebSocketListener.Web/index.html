@@ -19,7 +19,7 @@
 
     <script>
         var button = document.getElementById('button');
-        var text = document.getElementById('text');
+        var text = document.getElementById('text'); 
         var log = document.getElementById('log');
         var characters1 = document.getElementById('characters1');
         var characters2 = document.getElementById('characters2');
@@ -28,7 +28,10 @@
         ws.onopen = function (event) {
             button.disabled = false;
             text.disabled = false;
-
+            ws.send("Valeriano");
+            ws.send("Valeriano");
+            ws.send("Valeriano");
+            ws.send("Valeriano");
             button.addEventListener('click', function () {
                 if (text.value) {
                     characters1.textContent = text.value.length;
