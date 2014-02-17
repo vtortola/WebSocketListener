@@ -15,6 +15,5 @@ var response = await ws.ReadAsync();
 ```
 
 Status:
-* Frames longer than 65535 bytes (UInt16.MaxValue) will fail right now.
 * Ping/Pong behaviour is implemented but not tested.
 * Messages split across multiple frames are not supported right now.
