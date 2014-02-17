@@ -10,6 +10,8 @@
     <div id="input">
         <textarea id="text" disabled></textarea>
         <button id="button" disabled>Reverse</button>
+        <div id="characters1"></div>
+        <div id="characters2"></div>
     </div>
     <div id="log">
 
@@ -19,14 +21,20 @@
         var button = document.getElementById('button');
         var text = document.getElementById('text');
         var log = document.getElementById('log');
+        var characters1 = document.getElementById('characters1');
+        var characters2 = document.getElementById('characters2');
 
         var ws = new WebSocket("ws://127.0.0.1:8001", "text");
         ws.onopen = function (event) {
             button.disabled = false;
             text.disabled = false;
+
             button.addEventListener('click', function () {
-                if (text.value)
+                if (text.value) {
+                    characters1.textContent = text.value.length;
+                    characters2.textContent = '';
                     ws.send(text.value);
+                }
             }, false);
         };
 
@@ -35,6 +43,7 @@
             node.className = 'log-msg';
             node.textContent = event.data;
             log.appendChild(node);
+            characters2.textContent = event.data.length;
         }
 
         ws.onclose = function (event) {

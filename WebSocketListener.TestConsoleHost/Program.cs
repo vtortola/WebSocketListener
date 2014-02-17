@@ -20,7 +20,7 @@ namespace WebSockets.TestConsoleHost
             server.Start();
             Log("Server started at " + endpoint.ToString());
 
-            Listen(server, cancellation.Token);
+            var task = AcceptWebSocketClients(server, cancellation.Token);
 
             Console.ReadKey(true);
             Log("Server stoping"); 
@@ -28,7 +28,8 @@ namespace WebSockets.TestConsoleHost
             Console.ReadKey(true);
         }
 
-        static async Task Listen(vtortola.WebSockets.WebSocketListener server, CancellationToken token)
+
+        static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {

@@ -8,7 +8,7 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketFrameHeader
     {
-        public Int32 ContentLength { get; private set; }
+        public UInt64 ContentLength { get; private set; }
         public Boolean IsPartial { get; private set; }
         public Int32 HeaderLength { get; private set; }
         public WebSocketFrameOption Option { get; private set; }
@@ -16,10 +16,9 @@ namespace vtortola.WebSockets
 
         public WebSocketFrameHeader(Byte[] header)
         {
-            Raw = header;
             IdentifyHeader(header[0]);
 
-            ContentLength = (Int32)(header[1] - 128);
+            ContentLength = (UInt64)(header[1] - 128);
             if (ContentLength <= 125)
             {
                 HeaderLength = 2;
@@ -35,14 +34,21 @@ namespace vtortola.WebSockets
             }
             else if (ContentLength == 127)
             {
-                // if it is bigger... well, fuck.
-                ContentLength = (Int32)BitConverter.ToUInt64(header, 1);
+                Byte[] ui64 = new Byte[8];
+                for (int i = 0; i < 8; i++)
+                    ui64[i] = header[9-i];
+
+                // if it is bigger... well, fuck
+                ContentLength = BitConverter.ToUInt64(ui64,0);
                 HeaderLength = 10;
             }
             else
                 throw new WebSocketException("Protocol error");
+
+            Raw = new Byte[HeaderLength];
+            Array.Copy(header, 0, Raw, 0, HeaderLength);
         }
-        public WebSocketFrameHeader(Int32 contentLength, Boolean isPartial, WebSocketFrameOption option)
+        public WebSocketFrameHeader(UInt64 contentLength, Boolean isPartial, WebSocketFrameOption option)
         {
             List<Byte> arrayMaker = new List<Byte>();
             Int32 value = isPartial ? 0 : 128;
@@ -63,7 +69,7 @@ namespace vtortola.WebSockets
             else if ((UInt64)contentLength < UInt64.MaxValue)
             {
                 arrayMaker.Add(127);
-                arrayMaker.AddRange(BitConverter.GetBytes((UInt16)contentLength).Reverse().ToArray());
+                arrayMaker.AddRange(BitConverter.GetBytes((UInt64)contentLength).Reverse().ToArray());
                 HeaderLength = 10;
             }
 
