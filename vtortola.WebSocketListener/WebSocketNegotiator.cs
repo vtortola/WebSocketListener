@@ -16,28 +16,26 @@ namespace vtortola.WebSockets
 
         public Uri RequestUri { get; private set; }
         public Version Version { get; private set; }
-
         public CookieContainer Cookies { get; private set; }
-
         public HttpHeadersCollection Headers { get; private set; }
 
         public Boolean IsWebSocketRequest
         {
             get
             {
-                return _headers.ContainsKey("HOST") &&
-                       _headers.ContainsKey("UPGRADE") && _headers["UPGRADE"] == "websocket" &&
-                       _headers.ContainsKey("CONNECTION") &&
-                       _headers.ContainsKey("SEC-WEBSOCKET-KEY") && !String.IsNullOrWhiteSpace(_headers["SEC-WEBSOCKET-KEY"]) &&
-                       _headers.ContainsKey("SEC-WEBSOCKET-PROTOCOL") &&
-                       _headers.ContainsKey("SEC-WEBSOCKET-VERSION") && _headers["SEC-WEBSOCKET-VERSION"] == "13" &&
-                       _headers.ContainsKey("ORIGIN");
+                return _headers.ContainsKey("Host") &&
+                       _headers.ContainsKey("Upgrade") && _headers["Upgrade"] == "websocket" &&
+                       _headers.ContainsKey("Connection") &&
+                       _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
+                       _headers.ContainsKey("Sec-WebSocket-Protocol") &&
+                       _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13" &&
+                       _headers.ContainsKey("Origin");
             }
         }
 
         public WebSocketNegotiator()
         {
-            _headers = new Dictionary<String, String>();
+            _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
             Cookies = new CookieContainer();
             Headers = new HttpHeadersCollection();
@@ -59,7 +57,7 @@ namespace vtortola.WebSockets
             var separator = line.IndexOf(":");
             if (separator == -1)
                 return;
-            String key = line.Substring(0, separator).ToUpperInvariant();
+            String key = line.Substring(0, separator);
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             _headers.Add(key, value);
         }
@@ -90,14 +88,14 @@ namespace vtortola.WebSockets
 
         private String GenerateHandshake()
         {
-            return Convert.ToBase64String(_sha1.ComputeHash(Encoding.UTF8.GetBytes(_headers["SEC-WEBSOCKET-KEY"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
+            return Convert.ToBase64String(_sha1.ComputeHash(Encoding.UTF8.GetBytes(_headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
         }
 
         public void ConsolidateHeaders()
         {
-            if(_headers.ContainsKey("COOKIE"))
+            if(_headers.ContainsKey("Cookie"))
             {            
-                Cookies.SetCookies(new Uri("http://" + _headers["HOST"]), _headers["COOKIE"]);
+                Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
             }
 
             Headers = new HttpHeadersCollection();
@@ -108,11 +106,12 @@ namespace vtortola.WebSockets
 
     public sealed class HttpHeadersCollection:NameValueCollection
     {
-        public String Origin { get { return this["ORIGIN"]; } }
+        public String Origin { get { return this["Origin"]; } }
+        public String WebSocketProtocol { get { return this["Sec-WebSocket-Protocol"]; } }
 
         public String this[HttpRequestHeader header]
         {
-            get { return this[header.ToString().ToUpperInvariant()];}
+            get { return this[header.ToString()];}
         }
        
     }

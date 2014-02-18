@@ -13,7 +13,7 @@ namespace vtortola.WebSockets
 
         public MemoryStream StreamData { get; private set; }
 
-        private Int32 _keyCount, _keyCursor;
+        private Int32 _keyCount;
         private Byte[] _key;
 
         public WebSocketFrame(WebSocketFrameHeader header)
@@ -22,7 +22,7 @@ namespace vtortola.WebSockets
             Int32 capacity = header.ContentLength > Int32.MaxValue ? Int32.MaxValue : (Int32)header.ContentLength;
             StreamData = new MemoryStream(capacity);
             _key = new Byte[4];
-            _keyCount = _keyCursor = 0;
+            _keyCount = 0;
         }
 
         public void Write(Byte[] buffer, Int32 offset, Int32 length)
@@ -47,8 +47,9 @@ namespace vtortola.WebSockets
 
         private void Decode(Byte[] array, Int32 offset, Int32 count)
         {
+            var currentLength = StreamData.Length;
             for (int i = offset; i < count + offset; i++)
-                array[i] = (Byte)(array[i] ^ _key[_keyCursor++ % 4]);
+                array[i] = (Byte)(array[i] ^ _key[currentLength++ % 4]);
         }
          
         public WebSocketFrame(Byte[] data, WebSocketFrameOption option)
