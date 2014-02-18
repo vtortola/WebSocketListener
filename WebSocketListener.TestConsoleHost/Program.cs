@@ -36,7 +36,7 @@ namespace WebSockets.TestConsoleHost
                 var ws = await server.AcceptWebSocketClientAsync();
                 Log("Client Connected: " + ws.RemoteEndpoint.ToString());
 
-                Task.Factory.StartNew(async () =>
+                Task.Run(async () =>
                 {
                     while (ws.IsConnected && !token.IsCancellationRequested)
                     {

@@ -27,17 +27,34 @@ namespace vtortola.WebSockets
 
         public async Task<WebSocketClient> AcceptWebSocketClientAsync()
         {
-            var client = await _listener.AcceptTcpClientAsync();
-            return await Negotiate(client);
+            while(true)
+            {
+                var client = await _listener.AcceptTcpClientAsync();
+                if (client.Connected)
+                {
+                    var ws = await Negotiate(client);
+                    if (ws != null)
+                        return ws;
+                }
+            }
         }
 
         private async Task<WebSocketClient> Negotiate(TcpClient client)
         {
             var stream = client.GetStream();
             StreamReader sr = new StreamReader(stream, Encoding.UTF8);
-            String line = await sr.ReadLineAsync();
-
+            StreamWriter sw = new StreamWriter(stream);
+            sw.AutoFlush = true;
             WebSocketNegotiator negotiator = new WebSocketNegotiator();
+
+            String line = await sr.ReadLineAsync();
+            
+            if(String.IsNullOrWhiteSpace(line))
+            {
+                CloseConnection(negotiator, client, sr, sw);
+                return null;
+            }
+                        
             negotiator.ParseGET(line);
 
             while (!String.IsNullOrWhiteSpace(line))
@@ -46,14 +63,26 @@ namespace vtortola.WebSockets
                 negotiator.ParseHeader(line);
             }
 
+            negotiator.ConsolidateHeaders();        
+            
             if (!negotiator.IsWebSocketRequest)
-                throw new WebSocketException("Not a WS connection");
-
-            StreamWriter sw = new StreamWriter(stream);
+            {
+                CloseConnection(negotiator, client, sr, sw);
+                return null;
+            }
+                        
             await sw.WriteAsync(negotiator.GetNegotiationResponse());
-            await sw.FlushAsync();
 
-            return new WebSocketClient(client);
+            return new WebSocketClient(client, negotiator.RequestUri, negotiator.Version, negotiator.Cookies, negotiator.Headers);
+        }
+
+        private async Task CloseConnection(WebSocketNegotiator negotiatior, TcpClient client, StreamReader sr, StreamWriter sw)
+        {
+            await Task.Yield();
+            await sw.WriteAsync(negotiatior.GetNegotiationErrorResponse());
+            client.Close();
+            sr.Dispose();
+            sw.Dispose();
         }
     }
 }

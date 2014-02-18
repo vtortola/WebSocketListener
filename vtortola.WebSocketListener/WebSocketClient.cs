@@ -16,8 +16,12 @@ namespace vtortola.WebSockets
         public Boolean IsConnected { get { return _client.Client.Connected; } }
 
         Byte[] _rest;
+        public Uri RequestUri { get; private set; }
+        public Version HttpVersion { get; private set; }
+        public CookieContainer Cookies { get; private set; }
+        public HttpHeadersCollection Headers { get; private set; }
 
-        public WebSocketClient(TcpClient client)
+        public WebSocketClient(TcpClient client, Uri uri, Version version, CookieContainer cookies, HttpHeadersCollection headers)
         {
             if (client == null)
                 throw new ArgumentNullException("client");
@@ -25,6 +29,10 @@ namespace vtortola.WebSockets
             RemoteEndpoint = (IPEndPoint)_client.Client.RemoteEndPoint;
             LocalEndpoint = (IPEndPoint)_client.Client.LocalEndPoint;
             _rest = new Byte[0];
+            RequestUri = uri;
+            HttpVersion = version;
+            Cookies = cookies;
+            Headers = headers;
         }
 
         public async Task<String> ReadAsync()
