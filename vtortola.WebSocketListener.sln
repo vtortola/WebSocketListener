@@ -7,26 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSocketListener"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListener.TestConsoleHost", "WebSocketListener.TestConsoleHost\WebSocketListener.TestConsoleHost.csproj", "{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "WebSocketListener.Web", "http://localhost:1708", "{DD20C9FB-3986-4D73-8AD1-09B9665F4351}"
-	ProjectSection(WebsiteProperties) = preProject
-		UseIISExpress = "true"
-		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
-		Debug.AspNetCompiler.VirtualPath = "/localhost_1708"
-		Debug.AspNetCompiler.PhysicalPath = "WebSocketListener.Web\"
-		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_1708\"
-		Debug.AspNetCompiler.Updateable = "true"
-		Debug.AspNetCompiler.ForceOverwrite = "true"
-		Debug.AspNetCompiler.FixedNames = "false"
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.VirtualPath = "/localhost_1708"
-		Release.AspNetCompiler.PhysicalPath = "WebSocketListener.Web\"
-		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_1708\"
-		Release.AspNetCompiler.Updateable = "true"
-		Release.AspNetCompiler.ForceOverwrite = "true"
-		Release.AspNetCompiler.FixedNames = "false"
-		Release.AspNetCompiler.Debug = "False"
-		SlnRelativePath = "WebSocketListener.Web\"
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebSocketListener.Web", "TestWebSocketListener.Web\TestWebSocketListener.Web.csproj", "{6964319A-3F06-4FE4-957B-C7548ADCE3E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,10 +23,10 @@ Global
 		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD20C9FB-3986-4D73-8AD1-09B9665F4351}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD20C9FB-3986-4D73-8AD1-09B9665F4351}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD20C9FB-3986-4D73-8AD1-09B9665F4351}.Release|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD20C9FB-3986-4D73-8AD1-09B9665F4351}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

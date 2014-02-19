@@ -39,7 +39,7 @@ namespace WebSockets.TestConsoleHost
                 Task.Run(async () =>
                 {
                     while (ws.IsConnected && !token.IsCancellationRequested)
-                    {
+                    { 
                         var msg = await ws.ReadAsync();
                         if (msg != null) // disconnection yields a null msg
                         {

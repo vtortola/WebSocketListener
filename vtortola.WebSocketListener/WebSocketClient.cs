@@ -53,6 +53,12 @@ namespace vtortola.WebSockets
                 throw new WebSocketException("WebSocket option not supported " + frame.Header.Option.ToString());
         }
 
+        public void Close()
+        {
+            _client.Close();
+            _client.Client.Dispose(); 
+        }
+
         public async Task<String> ReadAsync()
         {
             WebSocketFrameHeader header;
@@ -74,7 +80,7 @@ namespace vtortola.WebSockets
                     return await ProcessFrameAsync(frame);
                 }
                 else
-                {
+                {  // set tail to buffer
                     readed = _tailLength;
                     Array.Copy(_tail, 0, _buffer, 0, _tailLength);
                     _tailLength = 0;
@@ -86,7 +92,7 @@ namespace vtortola.WebSockets
                 Int32 r = await _client.GetStream().ReadAsync(_buffer, readed, BufferLength - readed);
                 if (r == 0)
                 {
-                    _client.Close();
+                    this.Close();
                     return null;
                 }
                 readed += r;
@@ -149,8 +155,7 @@ namespace vtortola.WebSockets
 
         public void Dispose()
         {
-            _client.Close();
-            _client.Client.Dispose();
+            this.Close();
         }
     }
 
