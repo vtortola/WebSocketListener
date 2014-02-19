@@ -20,6 +20,7 @@ namespace vtortola.WebSockets
         public Version HttpVersion { get; private set; }
         public CookieContainer Cookies { get; private set; }
         public HttpHeadersCollection Headers { get; private set; }
+
         readonly Byte[] _tail, _buffer;
         Int32 _tailLength;
         public WebSocketClient(TcpClient client, Uri uri, Version version, CookieContainer cookies, HttpHeadersCollection headers)

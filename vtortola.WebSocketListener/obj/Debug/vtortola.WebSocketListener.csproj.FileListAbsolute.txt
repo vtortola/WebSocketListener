@@ -1,5 +1,0 @@
-C:\Users\vtortola\Documents\GitHub\WebSocketListener\vtortola.WebSocketListener\obj\Debug\vtortola.WebSocketListener.csprojResolveAssemblyReference.cache
-C:\Users\vtortola\Documents\GitHub\WebSocketListener\vtortola.WebSocketListener\bin\Debug\vtortola.WebSocketListener.dll
-C:\Users\vtortola\Documents\GitHub\WebSocketListener\vtortola.WebSocketListener\bin\Debug\vtortola.WebSocketListener.pdb
-C:\Users\vtortola\Documents\GitHub\WebSocketListener\vtortola.WebSocketListener\obj\Debug\vtortola.WebSocketListener.dll
-C:\Users\vtortola\Documents\GitHub\WebSocketListener\vtortola.WebSocketListener\obj\Debug\vtortola.WebSocketListener.pdb
