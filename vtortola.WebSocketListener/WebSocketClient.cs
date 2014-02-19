@@ -10,17 +10,18 @@ namespace vtortola.WebSockets
 {
     public class WebSocketClient : IDisposable
     {
+        public static readonly Int32 BufferLength = 4096;
+
         readonly TcpClient _client;
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
         public Boolean IsConnected { get { return _client.Client.Connected; } }
-
-        Byte[] _rest;
         public Uri RequestUri { get; private set; }
         public Version HttpVersion { get; private set; }
         public CookieContainer Cookies { get; private set; }
         public HttpHeadersCollection Headers { get; private set; }
-
+        readonly Byte[] _tail, _buffer;
+        Int32 _tailLength;
         public WebSocketClient(TcpClient client, Uri uri, Version version, CookieContainer cookies, HttpHeadersCollection headers)
         {
             if (client == null)
@@ -28,33 +29,73 @@ namespace vtortola.WebSockets
             _client = client;
             RemoteEndpoint = (IPEndPoint)_client.Client.RemoteEndPoint;
             LocalEndpoint = (IPEndPoint)_client.Client.LocalEndPoint;
-            _rest = new Byte[0];
+            _tail = new Byte[BufferLength];
+            _buffer = new Byte[BufferLength];
+            _tailLength = 0;
             RequestUri = uri;
             HttpVersion = version;
             Cookies = cookies;
             Headers = headers;
         }
 
+        private async Task<String> ProcessFrameAsync(WebSocketFrame frame)
+        {
+            if (frame.Header.Option == WebSocketFrameOption.Text)
+                return Encoding.UTF8.GetString(frame.StreamData.ToArray());
+            else if (frame.Header.Option == WebSocketFrameOption.Ping)
+            {
+                var pongFrame = new WebSocketFrame(frame.StreamData.ToArray(), WebSocketFrameOption.Pong);
+                await _client.GetStream().WriteAsync(pongFrame.StreamData.ToArray(), 0, pongFrame.StreamData.ToArray().Length);
+                return await ReadAsync();
+            }
+            else
+                throw new WebSocketException("WebSocket option not supported " + frame.Header.Option.ToString());
+        }
+
         public async Task<String> ReadAsync()
         {
-            Byte[] buffer = new Byte[4096];
-            Int32 readed = _rest.Length;
-            if (readed != 0)
-                Array.Copy(_rest, 0, buffer, 0, readed);
+            WebSocketFrameHeader header;
+            Int32 readed = 0;
 
-            while (readed == _rest.Length)
-                readed += await _client.GetStream().ReadAsync(buffer, readed, 10 - readed);
+            if (_tailLength != 0 && WebSocketFrameHeader.TryParse(_tail, _tailLength, out header))
+            {
+                UInt64 frameLength = (UInt64)header.HeaderLength + header.ContentLength + 4;
+                if (frameLength <= (UInt64)_tailLength)
+                { // frame is already in tail
+                    readed = (Int32)frameLength;
+                    _tailLength = _tailLength - readed;
+                    Array.Copy(_tail, 0, _buffer, 0, readed);
+                    for (int i = 0; i < _tailLength; i++) // shift
+                        _tail[i] = _tail[i + readed];
 
-            var header = new WebSocketFrameHeader(buffer);
+                    WebSocketFrame frame = new WebSocketFrame(header);
+                    frame.Write(_buffer, header.HeaderLength, readed - header.HeaderLength);
+                    return await ProcessFrameAsync(frame);
+                }
+                else
+                {
+                    readed = _tailLength;
+                    Array.Copy(_tail, 0, _buffer, 0, _tailLength);
+                    _tailLength = 0;
+                }
+            }
+
+            while(!WebSocketFrameHeader.TryParse(_buffer, readed, out header))
+            {
+                Int32 r = await _client.GetStream().ReadAsync(_buffer, readed, BufferLength - readed);
+                if (r == 0)
+                {
+                    _client.Close();
+                    return null;
+                }
+                readed += r;
+            }          
 
             if (header.Option == WebSocketFrameOption.ConnectionClose)
             {
                 _client.Close();
                 return null;
             }
-
-            if (header.Option != WebSocketFrameOption.Text)
-                return await ReadAsync();
 
             if (!header.IsPartial)
             {
@@ -63,45 +104,36 @@ namespace vtortola.WebSockets
                 UInt64 frameLength = (UInt64)header.HeaderLength + header.ContentLength + 4;
                 if (frameLength < (UInt64)readed)
                 {
-                    _rest = new Byte[readed - (Int32)frameLength];
-                    Array.Copy(buffer, (Int32)frameLength, _rest, 0, readed - (Int32)frameLength);
+                    _tailLength = readed - (Int32)frameLength;
+                    Array.Copy(_buffer, (Int32)frameLength, _tail, 0, _tailLength);
                 }
                 else
-                    _rest = new Byte[0];
+                    _tailLength=0;
 
                 if (frameLength <= (UInt64)readed)
                 {    
-                    frame.Write(buffer, header.HeaderLength, (Int32)header.ContentLength + 4);
+                    frame.Write(_buffer, header.HeaderLength, (Int32)header.ContentLength + 4);
                 }
                 else
                 {
                     if(header.HeaderLength < readed)
-                        frame.Write(buffer, header.HeaderLength, readed - header.HeaderLength);
+                        frame.Write(_buffer, header.HeaderLength, readed - header.HeaderLength);
                     
                     UInt64 missingBytes = frameLength - (UInt64)readed;
-                    Int32 bytesToRead = buffer.Length;
+                    Int32 bytesToRead = _buffer.Length;
 
                     while (missingBytes > 0)
                     {
                         if (missingBytes < (UInt64)bytesToRead)
                             bytesToRead = (Int32)missingBytes;
 
-                        readed = await _client.GetStream().ReadAsync(buffer, 0, bytesToRead);
-                        frame.Write(buffer, 0, readed);
+                        readed = await _client.GetStream().ReadAsync(_buffer, 0, bytesToRead);
+                        frame.Write(_buffer, 0, readed);
                         missingBytes = missingBytes - (UInt64)readed;
                     }
                 }
 
-                if (frame.Header.Option == WebSocketFrameOption.Text)
-                    return Encoding.UTF8.GetString(frame.StreamData.ToArray());
-                else if (frame.Header.Option == WebSocketFrameOption.Ping)
-                {
-                    var pongFrame = new WebSocketFrame(frame.StreamData.ToArray(), WebSocketFrameOption.Pong);
-                    await _client.GetStream().WriteAsync(pongFrame.StreamData.ToArray(), 0, pongFrame.StreamData.ToArray().Length);
-                    return await ReadAsync();
-                }
-                else
-                    throw new WebSocketException("WebSocket option not supported " + frame.Header.Option.ToString());
+                return await ProcessFrameAsync(frame);
             }
             else 
                 throw new WebSocketException("Partial frames not supported yet.");

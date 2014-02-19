@@ -14,39 +14,59 @@ namespace vtortola.WebSockets
         public WebSocketFrameOption Option { get; private set; }
         public Byte[] Raw { get; set; }
 
-        public WebSocketFrameHeader(Byte[] header)
+        public static Boolean TryParse(Byte[] frameStart, Int32 count, out WebSocketFrameHeader header)
         {
-            IdentifyHeader(header[0]);
+            header = null;
 
-            ContentLength = (UInt64)(header[1] - 128);
-            if (ContentLength <= 125)
-            {
-                HeaderLength = 2;
-            }
-            else if (ContentLength == 126)
-            {
-                Byte b = header[2];
-                header[2] = header[3];
-                header[3] = b;
+            if (frameStart == null || frameStart.Length < 2 || count < 2)
+                return false;
 
-                ContentLength = BitConverter.ToUInt16(header, 2);
-                HeaderLength = 4;
-            }
-            else if (ContentLength == 127)
+            Boolean isPartial = frameStart[0] <= 128;
+
+            Int32 value = frameStart[0];
+            value = value > 128 ? value - 128 : value;
+
+            WebSocketFrameOption option = (WebSocketFrameOption)value;
+
+            UInt64 contentLength= (UInt64)(frameStart[1] - 128);
+            Int32 headerLength = 0;
+
+            if (contentLength <= 125)
             {
+                headerLength = 2;
+            }
+            else if (contentLength == 126)
+            {
+                if (frameStart.Length < 4 || count < 4)
+                    return false;
+
+                Byte b = frameStart[2];
+                frameStart[2] = frameStart[3];
+                frameStart[3] = b;
+
+                contentLength = BitConverter.ToUInt16(frameStart, 2);
+                headerLength = 4;
+            }
+            else if (contentLength == 127)
+            {
+                if (frameStart.Length < 10 || count < 10)
+                    return false;
+
                 Byte[] ui64 = new Byte[8];
                 for (int i = 0; i < 8; i++)
-                    ui64[i] = header[9-i];
+                    ui64[i] = frameStart[9 - i];
 
-                ContentLength = (UInt64)BitConverter.ToUInt64(ui64, 0);
-                HeaderLength = 10;
+                contentLength = (UInt64)BitConverter.ToUInt64(ui64, 0);
+                headerLength = 10;
             }
             else
                 throw new WebSocketException("Protocol error");
 
-            Raw = new Byte[HeaderLength];
-            Array.Copy(header, 0, Raw, 0, HeaderLength);
+            header = new WebSocketFrameHeader(contentLength, isPartial, option);
+            return true;
         }
+
+
         public WebSocketFrameHeader(UInt64 contentLength, Boolean isPartial, WebSocketFrameOption option)
         {
             List<Byte> arrayMaker = new List<Byte>();
@@ -75,29 +95,6 @@ namespace vtortola.WebSockets
             ContentLength = contentLength;
             Raw = arrayMaker.ToArray();
             Option = option;
-        }
-
-        private void IdentifyHeader(Int32 value)
-        {
-            IsPartial = value <= 128;
-            value = value > 128 ? value - 128 : value;
-
-            switch (value)
-            {
-                case 0: Option = WebSocketFrameOption.Continuation;
-                    break;
-                case 1: Option = WebSocketFrameOption.Text;
-                    break;
-                case 2: Option = WebSocketFrameOption.Binary;
-                    break;
-                case 8: Option = WebSocketFrameOption.ConnectionClose;
-                    break;
-                case 9: Option = WebSocketFrameOption.Ping;
-                    break;
-                case 10: Option = WebSocketFrameOption.Ping;
-                    break;
-                default: throw new WebSocketException("Unrecognized opt code");
-            }
         }
     }
 }
