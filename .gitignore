@@ -50,6 +50,9 @@ build/
 [Bb]in/
 [Oo]bj/
 
+packages/*
+!packages/repositories.config
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
