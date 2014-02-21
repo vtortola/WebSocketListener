@@ -5,9 +5,11 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSocketListener", "vtortola.WebSocketListener\vtortola.WebSocketListener.csproj", "{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListener.TestConsoleHost", "WebSocketListener.TestConsoleHost\WebSocketListener.TestConsoleHost.csproj", "{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestApps", "TestApps", "{9819EE57-0EFF-431A-94B8-CCAAA2403443}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebSocketListener.Web", "TestWebSocketListener.Web\TestWebSocketListener.Web.csproj", "{6964319A-3F06-4FE4-957B-C7548ADCE3E1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListener.TestConsoleHost", "TestApps\WebSocketListener.TestConsoleHost\WebSocketListener.TestConsoleHost.csproj", "{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebSocketListener.Web", "TestApps\TestWebSocketListener.Web\TestWebSocketListener.Web.csproj", "{6964319A-3F06-4FE4-957B-C7548ADCE3E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +32,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60} = {9819EE57-0EFF-431A-94B8-CCAAA2403443}
+		{6964319A-3F06-4FE4-957B-C7548ADCE3E1} = {9819EE57-0EFF-431A-94B8-CCAAA2403443}
 	EndGlobalSection
 EndGlobal
