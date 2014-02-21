@@ -41,7 +41,7 @@ namespace WebSockets.TestConsoleHost
                     while (ws.IsConnected && !token.IsCancellationRequested)
                     { 
                         var msg = await ws.ReadAsync();
-                        if (msg != null) // disconnection yields a null msg
+                        if (msg !=null)
                         {
                             Log("Client says: " + msg);
                             await ws.WriteAsync(new String(msg.Reverse().ToArray()));

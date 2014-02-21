@@ -47,11 +47,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebSocketClient.cs" />
     <Compile Include="WebSocketException.cs" />
-    <Compile Include="WebSocketFrame.cs" />
     <Compile Include="WebSocketFrameHeader.cs" />
     <Compile Include="WebSocketFrameOption.cs" />
     <Compile Include="WebSocketListener.cs" />
     <Compile Include="WebSocketNegotiator.cs" />
+    <Compile Include="WebSocketReadState.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
