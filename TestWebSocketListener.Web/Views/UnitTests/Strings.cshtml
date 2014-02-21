@@ -1,0 +1,321 @@
+﻿@{
+    ViewBag.Title = "SmallStrings";
+}
+
+<h2>String Message test</h2>
+
+<script>
+    
+    describe("Small Strings: ", function () {
+        var result = '';
+        var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+
+        it("Must reverse the 'Hi' string", function () {
+            
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.onopen = function (event) {
+                    ws.send("Hi");
+                };
+            });
+
+            waitsFor(function () {
+                return result == 'iH';
+            }, "Error", 1000);
+
+            runs(function () {
+                expect(result).toBe('iH');
+            });
+        });
+
+        it("Must reverse the 'Valeriano' string", function () {
+
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.send("Valeriano");
+            });
+
+            waitsFor(function () {
+                return result == 'onairelaV';
+            }, "Error", 100);
+
+            runs(function () {
+                expect(result).toBe('onairelaV');
+            });
+        });
+
+        it("Must reverse 6 'iH' string", function () {
+
+            var counter = 0;
+
+            ws.onmessage = function (event) {
+                if (event.data == 'iH')
+                    counter++;
+            };
+
+            // it does not need "onopen" here and I do not understand why. TODO: Find it out.
+            runs(function () {
+                ws.send("Hi");
+                ws.send("Hi");
+                ws.send("Hi");
+                ws.send("Hi");
+                ws.send("Hi");
+                ws.send("Hi");
+            });
+
+            waitsFor(function () {
+                return counter == 6;
+            }, "Error", 100);
+
+            runs(function () {
+                expect(counter).toBe(6);
+            });
+        });
+
+        it("Must reverse alternated strings", function () {
+
+            var hCounter = 0;
+            var vCounter = 0;
+
+            ws.onmessage = function (event) {
+                if (event.data == 'iH')
+                    hCounter++;
+                else if (event.data == 'onairelaV')
+                    vCounter++;
+            };
+
+            runs(function () {
+                ws.send("Hi");
+                ws.send("Valeriano");
+                ws.send("Hi");
+                ws.send("Hi");
+                ws.send("Hi");
+                ws.send("Valeriano");
+                ws.send("Valeriano");
+                ws.send("Valeriano");
+                ws.send("Hi");
+                ws.send("Valeriano");
+                ws.send("Valeriano");
+                ws.send("Hi");
+            });
+
+            waitsFor(function () {
+                return hCounter == 6 && vCounter == 6;
+            }, "Error", 100);
+
+            runs(function () {
+
+                expect(hCounter).toBe(6);
+                expect(vCounter).toBe(6);
+            });
+        });
+
+    });
+
+    function createString(char, length) {
+        var result = '';
+        for (var i = 0; i < length; i++) {
+            result += char;
+        }
+        return result;
+    };
+
+    var s4096 = createString('a', 4096);
+    var s4097 = createString('b', 4097);
+    var s4095 = createString('c', 4095);
+
+    describe("Medium Strings: ", function () {
+        var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+        var result = '';
+
+        it("Must reverse a 4095 length string", function () {
+
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.send(s4095);
+            });
+
+            waitsFor(function () {
+                return result == s4095;
+            }, "Error", 100);
+
+            runs(function () {
+                expect(result).toBe(s4095);
+            });
+        });
+
+        it("Must reverse a 4096 length string", function () {
+
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.send(s4096);
+            });
+
+            waitsFor(function () {
+                return result == s4096;
+            }, "Error", 100);
+
+            runs(function () {
+                expect(result).toBe(s4096);
+            });
+        });
+
+        it("Must reverse a 4097 length string", function () {
+
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.send(s4097);
+            });
+
+            waitsFor(function () {
+                return result == s4097;
+            }, "Error", 100);
+
+            runs(function () {
+                expect(result).toBe(s4097);
+                expect(result.length).toBe(4097);
+            });
+        });
+
+        it("Must reverse alternated medium strings", function () {
+
+            var counter5 = 0, counter6 = 0, counter7 = 0;
+
+            ws.onmessage = function (event) {
+                if (event.data.length == 4095)
+                    counter5++;
+                else if (event.data.length == 4096)
+                    counter6++;
+                else if (event.data.length == 4097)
+                    counter7++;
+            };
+
+            runs(function () {
+                ws.send("Hi");
+                ws.send(s4095);
+                ws.send(s4096);
+                ws.send(s4097);
+                ws.send(s4095);
+                ws.send(s4096);
+                ws.send("Hi");
+                ws.send(s4097);
+                ws.send(s4097);
+                ws.send("Hi");
+                ws.send(s4096);
+                ws.send(s4095);
+                ws.send(s4097);
+                ws.send(s4096);
+                ws.send(s4095);
+                ws.send(s4096);
+                ws.send(s4095);
+                ws.send("Hi");
+                ws.send(s4097);
+                ws.send(s4096);
+                ws.send(s4095);
+                ws.send(s4097);
+                ws.send("Hi");
+            });
+
+            waitsFor(function () {
+                return counter5 == 6 && counter6 == 6 && counter7 == 6;
+            }, "Error", 500);
+
+            runs(function () {
+                expect(counter5).toBe(6);
+                expect(counter6).toBe(6);
+                expect(counter7).toBe(6);
+            });
+        });
+
+    });
+
+    var large1 = createString('d', @(System.UInt16.MaxValue*4));
+    var large2 = createString('e', @(System.UInt16.MaxValue*4));
+
+
+    describe("Large Strings: ", function () {
+        var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+        var result = '';
+
+        it("Must reverse a large length string", function () {
+
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.send(large1);
+            });
+
+            waitsFor(function () {
+                return result == large1;
+            }, "Error", 500);
+
+            runs(function () {
+                expect(result).toBe(large1);
+            });
+        });
+
+        it("Must reverse two consecutive large length string", function () {
+
+            var counter1 =0;
+            var counter2 =0;
+
+            ws.onmessage = function (event) {
+                if(event.data == large1)
+                    counter1++;
+                if(event.data == large2)
+                    counter2++;
+            };
+
+            runs(function () {
+                ws.send(large1);
+                ws.send(large2);
+            });
+
+            waitsFor(function () {
+                return counter1==1 && counter2==1;
+            }, "Error", 500);
+
+            runs(function () {
+                expect(result).toBe(large1);
+            });
+        });
+
+        it("Must reverse an extra large length string", function () {
+
+            ws.onmessage = function (event) {
+                result = event.data;
+            };
+
+            runs(function () {
+                ws.send(large1 + large2 + large1 + large2);
+            });
+
+            waitsFor(function () {
+                return result == large2 + large1 + large2 + large1;
+            }, "Error", 3000);
+
+            runs(function () {
+                expect(result).toBe(large2 + large1 + large2 + large1);
+            });
+        });
+    });
+
+
+</script>

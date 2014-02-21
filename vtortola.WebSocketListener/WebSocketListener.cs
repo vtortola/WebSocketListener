@@ -16,10 +16,12 @@ namespace vtortola.WebSockets
         {
             _listener = new TcpListener(endpoint);
         }
+
         public void Start()
         {
             _listener.Start();
         }
+
         public void Stop()
         {
             _listener.Stop();
@@ -72,7 +74,13 @@ namespace vtortola.WebSockets
             }
                         
             await sw.WriteAsync(negotiator.GetNegotiationResponse());
+            await sw.FlushAsync();
 
+            return CreateWebSocketClient(client, negotiator);
+        }
+
+        public static WebSocketClient CreateWebSocketClient(TcpClient client, WebSocketNegotiator negotiator)
+        {
             return new WebSocketClient(client, negotiator.RequestUri, negotiator.Version, negotiator.Cookies, negotiator.Headers);
         }
 

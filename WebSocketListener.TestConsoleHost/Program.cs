@@ -38,17 +38,47 @@ namespace WebSockets.TestConsoleHost
 
                 Task.Run(async () =>
                 {
-                    while (ws.IsConnected && !token.IsCancellationRequested)
-                    { 
-                        var msg = await ws.ReadAsync();
-                        if (msg !=null)
+                    try
+                    {
+                        while (ws.IsConnected && !token.IsCancellationRequested)
                         {
-                            Log("Client says: " + msg);
-                            await ws.WriteAsync(new String(msg.Reverse().ToArray()));
+                            var msg = await ws.ReadAsync();
+                            if (msg != null)
+                            {
+                                Log("Client says: " + msg.Length);
+                                await ws.WriteAsync(new String(msg.Reverse().ToArray()));
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Error : " + ex.Message);
                     }
                     Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
                 }, token);
+
+                //Task.Run(async () =>
+                //{
+                //    try
+                //    {
+                //        while (ws.IsConnected && !token.IsCancellationRequested)
+                //        {
+                //            Byte[] buffer = new Byte[4096];
+
+                //            var state = await ws.ReadAsync(buffer, 0, buffer.Length);
+                //            if (state != null)
+                //            {
+                //                Log("Client says: " + state.BytesReaded);
+                //                await ws.WriteAsync(buffer, 0, state.BytesReaded, true, WebSocketMessageType.ByteArray);
+                //            }
+                //        }
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log("Error : " + ex.Message);
+                //    }
+                //    Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
+                //}, token);
             }
         }
 

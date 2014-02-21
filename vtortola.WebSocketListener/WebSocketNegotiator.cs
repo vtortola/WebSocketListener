@@ -27,7 +27,6 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Upgrade") && _headers["Upgrade"] == "websocket" &&
                        _headers.ContainsKey("Connection") &&
                        _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
-                       _headers.ContainsKey("Sec-WebSocket-Protocol") &&
                        _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13" &&
                        _headers.ContainsKey("Origin");
             }
@@ -72,7 +71,8 @@ namespace vtortola.WebSockets
             sb.Append(GenerateHandshake());
             sb.Append("\r\n");
             sb.Append("Sec-WebSocket-Protocol: ");
-            sb.Append(_headers["SEC-WEBSOCKET-PROTOCOL"]);
+            if (_headers.ContainsKey("SEC-WEBSOCKET-PROTOCOL"))
+                sb.Append(_headers["SEC-WEBSOCKET-PROTOCOL"]);
             sb.Append("\r\n");
             sb.Append("\r\n");
             return sb.ToString();
