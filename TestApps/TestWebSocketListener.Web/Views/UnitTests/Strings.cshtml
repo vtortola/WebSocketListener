@@ -5,10 +5,10 @@
 <h2>String Message test</h2>
 
 <script>
-    
+    var ws = new WebSocket("ws://127.0.0.1:8001", "text");
     describe("Small Strings: ", function () {
         var result = '';
-        var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+        
 
         it("Must reverse the 'Hi' string", function () {
             
@@ -131,7 +131,7 @@
     var s4095 = createString('c', 4095);
 
     describe("Medium Strings: ", function () {
-        var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+        //var ws = new WebSocket("ws://127.0.0.1:8001", "text");
         var result = '';
 
         it("Must reverse a 4095 length string", function () {
@@ -249,7 +249,7 @@
 
 
     describe("Large Strings: ", function () {
-        var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+        //var ws = new WebSocket("ws://127.0.0.1:8001", "text");
         var result = '';
 
         it("Must reverse a large length string", function () {

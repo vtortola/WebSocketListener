@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -100,6 +101,9 @@ namespace vtortola.WebSockets
 
             Int32 value = frameStart[offset];
             value = value > 128 ? value - 128 : value;
+
+            if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))
+                Debugger.Break();
 
             WebSocketFrameOption option = (WebSocketFrameOption)value;
 

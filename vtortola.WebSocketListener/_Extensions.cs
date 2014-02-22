@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
@@ -51,10 +52,13 @@ namespace vtortola.WebSockets
 
     internal static class NetworkStreamExtensions
     {
-        internal static Boolean ReadUntilCount(this NetworkStream stream, ref Int32 readed, Byte[] buffer, Int32 offset, Int32 count, Int32 until)
+        internal static Boolean ReadUntilCount(this NetworkStream stream, ref Int32 readed, Byte[] buffer, Int32 offset, Int32 count, Int32 until, CancellationToken token)
         {
             do
             {
+                if (token.IsCancellationRequested)
+                    return false;
+
                 Int32 r = 0;
                 r= stream.Read(buffer, readed, 2);
                 if (r == 0)

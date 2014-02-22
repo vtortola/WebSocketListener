@@ -14,10 +14,7 @@ namespace vtortola.WebSockets
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
 
-        public Uri RequestUri { get; private set; }
-        public Version Version { get; private set; }
-        public CookieContainer Cookies { get; private set; }
-        public HttpHeadersCollection Headers { get; private set; }
+        public WebSocketHttpRequest Request { get; private set; }
 
         public Boolean IsWebSocketRequest
         {
@@ -36,8 +33,9 @@ namespace vtortola.WebSockets
         {
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
-            Cookies = new CookieContainer();
-            Headers = new HttpHeadersCollection();
+            Request = new WebSocketHttpRequest();
+            Request.Cookies = new CookieContainer();
+            Request.Headers = new HttpHeadersCollection();
         }
 
         internal void ParseGET(String line)
@@ -46,9 +44,9 @@ namespace vtortola.WebSockets
                 throw new WebSocketException("Not GET request");
 
             var parts = line.Split(' ');
-            RequestUri = new Uri(parts[1], UriKind.Relative);
+            Request.RequestUri = new Uri(parts[1], UriKind.Relative);
             String version = parts[2];
-            Version = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
+            Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
         }
 
         internal void ParseHeader(String line)
@@ -95,12 +93,12 @@ namespace vtortola.WebSockets
         {
             if(_headers.ContainsKey("Cookie"))
             {            
-                Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
+                Request.Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
             }
 
-            Headers = new HttpHeadersCollection();
+            Request.Headers = new HttpHeadersCollection();
             foreach (var kv in _headers)
-                Headers.Add(kv.Key, kv.Value);
+                Request.Headers.Add(kv.Key, kv.Value);
         }
     }
 
@@ -115,5 +113,14 @@ namespace vtortola.WebSockets
         }
        
     }
+
+    public sealed class WebSocketHttpRequest
+    {
+        public Uri RequestUri { get; internal set; }
+        public Version HttpVersion { get; internal set; }
+        public CookieContainer Cookies { get; internal set; }
+        public HttpHeadersCollection Headers { get; internal set; }
+    }
+
 
 }

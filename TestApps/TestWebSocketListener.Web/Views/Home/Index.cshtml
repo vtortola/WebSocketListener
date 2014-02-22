@@ -25,13 +25,6 @@
     ws.onopen = function (event) {
         button.disabled = false;
         text.disabled = false;
-        ws.send("Hi"); ws.send("Hi"); ws.send("Hi");
-        ws.send("Valeriano");
-        ws.send("Hi");
-        ws.send("Hi");
-        ws.send("Valeriano");
-        ws.send("Valeriano");
-        ws.send("Valeriano");
         button.addEventListener('click', function () {
             if (text.value) {
                 characters1.textContent = text.value.length;

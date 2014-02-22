@@ -15,7 +15,7 @@ namespace WebSockets.TestConsoleHost
         {
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
-            WebSocketListener server = new WebSocketListener(endpoint);
+            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(5));
 
             server.Start();
             Log("Server started at " + endpoint.ToString());
@@ -33,7 +33,9 @@ namespace WebSockets.TestConsoleHost
         {
             while (!token.IsCancellationRequested)
             {
-                var ws = await server.AcceptWebSocketClientAsync();
+                var ws = await server.AcceptWebSocketClientAsync(token);
+                if (ws == null)
+                    continue;
                 Log("Client Connected: " + ws.RemoteEndpoint.ToString());
 
                 Task.Run(async () =>
@@ -56,30 +58,8 @@ namespace WebSockets.TestConsoleHost
                     }
                     Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
                 }, token);
-
-                //Task.Run(async () =>
-                //{
-                //    try
-                //    {
-                //        while (ws.IsConnected && !token.IsCancellationRequested)
-                //        {
-                //            Byte[] buffer = new Byte[4096];
-
-                //            var state = await ws.ReadAsync(buffer, 0, buffer.Length);
-                //            if (state != null)
-                //            {
-                //                Log("Client says: " + state.BytesReaded);
-                //                await ws.WriteAsync(buffer, 0, state.BytesReaded, true, WebSocketMessageType.ByteArray);
-                //            }
-                //        }
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Log("Error : " + ex.Message);
-                //    }
-                //    Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
-                //}, token);
             }
+            Log("Server Stop accepting clients");
         }
 
         static void Log(String line)
