@@ -14,6 +14,4 @@ await ws.WriteAsync("Hi!");
 var response = await ws.ReadAsync();
 ```
 
-Status:
-* Ping/Pong behaviour is implemented but not tested.
-* Messages split across multiple frames are not supported right now.
+
