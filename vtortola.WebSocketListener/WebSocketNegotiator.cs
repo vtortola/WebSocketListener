@@ -111,7 +111,6 @@ namespace vtortola.WebSockets
         {
             get { return this[header.ToString()];}
         }
-       
     }
 
     public sealed class WebSocketHttpRequest

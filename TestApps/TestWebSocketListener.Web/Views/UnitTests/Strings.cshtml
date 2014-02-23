@@ -5,7 +5,7 @@
 <h2>String Message test</h2>
 
 <script>
-    var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+    var ws = new WebSocket("ws://127.0.0.1:8001/", "text");
 
     describe("Connects: ", function () {
         var connected = false;
@@ -216,7 +216,7 @@
             var counter5 = 0, counter6 = 0, counter7 = 0;
 
             ws.onmessage = function (event) {
-                console.log(event.data.length);
+
                 if (event.data.length == 4095)
                     counter5++;
                 else if (event.data.length == 4096)

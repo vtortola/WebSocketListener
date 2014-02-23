@@ -33,10 +33,10 @@
     for (var i = 0; i < img.data.length; i++) {
         binary[i] = img.data[i];
     }
-
+   
     describe("Binary: ", function () {
         
-        var ws = new WebSocket("ws://127.0.0.1:8001","text");
+        var ws = new WebSocket("ws://127.0.0.1:8001/","text");
         ws.binaryType = 'arraybuffer';
 
         it("Simple binary array test", function () {
@@ -80,11 +80,13 @@
             };
 
             runs(function () {
-                  ws.send(binary.buffer);
+                //ws.onopen = function () {
+                    ws.send(binary.buffer);
+                //}
             });
 
             waitsFor(function () {
-                console.log(counter);
+                //console.log(counter);
                 return counter == binary.length;
             }, "Error", 1000);
 

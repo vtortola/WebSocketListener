@@ -52,19 +52,29 @@ namespace WebSockets.TestConsoleHost
 
                             using (var messageReader = ws.CreateMessageReader())
                             {
-                                using(var sr = new StreamReader(messageReader, Encoding.UTF8))
-                                {
-                                    msg = await sr.ReadToEndAsync();
-                                }
-                            }
+                                await messageReader.AwaitHeaderAsync();
 
-                            if (msg != null && !String.IsNullOrWhiteSpace(msg))
-                            {
-                                Log("Client says: " + msg.Length);
-                                using(var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
-                                using(var sw = new StreamWriter(messageWriter, Encoding.UTF8))
+                                switch (messageReader.MessageType)
                                 {
-                                    await sw.WriteAsync(new String(msg.Reverse().ToArray()));
+                                    case WebSocketMessageType.Text:
+                                        using (var sr = new StreamReader(messageReader, Encoding.UTF8))
+                                            msg = await sr.ReadToEndAsync();
+
+                                        if (msg == null || String.IsNullOrWhiteSpace(msg))
+                                            continue;
+                                        
+                                        Log("Client says: " + msg.Length);
+
+                                        using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
+                                        using (var sw = new StreamWriter(messageWriter, Encoding.UTF8))
+                                            await sw.WriteAsync(new String(msg.Reverse().ToArray()));                                       
+                                        break;
+
+                                    case WebSocketMessageType.Binary:
+                                        Console.WriteLine("Array");
+                                        using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
+                                            await messageReader.CopyToAsync(messageWriter);
+                                        break;
                                 }
                             }
                         }

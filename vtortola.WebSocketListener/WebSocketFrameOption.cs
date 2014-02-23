@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
+    public enum WebSocketMessageType
+    {
+        Text = 1,
+        Binary = 2,
+    }
     public enum WebSocketFrameOption
     {
         Continuation = 0,

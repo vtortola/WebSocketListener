@@ -61,7 +61,5 @@ namespace vtortola.WebSockets
             }
             base.Close();
         }
-
     }
-
 }

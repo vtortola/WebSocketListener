@@ -13,8 +13,20 @@ namespace vtortola.WebSockets
             : base(client)
         { }
 
+        Boolean _headerAwaited;
+        public async Task AwaitHeaderAsync()
+        {
+            _headerAwaited = true;
+            await _client.AwaitHeaderAsync();
+            if(_client.Header != null)
+                this.MessageType = (WebSocketMessageType)_client.Header.Option;
+        }
+
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
         {
+            if (!_headerAwaited)
+                await _client.AwaitHeaderAsync();
+
             Int32 readed = 0;
             if (_client.Header == null || _client.Header.RemainingBytes != 0)
             {

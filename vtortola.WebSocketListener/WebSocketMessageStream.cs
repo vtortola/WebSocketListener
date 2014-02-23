@@ -57,10 +57,5 @@ namespace vtortola.WebSockets
         {
             throw new NotSupportedException();
         }
-
-        public override Task CopyToAsync(Stream destination, int bufferSize, System.Threading.CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException();
-        }
     }
 }

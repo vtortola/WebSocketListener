@@ -51,36 +51,32 @@ namespace vtortola.WebSockets
             return new WebSocketMessageWriteStream(this,messageType);
         }
 
-        readonly Byte[] _headerBuffer = new Byte[14];
-        internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
+        internal async Task AwaitHeaderAsync()
         {
-            if (bufferCount < buffer.Length - bufferOffset)
-                throw new ArgumentException("There is not space in the array for that length considering that offset.");
-                                   
-            Int32 readed =0, headerLength;
+            Int32 readed = 0, headerLength;
             UInt64 contentLength;
             NetworkStream clientStream = _client.GetStream();
 
-            while (_header == null)
+            while (_header == null && _client.Connected)
             {
                 do
                 { // Checking for small frame
                     readed += await clientStream.ReadAsync(_headerBuffer, 0, 6, _token); // 6 = 2 minimal header + 4 key
                     if (readed == 0 || _token.IsCancellationRequested)
-                        return ReturnAndClose();
+                        ReturnAndClose();
                 }
                 while (readed < 6);
 
                 if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
                 { // Checking for medium frame
                     if (!clientStream.ReadUntilCount(ref readed, _headerBuffer, readed, 2, 8, _token)) // 8 = 2 header + 2 size + 4 key
-                        return ReturnAndClose();
+                        ReturnAndClose();
                 }
 
                 if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
                 { // Checking for large frame
                     if (!clientStream.ReadUntilCount(ref readed, _headerBuffer, readed, 6, 14, _token)) // 14 = 2 header + 8 size + 4 key
-                        return ReturnAndClose();
+                        ReturnAndClose();
                 }
 
                 if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out _header))
@@ -91,24 +87,30 @@ namespace vtortola.WebSockets
                     ProcessControlFrame(clientStream);
                     readed = 0;
                     _header = null;
-                    if (!_client.Connected)
-                        return 0;
                 }
             }
+        }
 
+        readonly Byte[] _headerBuffer = new Byte[14];
+        internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
+        {
+            if (bufferCount < buffer.Length - bufferOffset)
+                throw new ArgumentException("There is not space in the array for that length considering that offset.");
+                                   
             if (_header.ContentLength < (UInt64)bufferCount)
                 bufferCount = (Int32)_header.ContentLength;
 
             if (_header.RemainingBytes < (UInt64)bufferCount)
                 bufferCount = (Int32)_header.RemainingBytes;
 
-            readed = await clientStream.ReadAsync(buffer, bufferOffset, bufferCount);
+            var readed = await _client.GetStream().ReadAsync(buffer, bufferOffset, bufferCount);
 
             for (int i = 0; i < readed; i++)
                 buffer[i + bufferOffset] = _header.DecodeByte(buffer[i + bufferOffset]);
 
             return readed;
         }
+
         readonly Byte[] _controlFrameBuffer = new Byte[125];
         private void ProcessControlFrame(NetworkStream clientStream)
         {
@@ -141,6 +143,7 @@ namespace vtortola.WebSockets
                 default: throw new WebSocketException("Unexpected header option '" + _header.Option.ToString() + "'");
             }
         }
+
         ManualResetEventSlim _controlFrameGate = new ManualResetEventSlim(true);
         SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1);
         internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option)
