@@ -10,7 +10,7 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        public WebSocketMessageType MessageType { get; protected set; }
+        public WebSocketMessageType MessageType { get; internal set; }
         readonly protected WebSocketClient _client;
         internal WebSocketMessageStream(WebSocketClient client)
         {

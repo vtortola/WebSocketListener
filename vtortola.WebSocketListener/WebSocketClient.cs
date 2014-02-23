@@ -41,9 +41,12 @@ namespace vtortola.WebSockets
             PingAsync();
         }
                 
-        public WebSocketMessageReadStream CreateMessageReader()
+        public async Task<WebSocketMessageReadStream> ReadMessageAsync()
         {
-            return new WebSocketMessageReadStream(this);
+            var message = new WebSocketMessageReadStream(this);
+            await AwaitHeaderAsync();
+            message.MessageType = (WebSocketMessageType)_header.Option;
+            return message;
         }
 
         public WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
