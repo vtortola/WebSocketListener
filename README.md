@@ -13,7 +13,7 @@ This is an implementation of an asynchronous **WebSocket server** using a `TcpLi
  * It **handles partial frames transparently**. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.
  * It **handles interleaved control frames transparently**. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
-Setting up a server and start listening for clients is very similar than a `TcpListener`. The `pingInterval` will define how oftern the server sends "ping" control frames to the clients:
+Setting up a server and start listening for clients is very similar than a `TcpListener`. The `pingInterval` will define how often the server sends a "ping" control frames to clients (clients should reply with a "pong" control frame):
 
 ```cs
    var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
@@ -22,7 +22,7 @@ Setting up a server and start listening for clients is very similar than a `TcpL
    server.Start();
 ```
    
-Once the server has started, clients can be awaited asynchronously. When a client connects, a `WebSocketClient` will be returned:
+Once the server has started, clients can be awaited asynchronously. When a client connects, a `WebSocketClient` object will be returned:
 
 ```cs
    WebSocketClient client = await server.AcceptWebSocketClientAsync(cancellationToken);
@@ -36,9 +36,9 @@ With the client we can await a message as a readonly stream:
    WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
 ```
 
-At this point, the `WebSocketMessageReadStream` will contain information from the header, like type of message (Text or Binary) but not the message content. It does not contain the length, since a frame only contains the frame length, not the total message length, so showing the lenght could be missleading.
+At first, the `WebSocketMessageReadStream` will contain information from the header, like type of message (Text or Binary) but not the message content, neither the message length, since a frame only contains the frame length, not the total message length, so that information could be missleading.
 
-The message is a stream-like object, so is it possible to use regular .NET framework tools. The `WebSocketMessageReadStream.MessageType` property indicates what kind of content does the message contain. 
+The message is a stream-like object, so is it possible to use regular .NET framework tools to work with them. The `WebSocketMessageReadStream.MessageType` property indicates what kind of content does the message contain. 
 
 A text message can be read with a simple `StreamReader`.  It is worth remember that according to the WebSockets specs, it always uses UTF8 for text enconding:
 
@@ -85,40 +85,11 @@ Also binary messages:
       await myFileStream.CopyToAsync(messageWriter);
 ```
    
-This is a very simple example of an echo service (loops omitted for simplicity):
+Next steps in development include:
 
-```cs
-   var cancellationSource = new CancellationTokenSource();
-   var cancellationToken = cancellationSource.Token;
-
-   var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
-   WebSocketListener server = new WebSocketListener(endpoint: local, pingInterval: TimeSpan.FromSeconds(2));
-
-   server.Start();
-
-   WebSocketClient client = await server.AcceptWebSocketClientAsync(cancellationToken);
-
-   // once a client is connected, await a message
-   // at this point, the message will contain the header information, but not the content
-   WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
-
-   if(messageReadStream != null && messageReadStream.MessageType == WebSocketMessageType.Text)
-   { // a disconnection/cancellation can yield a null stream
-
-       // knowing what type or message is coming, you can decide how to read it
-       String msg = null;
-       using (var sr = new StreamReader(messageReadStream, Encoding.UTF8)) // WebSockets uses UTF8 for text
-           msg = await sr.ReadToEndAsync();
-
-       if (String.IsNullOrEmpty(msg))
-       { // a disconnection/cancellation can yield a null result 
-           return;
-       }
-
-       using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
-       using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
-           await sw.WriteAsync(msg.ReverseString());
-   }
-
-```
+ * Extension model to allow WebSocket extensions to be plugged in.
+ * Deflate extension.
+ * Load test.
+ * Extension methods to return `Task<String>` and write Strings, so it is easier to use in small projects.
+   
 
