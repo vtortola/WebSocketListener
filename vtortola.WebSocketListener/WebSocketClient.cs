@@ -137,7 +137,6 @@ namespace vtortola.WebSockets
                     for (int i = 0; i < readed; i++)
                         _controlFrameBuffer[i] = _header.DecodeByte(_controlFrameBuffer[i]);
                     var timestamp = DateTime.FromBinary(BitConverter.ToInt64(_controlFrameBuffer, 0));
-                    Console.WriteLine("PONG");
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + _header.Option.ToString() + "'");
             }
@@ -186,7 +185,6 @@ namespace vtortola.WebSockets
                 if (!_client.Connected)
                     return;
 
-                Console.WriteLine("PING");
                 var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
                 await WriteInternalAsync(array, 0, array.Length, true, false, WebSocketFrameOption.Ping);
             }
