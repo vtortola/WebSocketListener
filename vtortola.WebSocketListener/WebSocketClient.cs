@@ -54,7 +54,7 @@ namespace vtortola.WebSockets
             return new WebSocketMessageWriteStream(this,messageType);
         }
 
-        internal async Task AwaitHeaderAsync()
+        private async Task AwaitHeaderAsync()
         {
             Int32 readed = 0, headerLength;
             UInt64 contentLength;

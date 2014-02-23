@@ -28,8 +28,7 @@ namespace WebSockets.TestConsoleHost
             cancellation.Cancel();
             Console.ReadKey(true);
         }
-
-
+        
         static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
         {
             while (!token.IsCancellationRequested)

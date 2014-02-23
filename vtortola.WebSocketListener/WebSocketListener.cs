@@ -54,55 +54,15 @@ namespace vtortola.WebSockets
 
         private async Task<WebSocketClient> Negotiate(TcpClient client, TimeSpan pingInterval, CancellationToken token)
         {
-            var stream = client.GetStream();
-            StreamReader sr = new StreamReader(stream, Encoding.UTF8);
-            StreamWriter sw = new StreamWriter(stream);
-            sw.AutoFlush = true;
             WebSocketNegotiator negotiator = new WebSocketNegotiator();
-
-            String line = await sr.ReadLineAsync();
-            
-            if(String.IsNullOrWhiteSpace(line))
-            {
-                if(!token.IsCancellationRequested)
-                    CloseConnection(negotiator, client, sr, sw);
-                return null;
-            }
-                        
-            negotiator.ParseGET(line);
-
-            while (!String.IsNullOrWhiteSpace(line))
-            {
-                line = await sr.ReadLineAsync();
-                negotiator.ParseHeader(line);
-            }
-
-            negotiator.ConsolidateHeaders();        
-            
-            if (!negotiator.IsWebSocketRequest)
-            {
-                if (!token.IsCancellationRequested)
-                    CloseConnection(negotiator, client, sr, sw);
-                return null;
-            }
-                        
-            await sw.WriteAsync(negotiator.GetNegotiationResponse());
-
-            return CreateWebSocketClient(client, negotiator, pingInterval, token);
+            if(await negotiator.NegotiateWebsocketAsync(client.GetStream()))
+                return CreateWebSocketClient(client, negotiator, pingInterval, token);
+            return null;
         }
 
         public static WebSocketClient CreateWebSocketClient(TcpClient client, WebSocketNegotiator negotiator, TimeSpan pingInterval, CancellationToken token)
         {
             return new WebSocketClient(client, negotiator.Request, pingInterval, token);
-        }
-
-        private async Task CloseConnection(WebSocketNegotiator negotiatior, TcpClient client, StreamReader sr, StreamWriter sw)
-        {
-            await Task.Yield();
-            await sw.WriteAsync(negotiatior.GetNegotiationErrorResponse());
-            client.Close();
-            sr.Dispose();
-            sw.Dispose();
         }
     }
 }

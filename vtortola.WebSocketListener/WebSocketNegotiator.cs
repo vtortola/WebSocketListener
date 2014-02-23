@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,7 +40,36 @@ namespace vtortola.WebSockets
             Request.Headers = new HttpHeadersCollection();
         }
 
-        internal void ParseGET(String line)
+        public async Task<Boolean> NegotiateWebsocketAsync(NetworkStream clientStream)
+        {
+            StreamReader sr = new StreamReader(clientStream, Encoding.UTF8);
+            StreamWriter sw = new StreamWriter(clientStream);
+            sw.AutoFlush = true;
+
+            String line = await sr.ReadLineAsync();
+                        
+            ParseGET(line);
+
+            while (!String.IsNullOrWhiteSpace(line))
+            {
+                line = await sr.ReadLineAsync();
+                ParseHeader(line);
+            }
+
+            Finish();
+
+            if (!IsWebSocketRequest)
+            {
+                await sw.WriteAsync(GetNegotiationErrorResponse());
+                clientStream.Close();
+            }
+            else
+                await sw.WriteAsync(GetNegotiationResponse());
+
+            return IsWebSocketRequest;
+        }
+
+        private void ParseGET(String line)
         {
             if (String.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
                 throw new WebSocketException("Not GET request");
@@ -49,7 +80,7 @@ namespace vtortola.WebSockets
             Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
         }
 
-        internal void ParseHeader(String line)
+        private void ParseHeader(String line)
         {
             var separator = line.IndexOf(":");
             if (separator == -1)
@@ -59,7 +90,7 @@ namespace vtortola.WebSockets
             _headers.Add(key, value);
         }
 
-        public String GetNegotiationResponse()
+        private String GetNegotiationResponse()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("HTTP/1.1 101 Switching Protocols\r\n");
@@ -76,7 +107,7 @@ namespace vtortola.WebSockets
             return sb.ToString();
         }
 
-        public String GetNegotiationErrorResponse()
+        private String GetNegotiationErrorResponse()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("HTTP/1.1 404 Bad Request\r\n");
@@ -89,10 +120,10 @@ namespace vtortola.WebSockets
             return Convert.ToBase64String(_sha1.ComputeHash(Encoding.UTF8.GetBytes(_headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
         }
 
-        public void ConsolidateHeaders()
+        private void Finish()
         {
             if(_headers.ContainsKey("Cookie"))
-            {            
+            {
                 Request.Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
             }
 
