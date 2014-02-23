@@ -52,7 +52,7 @@ namespace vtortola.WebSockets
 
     internal static class NetworkStreamExtensions
     {
-        internal static Boolean ReadUntilCount(this NetworkStream stream, ref Int32 readed, Byte[] buffer, Int32 offset, Int32 count, Int32 until, CancellationToken token)
+        internal static Boolean ReadSynchronouslyUntilCount(this NetworkStream stream, ref Int32 readed, Byte[] buffer, Int32 offset, Int32 count, Int32 until, CancellationToken token)
         {
             do
             {

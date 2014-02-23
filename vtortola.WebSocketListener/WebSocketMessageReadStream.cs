@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
@@ -13,14 +14,14 @@ namespace vtortola.WebSockets
             : base(client)
         { }
 
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+        public override async Task<Int32> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             Int32 readed = 0;
             if (_client.Header == null || _client.Header.RemainingBytes != 0)
             {
-                readed = await _client.ReadInternalAsync(buffer, offset, count);
+                readed = await _client.ReadInternalAsync(buffer, offset, count,  cancellationToken);
 
-                if (_client.CancellationToken.IsCancellationRequested || readed == 0)
+                if (readed == 0)
                     return 0;
 
                 this.MessageType = (WebSocketMessageType)_client.Header.Option;

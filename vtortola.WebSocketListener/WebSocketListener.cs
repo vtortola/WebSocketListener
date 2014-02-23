@@ -62,7 +62,7 @@ namespace vtortola.WebSockets
 
         public static WebSocketClient CreateWebSocketClient(TcpClient client, WebSocketNegotiator negotiator, TimeSpan pingInterval, CancellationToken token)
         {
-            return new WebSocketClient(client, negotiator.Request, pingInterval, token);
+            return new WebSocketClient(client, negotiator.Request, pingInterval);
         }
     }
 }

@@ -19,16 +19,16 @@ namespace WebSockets.TestConsoleHost
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromMilliseconds(1000));
 
             server.Start();
+
             Log("Server started at " + endpoint.ToString());
 
             var task = AcceptWebSocketClients(server, cancellation.Token);
 
             Console.ReadKey(true);
-            Log("Server stoping"); 
+            Log("Server stoping");
             cancellation.Cancel();
             Console.ReadKey(true);
-        }
-        
+        }       
         static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
@@ -50,7 +50,7 @@ namespace WebSockets.TestConsoleHost
             {
                 while (ws.IsConnected && !token.IsCancellationRequested)
                 {
-                    using (var messageReader = await ws.ReadMessageAsync())
+                    using (var messageReader = await ws.ReadMessageAsync(token))
                     {
                         if (messageReader == null)
                             continue; // disconnection

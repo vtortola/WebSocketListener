@@ -23,17 +23,13 @@ namespace vtortola.WebSockets
         WebSocketFrameHeader _header;
         internal WebSocketFrameHeader Header { get { return _header; } }
 
-        readonly CancellationToken _token;
-        public CancellationToken CancellationToken { get { return _token; } }
-
         readonly TimeSpan _pingInterval;
 
-        public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingInterval, CancellationToken token)
+        public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingInterval)
         {
             if (client == null)
                 throw new ArgumentNullException("client");
             _client = client;
-            _token = token;
             RemoteEndpoint = (IPEndPoint)_client.Client.RemoteEndPoint;
             LocalEndpoint = (IPEndPoint)_client.Client.LocalEndPoint;
             HttpRequest = httpRequest;
@@ -41,12 +37,16 @@ namespace vtortola.WebSockets
             PingAsync();
         }
                 
-        public async Task<WebSocketMessageReadStream> ReadMessageAsync()
+        public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
             var message = new WebSocketMessageReadStream(this);
-            await AwaitHeaderAsync();
-            message.MessageType = (WebSocketMessageType)_header.Option;
-            return message;
+            await AwaitHeaderAsync(token);
+            if (_header != null)
+            {
+                message.MessageType = (WebSocketMessageType)_header.Option;
+                return message;
+            }
+            return null;
         }
 
         public WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
@@ -54,64 +54,96 @@ namespace vtortola.WebSockets
             return new WebSocketMessageWriteStream(this,messageType);
         }
 
-        private async Task AwaitHeaderAsync()
+        private async Task AwaitHeaderAsync(CancellationToken token)
         {
-            Int32 readed = 0, headerLength;
-            UInt64 contentLength;
-            NetworkStream clientStream = _client.GetStream();
-
-            while (_header == null && _client.Connected)
+            try
             {
-                do
-                { // Checking for small frame
-                    readed += await clientStream.ReadAsync(_headerBuffer, 0, 6, _token); // 6 = 2 minimal header + 4 key
-                    if (readed == 0 || _token.IsCancellationRequested)
-                        ReturnAndClose();
-                }
-                while (readed < 6);
+                Int32 readed = 0, headerLength;
+                UInt64 contentLength;
+                NetworkStream clientStream = _client.GetStream();
 
-                if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
-                { // Checking for medium frame
-                    if (!clientStream.ReadUntilCount(ref readed, _headerBuffer, readed, 2, 8, _token)) // 8 = 2 header + 2 size + 4 key
-                        ReturnAndClose();
-                }
-
-                if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
-                { // Checking for large frame
-                    if (!clientStream.ReadUntilCount(ref readed, _headerBuffer, readed, 6, 14, _token)) // 14 = 2 header + 8 size + 4 key
-                        ReturnAndClose();
-                }
-
-                if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out _header))
-                    throw new WebSocketException("Cannot understand header");
-
-                if (!_header.Option.IsData())
+                while (_header == null && _client.Connected)
                 {
-                    ProcessControlFrame(clientStream);
-                    readed = 0;
-                    _header = null;
+                    do
+                    { // Checking for small frame
+                        readed += await clientStream.ReadAsync(_headerBuffer, 0, 6, token); // 6 = 2 minimal header + 4 key
+                        if (readed == 0 || token.IsCancellationRequested)
+                        {
+                            Close();
+                            return;
+                        }
+                    }
+                    while (readed < 6);
+
+                    if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
+                    { // Checking for medium frame
+                        if (!clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
+                        {
+                            Close();
+                            return;
+                        }
+                    }
+
+                    if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
+                    { // Checking for large frame
+                        if (!clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
+                        { 
+                            Close();
+                            return;
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        Close();
+                        return;
+                    }
+
+                    if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out _header))
+                        throw new WebSocketException("Cannot understand header");
+
+                    if (!_header.Option.IsData())
+                    {
+                        ProcessControlFrame(clientStream);
+                        readed = 0;
+                        _header = null;
+                    }
                 }
             }
+            catch(IOException)
+            {
+                Close();
+            }
         }
-
-        readonly Byte[] _headerBuffer = new Byte[14];
-        internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
+        internal void CleanHeader()
         {
-            if (bufferCount < buffer.Length - bufferOffset)
-                throw new ArgumentException("There is not space in the array for that length considering that offset.");
-                                   
-            if (_header.ContentLength < (UInt64)bufferCount)
-                bufferCount = (Int32)_header.ContentLength;
+            _header = null;
+        }
+        readonly Byte[] _headerBuffer = new Byte[14];
+        internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount, CancellationToken token)
+        {
+            try
+            {
+                if (bufferCount < buffer.Length - bufferOffset)
+                    throw new ArgumentException("There is not space in the array for that length considering that offset.");
 
-            if (_header.RemainingBytes < (UInt64)bufferCount)
-                bufferCount = (Int32)_header.RemainingBytes;
+                if (_header.ContentLength < (UInt64)bufferCount)
+                    bufferCount = (Int32)_header.ContentLength;
 
-            var readed = await _client.GetStream().ReadAsync(buffer, bufferOffset, bufferCount);
+                if (_header.RemainingBytes < (UInt64)bufferCount)
+                    bufferCount = (Int32)_header.RemainingBytes;
 
-            for (int i = 0; i < readed; i++)
-                buffer[i + bufferOffset] = _header.DecodeByte(buffer[i + bufferOffset]);
+                var readed = await _client.GetStream().ReadAsync(buffer, bufferOffset, bufferCount, token);
 
-            return readed;
+                for (int i = 0; i < readed; i++)
+                    buffer[i + bufferOffset] = _header.DecodeByte(buffer[i + bufferOffset]);
+
+                return readed;
+            }
+            catch (IOException)
+            {
+                return ReturnAndClose();
+            }
         }
 
         readonly Byte[] _controlFrameBuffer = new Byte[125];
@@ -149,14 +181,14 @@ namespace vtortola.WebSockets
 
         ManualResetEventSlim _controlFrameGate = new ManualResetEventSlim(true);
         SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1);
-        internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option)
+        internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, CancellationToken token)
         {
             try
             {
                 if(!option.IsData()) 
-                    _controlFrameGate.Wait();
+                    _controlFrameGate.Wait(token);
 
-                await _writeSemaphore.WaitAsync(_token);
+                await _writeSemaphore.WaitAsync(token);
 
                 if (!isCompleted)
                     _controlFrameGate.Reset();
@@ -173,6 +205,10 @@ namespace vtortola.WebSockets
                 }
                 
             }
+            catch(IOException)
+            {
+                Close();
+            }
             finally
             {
                 if (isCompleted)
@@ -184,21 +220,32 @@ namespace vtortola.WebSockets
         }
         private async Task PingAsync()
         {
-            while (!_token.IsCancellationRequested && _client.Connected)
+            try
             {
-                await Task.Delay(_pingInterval);
+                while (_client.Connected)
+                {
+                    await Task.Delay(_pingInterval);
 
-                if (!_client.Connected)
-                    return;
+                    if (!_client.Connected)
+                        return;
 
-                var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
-                await WriteInternalAsync(array, 0, array.Length, true, false, WebSocketFrameOption.Ping);
+                    var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
+                    await WriteInternalAsync(array, 0, array.Length, true, false, WebSocketFrameOption.Ping, CancellationToken.None);
+                }
+            }
+            catch(IOException)
+            {
+                Close();
             }
         }
         public async Task Close()
         {
-            _client.Close();
-            _client.Client.Dispose();
+            try
+            {
+                _client.Close();
+                _client.Client.Dispose();
+            }
+            catch { }
         }
 
         private Int32 ReturnAndClose()
@@ -210,11 +257,6 @@ namespace vtortola.WebSockets
         public void Dispose()
         {
             this.Close();
-        }
-
-        internal void CleanHeader()
-        {
-            _header = null;
         }
     }
 
