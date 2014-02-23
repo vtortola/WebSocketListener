@@ -20,8 +20,12 @@ namespace vtortola.WebSockets
         public Boolean IsConnected { get { return _client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
 
+        WebSocketFrameHeader _header;
+        internal WebSocketFrameHeader Header { get { return _header; } }
+
         readonly CancellationToken _token;
-        readonly SemaphoreSlim _writeGate;
+        public CancellationToken CancellationToken { get { return _token; } }
+
         readonly TimeSpan _pingInterval;
 
         public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingInterval, CancellationToken token)
@@ -33,77 +37,22 @@ namespace vtortola.WebSockets
             RemoteEndpoint = (IPEndPoint)_client.Client.RemoteEndPoint;
             LocalEndpoint = (IPEndPoint)_client.Client.LocalEndPoint;
             HttpRequest = httpRequest;
-            _writeGate = new SemaphoreSlim(1);
             _pingInterval = pingInterval;
             PingAsync();
         }
-       
-       
-        WebSocketFrameHeader _header;
-        readonly Byte[] _headerBuffer = new Byte[14];
                 
-        public async Task<WebSocketReadState> ReadAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
+        public WebSocketMessageReadStream CreateMessageReader()
         {
-            try
-            {
-                return await ReadInternalAsync(buffer, bufferOffset, bufferCount);
-            }
-            catch(IOException)
-            {
-                this.Close();
-                return WebSocketReadState.Empty;
-            }
-        }
-        public async Task WriteAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, WebSocketMessageType messageType)
-        {
-            try
-            {
-                await WriteInternalAsync(buffer, offset, count, isCompleted, (WebSocketFrameOption)messageType);
-            }
-            catch(IOException)
-            {
-                this.Close();
-            }
+            return new WebSocketMessageReadStream(this);
         }
 
-        public Task WriteAsync(String data)
+        public WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
-            if (_token.IsCancellationRequested)
-                this.Close();
-
-            var dataArray = Encoding.UTF8.GetBytes(data);
-            return WriteAsync(dataArray, 0, dataArray.Length, true, WebSocketMessageType.Text);
+            return new WebSocketMessageWriteStream(this,messageType);
         }
 
-        public async Task<String> ReadAsync()
-        {
-            Byte[] buffer = new Byte[BufferLength];
-            var state = await ReadAsync(buffer, 0, BufferLength);
-
-            if (state == null || state.MessageType == WebSocketMessageType.Closing)
-                return null;
-
-            UInt64 messageLength = state.BytesRemaining + (UInt64)state.BytesReaded;
-
-            if (state.IsCompleted && state.BytesRemaining == 0 && state.BytesReaded != 0)
-                return Encoding.UTF8.GetString(buffer, 0, state.BytesReaded);
-
-            Int32 capacity = (UInt64)Int32.MaxValue < messageLength ? Int32.MaxValue : (Int32)messageLength;
-            using (MemoryStream ms = new MemoryStream(capacity))
-            {
-                ms.Write(buffer, 0, state.BytesReaded);
-                while (!state.IsCompleted)
-                {
-                    state = await ReadAsync(buffer, 0, BufferLength);
-                    if (state.MessageType == WebSocketMessageType.Closing)
-                        return null;
-                    ms.Write(buffer, 0, state.BytesReaded);
-                }
-                return Encoding.UTF8.GetString(ms.ToArray());
-            }
-        }
-
-        private async Task<WebSocketReadState> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
+        readonly Byte[] _headerBuffer = new Byte[14];
+        internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
         {
             if (bufferCount < buffer.Length - bufferOffset)
                 throw new ArgumentException("There is not space in the array for that length considering that offset.");
@@ -139,51 +88,29 @@ namespace vtortola.WebSockets
 
                 if (!_header.Option.IsData())
                 {
-                    ProcessProtocolFrame(clientStream);
+                    ProcessControlFrame(clientStream);
                     readed = 0;
                     _header = null;
                     if (!_client.Connected)
-                        return null;
+                        return 0;
                 }
             }
 
-            if ((UInt64)bufferCount > _header.RemainingBytes)
+            if (_header.ContentLength < (UInt64)bufferCount)
+                bufferCount = (Int32)_header.ContentLength;
+
+            if (_header.RemainingBytes < (UInt64)bufferCount)
                 bufferCount = (Int32)_header.RemainingBytes;
 
-            readed = await clientStream.ReadAsync(buffer, bufferOffset, bufferCount, _token);
-
-            if (_token.IsCancellationRequested)
-                return ReturnAndClose();
+            readed = await clientStream.ReadAsync(buffer, bufferOffset, bufferCount);
 
             for (int i = 0; i < readed; i++)
                 buffer[i + bufferOffset] = _header.DecodeByte(buffer[i + bufferOffset]);
 
-            WebSocketReadState state = new WebSocketReadState();
-            state.BytesRemaining = _header.RemainingBytes;
-            state.BytesReaded = readed;
-            state.MessageType = (WebSocketMessageType)_header.Option;
-            state.IsCompleted = !_header.IsPartial && state.BytesRemaining == 0;
-
-            if (_header.RemainingBytes == 0)
-                _header = null;
-
-            return state;
-        }
-        private async Task PingAsync()
-        {
-            while (!_token.IsCancellationRequested && _client.Connected)
-            {
-                await Task.Delay(_pingInterval);
-
-                if (!_client.Connected)
-                    return;
-
-                var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
-                await WriteInternalAsync(array, 0, array.Length, true, WebSocketFrameOption.Ping);
-            }
+            return readed;
         }
         readonly Byte[] _controlFrameBuffer = new Byte[125];
-        private void ProcessProtocolFrame(NetworkStream clientStream)
+        private void ProcessControlFrame(NetworkStream clientStream)
         {
             switch (_header.Option)
             {
@@ -210,27 +137,58 @@ namespace vtortola.WebSockets
                     for (int i = 0; i < readed; i++)
                         _controlFrameBuffer[i] = _header.DecodeByte(_controlFrameBuffer[i]);
                     var timestamp = DateTime.FromBinary(BitConverter.ToInt64(_controlFrameBuffer, 0));
+                    Console.WriteLine("PONG");
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + _header.Option.ToString() + "'");
             }
         }
-        private async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, WebSocketFrameOption option)
+        ManualResetEventSlim _controlFrameGate = new ManualResetEventSlim(true);
+        SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1);
+        internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option)
         {
             try
             {
-                await _writeGate.WaitAsync(_token);
+                if(!option.IsData()) 
+                    _controlFrameGate.Wait();
+
+                await _writeSemaphore.WaitAsync(_token);
+
+                if (!isCompleted)
+                    _controlFrameGate.Reset();
+
+                if (!option.IsData() && !isCompleted)
+                    return;
+
                 if (_client.Connected)
                 {
                     Stream s = _client.GetStream();
-                    var header = WebSocketFrameHeader.Create(count, !isCompleted, option);
+                    var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
                     await s.WriteAsync(header.Raw, 0, header.Raw.Length);
                     await s.WriteAsync(buffer, offset, count);
                 }
+                
             }
             finally
             {
                 if (isCompleted)
-                    _writeGate.Release();
+                    _controlFrameGate.Set();
+
+                _writeSemaphore.Release();
+                  
+            }
+        }
+        private async Task PingAsync()
+        {
+            while (!_token.IsCancellationRequested && _client.Connected)
+            {
+                await Task.Delay(_pingInterval);
+
+                if (!_client.Connected)
+                    return;
+
+                Console.WriteLine("PING");
+                var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
+                await WriteInternalAsync(array, 0, array.Length, true, false, WebSocketFrameOption.Ping);
             }
         }
         public async Task Close()
@@ -239,15 +197,20 @@ namespace vtortola.WebSockets
             _client.Client.Dispose();
         }
 
-        private WebSocketReadState ReturnAndClose()
+        private Int32 ReturnAndClose()
         {
             this.Close();
-            return WebSocketReadState.Empty;
+            return 0;
         }
 
         public void Dispose()
         {
             this.Close();
+        }
+
+        internal void CleanHeader()
+        {
+            _header = null;
         }
     }
 

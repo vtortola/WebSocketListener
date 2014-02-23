@@ -49,7 +49,10 @@
     <Compile Include="WebSocketException.cs" />
     <Compile Include="WebSocketFrameHeader.cs" />
     <Compile Include="WebSocketFrameOption.cs" />
+    <Compile Include="WebSocketMessageReadStream.cs" />
+    <Compile Include="WebSocketMessageStream.cs" />
     <Compile Include="WebSocketListener.cs" />
+    <Compile Include="WebSocketMessageWriteStream.cs" />
     <Compile Include="WebSocketNegotiator.cs" />
     <Compile Include="WebSocketReadState.cs" />
     <Compile Include="_Extensions.cs" />

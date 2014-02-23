@@ -10,7 +10,7 @@ namespace vtortola.WebSockets
     public sealed class WebSocketFrameHeader
     {
         public UInt64 ContentLength { get; private set; }
-        public Boolean IsPartial { get; private set; }
+        public Boolean IsComplete { get; private set; }
         public Int32 HeaderLength { get; private set; }
         public WebSocketFrameOption Option { get; private set; }
         public Byte[] Raw { get; set; }
@@ -97,7 +97,7 @@ namespace vtortola.WebSockets
             if (frameStart == null || frameStart.Length < 6 || count < 6 || frameStart.Length - (offset + count) < 0)
                 return false;
 
-            Boolean isPartial = frameStart[offset] <= 128;
+            Boolean isComplete = frameStart[offset] >= 128;
 
             Int32 value = frameStart[offset];
             value = value > 128 ? value - 128 : value;
@@ -117,7 +117,7 @@ namespace vtortola.WebSockets
             {
                 ContentLength = contentLength,
                 HeaderLength = headerLength,
-                IsPartial = isPartial,
+                IsComplete = isComplete,
                 Option = option,
                 RemainingBytes = contentLength
             };
@@ -129,11 +129,24 @@ namespace vtortola.WebSockets
             return true;
         }
 
-        public static WebSocketFrameHeader Create(Int32 count, Boolean isPartial, WebSocketFrameOption option)
+        public static WebSocketFrameHeader Create(Int32 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option)
         {
+            // Complete == 1
+            // Partial : first 0 + code
+            // Rest : first 0 + continuation
+            // final : fist 1 + continuation
+
             List<Byte> arrayMaker = new List<Byte>();
-            Int32 value = isPartial ? 0 : 128;
-            arrayMaker.Add((Byte)(value + (Int32)option));
+
+            if(isComplete && !headerSent)
+                arrayMaker.Add((Byte)(128 + (Int32)option));
+            else if(isComplete && headerSent)
+                arrayMaker.Add((Byte)(128 + (Int32)WebSocketFrameOption.Continuation));
+            else if(!isComplete && !headerSent)
+                arrayMaker.Add((Byte)(0 + (Int32)option));
+            else if(!isComplete && headerSent)
+                arrayMaker.Add((Byte)(0 + (Int32)WebSocketFrameOption.Continuation));
+
             Int32 headerLength = 2;
 
             if (count <= 125)
@@ -160,7 +173,7 @@ namespace vtortola.WebSockets
                 HeaderLength = headerLength,
                 ContentLength = (UInt64)count,
                 Option = option,
-                IsPartial = isPartial,
+                IsComplete = isComplete,
                 Raw = arrayMaker.ToArray(),
                 RemainingBytes = (UInt64)count
             };

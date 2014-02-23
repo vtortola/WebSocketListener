@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -13,9 +14,12 @@ namespace WebSockets.TestConsoleHost
     {
         static void Main(string[] args)
         {
+            Byte[] bbb = new Byte[] { 239, 187, 191 };
+            String s = Encoding.UTF8.GetString(bbb);
+
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
-            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(5));
+            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromMilliseconds(100));
 
             server.Start();
             Log("Server started at " + endpoint.ToString());
@@ -44,11 +48,24 @@ namespace WebSockets.TestConsoleHost
                     {
                         while (ws.IsConnected && !token.IsCancellationRequested)
                         {
-                            var msg = await ws.ReadAsync();
-                            if (msg != null)
+                            String msg = String.Empty;
+
+                            using (var messageReader = ws.CreateMessageReader())
+                            {
+                                using(var sr = new StreamReader(messageReader, Encoding.UTF8))
+                                {
+                                    msg = await sr.ReadToEndAsync();
+                                }
+                            }
+
+                            if (msg != null && !String.IsNullOrWhiteSpace(msg))
                             {
                                 Log("Client says: " + msg.Length);
-                                await ws.WriteAsync(new String(msg.Reverse().ToArray()));
+                                using(var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
+                                using(var sw = new StreamWriter(messageWriter, Encoding.UTF8))
+                                {
+                                    await sw.WriteAsync(new String(msg.Reverse().ToArray()));
+                                }
                             }
                         }
                     }

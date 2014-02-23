@@ -6,10 +6,31 @@
 
 <script>
     var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+
+    describe("Connects: ", function () {
+        var connected = false;
+        it("Connected", function () {
+
+            runs(function () {
+                ws.onopen = function (event) {
+                    connected = true;
+                };
+            });
+
+            waitsFor(function () {
+                return connected;
+            }, "Error", 1000);
+
+            runs(function () {
+                expect(connected).toBe(true);
+            });
+        });
+
+    });
+
     describe("Small Strings: ", function () {
         var result = '';
         
-
         it("Must reverse the 'Hi' string", function () {
             
             ws.onmessage = function (event) {
@@ -17,9 +38,7 @@
             };
 
             runs(function () {
-                ws.onopen = function (event) {
-                    ws.send("Hi");
-                };
+                ws.send("Hi");
             });
 
             waitsFor(function () {
@@ -197,6 +216,7 @@
             var counter5 = 0, counter6 = 0, counter7 = 0;
 
             ws.onmessage = function (event) {
+                console.log(event.data.length);
                 if (event.data.length == 4095)
                     counter5++;
                 else if (event.data.length == 4096)
@@ -244,9 +264,8 @@
 
     });
 
-    var large1 = createString('d', @(System.UInt16.MaxValue*4));
-    var large2 = createString('e', @(System.UInt16.MaxValue*4));
-
+    var large1 = createString('d', @(System.UInt16.MaxValue*6));
+    var large2 = createString('e', @(System.UInt16.MaxValue*6));
 
     describe("Large Strings: ", function () {
         //var ws = new WebSocket("ws://127.0.0.1:8001", "text");
@@ -316,6 +335,5 @@
             });
         });
     });
-
 
 </script>
