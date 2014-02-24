@@ -142,7 +142,7 @@ namespace WebSockets.TestConsoleHost
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = "Bytes Out"
+                    CounterName = "Bytes Out" 
                 });
 
                 ccdc.Add(new CounterCreationData
