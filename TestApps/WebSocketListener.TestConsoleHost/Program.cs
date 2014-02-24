@@ -70,7 +70,10 @@ namespace WebSockets.TestConsoleHost
 
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
                                 using (var sw = new StreamWriter(messageWriter, Encoding.UTF8))
+                                {
                                     await sw.WriteAsync(msg.ReverseString());
+                                    await sw.FlushAsync();
+                                }
                                 break;
 
                             case WebSocketMessageType.Binary:

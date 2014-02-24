@@ -16,6 +16,7 @@ namespace vtortola.WebSockets
         readonly Byte[] _internalBuffer;
         Int32 _internalBufferLength;
         CancellationToken _lastCancellationToken;
+
         public WebSocketMessageWriteStream(WebSocketClient client, WebSocketMessageType messageType)
             : base(client)
         {
@@ -23,12 +24,7 @@ namespace vtortola.WebSockets
             _internalBufferLength = 0;
             _internalBuffer = new Byte[64];
         }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            this.WriteAsync(buffer, offset, count).Wait();
-        }
-
+       
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             // http://www.rgagnon.com/javadetails/java-handle-utf8-file-with-bom.html
