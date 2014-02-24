@@ -43,7 +43,7 @@ namespace vtortola.WebSockets
             await AwaitHeaderAsync(token);
             if (_header != null)
             {
-                message.MessageType = (WebSocketMessageType)_header.Option;
+                message.MessageType = (WebSocketMessageType)_header.Flags.Option;
                 return message;
             }
             return null;
@@ -102,7 +102,7 @@ namespace vtortola.WebSockets
                     if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out _header))
                         throw new WebSocketException("Cannot understand header");
 
-                    if (!_header.Option.IsData())
+                    if (!_header.Flags.Option.IsData())
                     {
                         ProcessControlFrame(clientStream);
                         readed = 0;
@@ -149,7 +149,7 @@ namespace vtortola.WebSockets
         readonly Byte[] _controlFrameBuffer = new Byte[125];
         private void ProcessControlFrame(NetworkStream clientStream)
         {
-            switch (_header.Option)
+            switch (_header.Flags.Option)
             {
                 case WebSocketFrameOption.Continuation:
                     break;
@@ -175,7 +175,7 @@ namespace vtortola.WebSockets
                         _controlFrameBuffer[i] = _header.DecodeByte(_controlFrameBuffer[i]);
                     var timestamp = DateTime.FromBinary(BitConverter.ToInt64(_controlFrameBuffer, 0));
                     break;
-                default: throw new WebSocketException("Unexpected header option '" + _header.Option.ToString() + "'");
+                default: throw new WebSocketException("Unexpected header option '" + _header.Flags.Option.ToString() + "'");
             }
         }
 

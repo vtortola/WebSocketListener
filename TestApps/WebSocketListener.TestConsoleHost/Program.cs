@@ -74,7 +74,7 @@ namespace WebSockets.TestConsoleHost
                                 break;
 
                             case WebSocketMessageType.Binary:
-                                Console.WriteLine("Array");
+                                Log("Array");
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
                                     await messageReader.CopyToAsync(messageWriter);
                                 break;

@@ -24,7 +24,7 @@ namespace vtortola.WebSockets
                 if (readed == 0)
                     return 0;
 
-                this.MessageType = (WebSocketMessageType)_client.Header.Option;
+                this.MessageType = (WebSocketMessageType)_client.Header.Flags.Option;
             }
             if (readed == 0 && _client.Header.RemainingBytes == 0)
                 _client.CleanHeader();
