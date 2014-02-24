@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
@@ -15,9 +16,7 @@ namespace vtortola.WebSockets
     {
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
-
         public WebSocketHttpRequest Request { get; private set; }
-
         public Boolean IsWebSocketRequest
         {
             get
@@ -30,7 +29,6 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Origin");
             }
         }
-
         public WebSocketNegotiator()
         {
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
@@ -39,7 +37,6 @@ namespace vtortola.WebSockets
             Request.Cookies = new CookieContainer();
             Request.Headers = new HttpHeadersCollection();
         }
-
         public async Task<Boolean> NegotiateWebsocketAsync(NetworkStream clientStream)
         {
             StreamReader sr = new StreamReader(clientStream, Encoding.UTF8);
@@ -62,13 +59,14 @@ namespace vtortola.WebSockets
             {
                 await sw.WriteAsync(GetNegotiationErrorResponse());
                 clientStream.Close();
+                return false;
             }
-            else
-                await sw.WriteAsync(GetNegotiationResponse());
+            
+            await sw.WriteAsync(GetNegotiationResponse());
+
 
             return IsWebSocketRequest;
         }
-
         private void ParseGET(String line)
         {
             if (String.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
@@ -79,7 +77,6 @@ namespace vtortola.WebSockets
             String version = parts[2];
             Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
         }
-
         private void ParseHeader(String line)
         {
             var separator = line.IndexOf(":");
@@ -89,7 +86,6 @@ namespace vtortola.WebSockets
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             _headers.Add(key, value);
         }
-
         private String GetNegotiationResponse()
         {
             StringBuilder sb = new StringBuilder();
@@ -106,7 +102,6 @@ namespace vtortola.WebSockets
             sb.Append("\r\n");
             return sb.ToString();
         }
-
         private String GetNegotiationErrorResponse()
         {
             StringBuilder sb = new StringBuilder();
@@ -114,12 +109,10 @@ namespace vtortola.WebSockets
             sb.Append("\r\n");
             return sb.ToString();
         }
-
         private String GenerateHandshake()
         {
             return Convert.ToBase64String(_sha1.ComputeHash(Encoding.UTF8.GetBytes(_headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
         }
-
         private void Finish()
         {
             if(_headers.ContainsKey("Cookie"))
@@ -127,30 +120,37 @@ namespace vtortola.WebSockets
                 Request.Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
             }
 
+            List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
+            if(_headers.ContainsKey("Sec-WebSocket-Extensions"))
+            {
+                var extensions = _headers["Sec-WebSocket-Extensions"].Split(',');
+                AssertArrayIsAtLeast(extensions, 2, "Cannot parse extension");
+                foreach (var extension in extensions)
+                {
+                    List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
+                    var parts = extension.Split(';');
+                    AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension");
+                    foreach (var part in parts.Skip(1))
+                    {
+                        var optParts = part.Split('=');
+                        AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options");
+                        if(optParts.Length==1)
+                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption=true });
+                        else
+                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], Value = optParts[1]});
+                    }
+                    extensionList.Add(new WebSocketExtension(parts[0], extOptions));
+                }
+            }
+            Request.SetExtensions(extensionList);
             Request.Headers = new HttpHeadersCollection();
             foreach (var kv in _headers)
                 Request.Headers.Add(kv.Key, kv.Value);
         }
-    }
-
-    public sealed class HttpHeadersCollection:NameValueCollection
-    {
-        public String Origin { get { return this["Origin"]; } }
-        public String WebSocketProtocol { get { return this["Sec-WebSocket-Protocol"]; } }
-
-        public String this[HttpRequestHeader header]
+        private void AssertArrayIsAtLeast(String[] array, Int32 length, String error)
         {
-            get { return this[header.ToString()];}
+            if (array == null || array.Length < length)
+                throw new WebSocketException(error);
         }
     }
-
-    public sealed class WebSocketHttpRequest
-    {
-        public Uri RequestUri { get; internal set; }
-        public Version HttpVersion { get; internal set; }
-        public CookieContainer Cookies { get; internal set; }
-        public HttpHeadersCollection Headers { get; internal set; }
-    }
-
-
 }
