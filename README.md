@@ -75,8 +75,13 @@ Once a message writer is created, regular .NET tools can be used to write in it:
 
 ```cs
    using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
+   {
       await sw.WriteAsync("Hello World!");
+      await sw.FlushAsync();
+   }
 ```    
+
+Please note that `WebSocketMessageWriteStream` and `WebSocketMessageReadStream` only support asynchronous operations, so calls to synchronous methods will throw a `NotSupportedException`.  Unfortunately, a `StreamWriter` would buffer some data, and will try to flush it when closing. If by the time you call `StreamWriter.Dispose` or `StreamWriter.Close` there is data on the buffer, it will try to flush it synchronously, causing an exception. Always flush asynchronously your data.
 
 Also binary messages:
 
