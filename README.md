@@ -17,7 +17,7 @@ Setting up a server and start listening for clients is very similar than a `TcpL
 
 ```cs
    var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
-   WebSocketListener server = new WebSocketListener(endpoint: local, pingInterval: TimeSpan.FromSeconds(2));
+   var server = new WebSocketListener(endpoint: local, pingInterval: TimeSpan.FromSeconds(2));
 
    server.Start();
 ```
