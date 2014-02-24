@@ -3,7 +3,7 @@ WebSocketListener
 
 ###### (early development stage)
 
-This is an implementation of an asynchronous **WebSocket server** using a `TcpListener`. It **does not use** the `System.Net.WebSockets` namespace, and it **does not need** Internet Information Server 8, it should work in any operating system running Microsoft .NET 4.5.
+`WebSocketListener` is a C# implementation of an asynchronous **WebSocket server** using a `TcpListener`. It **does not use** the `System.Net.WebSockets` namespace, and it **does not need** Internet Information Server 8, it should work in any operating system running Microsoft .NET 4.5.
 
  * It can work with **Text or Binary** messages.
  * It is **fully asynchronous**. During idle state, no thread should be blocked.
