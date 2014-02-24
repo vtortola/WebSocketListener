@@ -13,7 +13,7 @@ WebSocketListener
  * It **handles partial frames transparently**. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.
  * It **handles interleaved control frames transparently**. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
-Setting up a server and start listening for clients is very similar than a `TcpListener`. The `pingInterval` will define how often the server sends a "ping" control frames to clients (clients should reply with a "pong" control frame):
+Setting up a server and start listening for clients is very similar than a `TcpListener`. The `pingInterval` will define how often the server sends "ping" control frames to clients (clients should reply with a "pong" control frame):
 
 ```cs
    var local = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
