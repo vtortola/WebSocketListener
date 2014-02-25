@@ -7,6 +7,7 @@
 <div id="input">
     <textarea id="text" disabled></textarea>
     <button id="button" disabled>Reverse</button>
+    <button id="close" disabled>Close</button>
     <div id="characters1"></div>
     <div id="characters2"></div>
 </div>
@@ -16,6 +17,7 @@
 
 <script>
     var button = document.getElementById('button');
+    var close = document.getElementById('close');
     var text = document.getElementById('text');
     var log = document.getElementById('log');
     var characters1 = document.getElementById('characters1');
@@ -32,6 +34,11 @@
                 ws.send(text.value);
             }
         }, false);
+
+        close.addEventListener('click', function () {
+            ws.close();
+        }, false);
+        close.disabled = false;
     };
 
     ws.onmessage = function (event) {
@@ -45,6 +52,7 @@
     ws.onclose = function (event) {
         button.disabled = true;
         text.disabled = true;
+        close.disabled = true;
     };
 
     ws.onerror = function (event) {
