@@ -20,9 +20,14 @@ namespace WebSockets.TestConsoleHost
             if (CreatePerformanceCounters())
                 return;
 
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            ThreadPool.SetMaxThreads(5000, 5000);
+            ThreadPool.SetMinThreads(2000, 2000);
+
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8001);
-            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromMilliseconds(1000));
+            var endpoint = new IPEndPoint(IPAddress.Any, 8001);
+            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromMilliseconds(5000));
 
             server.Start();
 
@@ -36,17 +41,30 @@ namespace WebSockets.TestConsoleHost
             Console.ReadKey(true);
         }
 
+        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Console.WriteLine("UEX: ");
+        }
+
         static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
-                var ws = await server.AcceptWebSocketClientAsync(token);
-                if (ws == null)
-                    continue; // disconnection
-                
-                Log("Client Connected: " + ws.RemoteEndpoint.ToString());
+                try
+                {
+                    var ws = await server.AcceptWebSocketClientAsync(token);
+                    if (ws == null)
+                        continue; // disconnection
 
-                HandleConnectionAsync(ws, token);
+                    Log("Client Connected: " + ws.RemoteEndpoint.ToString());
+
+                    HandleConnectionAsync(ws, token);
+                }
+                catch(Exception aex)
+                {
+                    var ex = aex.GetBaseException();
+                    Console.WriteLine(ex.GetType() + "   " + ex.Message);
+                }
             }
             Log("Server Stop accepting clients");
         }
@@ -102,16 +120,23 @@ namespace WebSockets.TestConsoleHost
             }
             catch (Exception ex)
             {
+                Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + ex.Message);
                 Log("Error : " + ex.Message);
             }
+            finally
+            {
+                _connected.Decrement();
+            }
             Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
-            _connected.Decrement();
+            
         }
 
         static void Log(String line)
         {
-            Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
+            //Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
         }
+
+        static String msgIn = "Messages In /sec", byteIn = "Bytes In /sec", msgOut = "Messages Out /sec", byteOut = "Bytes Out /sec", connected = "Connected";
 
         private static bool CreatePerformanceCounters()
         {
@@ -124,31 +149,31 @@ namespace WebSockets.TestConsoleHost
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = "Messages In"
+                    CounterName = msgIn
                 });
 
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = "Bytes In"
+                    CounterName = byteIn
                 });
 
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = "Messages Out"
+                    CounterName = msgOut
                 });
 
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = "Bytes Out" 
+                    CounterName = byteOut
                 });
 
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.NumberOfItems64,
-                    CounterName = "Connected"
+                    CounterName = connected
                 });
 
                 PerformanceCounterCategory.Create(categoryName, "", PerformanceCounterCategoryType.SingleInstance, ccdc);
@@ -159,13 +184,15 @@ namespace WebSockets.TestConsoleHost
             else
             {
                 //PerformanceCounterCategory.Delete(categoryName);
+                //Console.WriteLine("Delete");
                 //return true;
 
-                _inMessages = new PerformanceCounter(categoryName, "Messages In", false);
-                _inBytes = new PerformanceCounter(categoryName, "Bytes In", false);
-                _outMessages = new PerformanceCounter(categoryName, "Messages Out", false);
-                _outBytes = new PerformanceCounter(categoryName, "Bytes Out", false);
-                _connected = new PerformanceCounter(categoryName, "Connected", false);
+                _inMessages = new PerformanceCounter(categoryName, msgIn, false);
+                _inBytes = new PerformanceCounter(categoryName, byteIn, false);
+                _outMessages = new PerformanceCounter(categoryName, msgOut, false);
+                _outBytes = new PerformanceCounter(categoryName, byteOut, false);
+                _connected = new PerformanceCounter(categoryName, connected, false);
+                _connected.RawValue = 0;
 
                 return false;
             }

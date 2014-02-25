@@ -25,8 +25,7 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Upgrade") && _headers["Upgrade"] == "websocket" &&
                        _headers.ContainsKey("Connection") &&
                        _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
-                       _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13" &&
-                       _headers.ContainsKey("Origin");
+                       _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
             }
         }
         public WebSocketNegotiator()
