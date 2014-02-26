@@ -13,5 +13,10 @@ namespace TestWebSocketListener.Web.Controllers
             return View();
         }
 
+        public ActionResult Continuous()
+        {
+            return View();
+        }
+
     }
 }

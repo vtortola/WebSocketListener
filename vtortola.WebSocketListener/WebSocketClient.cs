@@ -12,8 +12,6 @@ namespace vtortola.WebSockets
 {
     public class WebSocketClient : IDisposable
     {
-        public static readonly Int32 BufferLength = 4096;
-
         readonly TcpClient _client;
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
@@ -55,6 +53,7 @@ namespace vtortola.WebSockets
             return new WebSocketMessageWriteStream(this,messageType);
         }
 
+        readonly Byte[] _headerBuffer = new Byte[14];
         private async Task AwaitHeaderAsync(CancellationToken token)
         {
             try
@@ -111,6 +110,10 @@ namespace vtortola.WebSockets
                     }
                 }
             }
+            catch (ObjectDisposedException)
+            {
+                Close();
+            }
             catch(IOException)
             {
                 Close();
@@ -120,7 +123,7 @@ namespace vtortola.WebSockets
         {
             _header = null;
         }
-        readonly Byte[] _headerBuffer = new Byte[14];
+        
         internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount, CancellationToken token)
         {
             try
@@ -134,15 +137,20 @@ namespace vtortola.WebSockets
                 if (_header.RemainingBytes < (UInt64)bufferCount)
                     bufferCount = (Int32)_header.RemainingBytes;
 
-                if(!this.IsConnected)
+                if (!this.IsConnected)
                     return ReturnAndClose();
 
                 var readed = await _client.GetStream().ReadAsync(buffer, bufferOffset, bufferCount, token);
 
-                for (int i = 0; i < readed; i++)
-                    buffer[i + bufferOffset] = _header.DecodeByte(buffer[i + bufferOffset]);
+                if (_header.Flags.MASK)
+                    for (int i = 0; i < readed; i++)
+                        buffer[i + bufferOffset] = _header.DecodeByte(buffer[i + bufferOffset]);
 
                 return readed;
+            }
+            catch (ObjectDisposedException)
+            {
+                return ReturnAndClose();
             }
             catch (IOException)
             {
@@ -175,53 +183,59 @@ namespace vtortola.WebSockets
                     if(_header.ContentLength < 125)
                         contentLength = (Int32)_header.ContentLength;
                     var readed = clientStream.Read(_controlFrameBuffer, 0, contentLength);
-                    for (int i = 0; i < readed; i++)
-                        _controlFrameBuffer[i] = _header.DecodeByte(_controlFrameBuffer[i]);
+
+                    if(_header.Flags.MASK)
+                        for (int i = 0; i < readed; i++)
+                            _controlFrameBuffer[i] = _header.DecodeByte(_controlFrameBuffer[i]);
                     var timestamp = DateTime.FromBinary(BitConverter.ToInt64(_controlFrameBuffer, 0));
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + _header.Flags.Option.ToString() + "'");
             }
         }
 
-        ManualResetEventSlim _controlFrameGate = new ManualResetEventSlim(true);
-        SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1);
+        volatile Boolean _messageInCourse = false; 
+        readonly SemaphoreSlim _locker = new SemaphoreSlim(1);
         internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, CancellationToken token)
         {
             try
             {
-                if(!option.IsData()) 
-                    _controlFrameGate.Wait(token);
-
-                await _writeSemaphore.WaitAsync(token);
-
-                if (!isCompleted)
-                    _controlFrameGate.Reset();
-
-                if (!option.IsData() && !isCompleted)
+                if(!option.IsData() && _messageInCourse)
                     return;
-
-                if (this.IsConnected)
-                {
-                    Stream s = _client.GetStream();
-                    var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
-                    await s.WriteAsync(header.Raw, 0, header.Raw.Length);
-                    await s.WriteAsync(buffer, offset, count);
-                }
                 
+                try
+                {
+                    await _locker.WaitAsync(token);
+
+                    if (!option.IsData() && _messageInCourse)
+                        return;
+
+                    _messageInCourse = true;
+
+                    if (this.IsConnected)
+                    {
+                        Stream s = _client.GetStream();
+                        var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
+                        await s.WriteAsync(header.Raw, 0, header.Raw.Length);
+                        await s.WriteAsync(buffer, offset, count);
+                    }
+                }
+                finally
+                {
+                    _messageInCourse = !isCompleted;
+                    _locker.Release();
+                }
+
             }
-            catch(IOException)
+            catch (ObjectDisposedException)
             {
                 Close();
             }
-            finally
+            catch (IOException)
             {
-                if (isCompleted)
-                    _controlFrameGate.Set();
-
-                _writeSemaphore.Release();
-                  
+                Close();
             }
         }
+
         private async Task PingAsync()
         {
             try
