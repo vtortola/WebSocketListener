@@ -28,7 +28,7 @@ namespace WebSocketLoadTest
 
             Console.WriteLine("Clients: " + amount + ", interval: " + interval + " ms.");
 
-            msgOut = Encoding.UTF8.GetBytes("This is a message example that it is supposed to contain little simulation data, but longh enough to simulate a very simple JSON object that needs to be sent to the client. I am kind of tired of this shit, i need to know why this is going slow damn it fuck tcpip programming.");
+            msgOut = Encoding.UTF8.GetBytes("- There's something very important I forgot to tell you. - What? - Don't cross the streams. - Why? - It would be bad. - I'm fuzzy on the whole good/bad thing. What do you mean, 'bad'? - Try to imagine all life as you know it stopping instantaneously and every molecule in your body exploding at the speed of light. - Total protonic reversal. - Right. That's bad. Okay. All right. Important safety tip. Thanks, Egon.");
             segmentOut = new ArraySegment<Byte>(msgOut, 0, msgOut.Length);
 
             Int32 a, b;
