@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,12 +15,15 @@ namespace WebSockets.TestConsoleHost
     class Program
     {
         static PerformanceCounter _inMessages, _inBytes, _outMessages, _outBytes, _connected;
+        static ILog _log = log4net.LogManager.GetLogger("Main");
 
         static void Main(string[] args)
         {
             if (CreatePerformanceCounters())
                 return;
 
+            log4net.Config.XmlConfigurator.Configure();
+            _log.Info("Starting");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             ThreadPool.SetMaxThreads(5000, 5000);
@@ -43,11 +47,12 @@ namespace WebSockets.TestConsoleHost
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Console.WriteLine("UEX: ");
+            _log.Fatal("HandleConnectionAsync", e.ExceptionObject as Exception);
         }
 
         static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
         {
+            await Task.Yield();
             while (!token.IsCancellationRequested)
             {
                 try
@@ -63,7 +68,8 @@ namespace WebSockets.TestConsoleHost
                 catch(Exception aex)
                 {
                     var ex = aex.GetBaseException();
-                    Console.WriteLine(ex.GetType() + "   " + ex.Message);
+                    _log.Error("AcceptWebSocketClients", ex);
+                    Log("Error Accepting clients: " + ex.Message);
                 }
             }
             Log("Server Stop accepting clients");
@@ -71,6 +77,7 @@ namespace WebSockets.TestConsoleHost
 
         static async Task HandleConnectionAsync(WebSocketClient ws, CancellationToken token)
         {
+            await Task.Yield();
             try
             {
                 _connected.Increment();
@@ -95,7 +102,7 @@ namespace WebSockets.TestConsoleHost
                                 _inMessages.Increment();
                                 _inBytes.IncrementBy(msg.Length); // assuming one byte per char for the test sake
 
-                                Log("Client sent length: " + msg.Length);
+                                //Log("Client sent length: " + msg.Length);
 
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
                                 using (var sw = new StreamWriter(messageWriter, Encoding.UTF8))
@@ -110,7 +117,7 @@ namespace WebSockets.TestConsoleHost
                                 break;
 
                             case WebSocketMessageType.Binary:
-                                Log("Array");
+                                //Log("Array");
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
                                     await messageReader.CopyToAsync(messageWriter);
                                 break;
@@ -118,10 +125,13 @@ namespace WebSockets.TestConsoleHost
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception aex)
             {
-                Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + ex.Message);
-                Log("Error : " + ex.Message);
+                var ex = aex.GetBaseException();
+                _log.Error("HandleConnectionAsync", ex);
+                Log("Error Handling connection: " + ex.Message);
+                try { ws.Close(); }
+                catch { }
             }
             finally
             {
@@ -133,7 +143,7 @@ namespace WebSockets.TestConsoleHost
 
         static void Log(String line)
         {
-            //Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
+            Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
         }
 
         static String msgIn = "Messages In /sec", byteIn = "Bytes In /sec", msgOut = "Messages Out /sec", byteOut = "Bytes Out /sec", connected = "Connected";

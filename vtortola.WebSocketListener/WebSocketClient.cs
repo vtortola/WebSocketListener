@@ -17,7 +17,8 @@ namespace vtortola.WebSockets
         readonly TcpClient _client;
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
-        public Boolean IsConnected { get { return _client.Client.Connected; } }
+        volatile Boolean _closed;
+        public Boolean IsConnected { get { return !_closed &&_client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
 
         WebSocketFrameHeader _header;
@@ -41,7 +42,7 @@ namespace vtortola.WebSockets
         {
             var message = new WebSocketMessageReadStream(this);
             await AwaitHeaderAsync(token);
-            if (_header != null)
+            if (this.IsConnected && _header != null)
             {
                 message.MessageType = (WebSocketMessageType)_header.Flags.Option;
                 return message;
@@ -62,7 +63,7 @@ namespace vtortola.WebSockets
                 UInt64 contentLength;
                 NetworkStream clientStream = _client.GetStream();
 
-                while (_header == null && _client.Connected)
+                while (this.IsConnected && _header == null)
                 {
                     do
                     { // Checking for small frame
@@ -133,6 +134,9 @@ namespace vtortola.WebSockets
                 if (_header.RemainingBytes < (UInt64)bufferCount)
                     bufferCount = (Int32)_header.RemainingBytes;
 
+                if(!this.IsConnected)
+                    return ReturnAndClose();
+
                 var readed = await _client.GetStream().ReadAsync(buffer, bufferOffset, bufferCount, token);
 
                 for (int i = 0; i < readed; i++)
@@ -196,7 +200,7 @@ namespace vtortola.WebSockets
                 if (!option.IsData() && !isCompleted)
                     return;
 
-                if (_client.Connected)
+                if (this.IsConnected)
                 {
                     Stream s = _client.GetStream();
                     var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
@@ -222,11 +226,11 @@ namespace vtortola.WebSockets
         {
             try
             {
-                while (_client.Connected)
+                while (this.IsConnected)
                 {
                     await Task.Delay(_pingInterval);
 
-                    if (!_client.Connected)
+                    if (!this.IsConnected)
                         return;
 
                     var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
@@ -238,12 +242,12 @@ namespace vtortola.WebSockets
                 Close();
             }
         }
-        public async Task Close()
+        public void Close()
         {
             try
             {
+                _closed = true;
                 _client.Close();
-                _client.Client.Dispose();
             }
             catch { }
         }
@@ -256,7 +260,12 @@ namespace vtortola.WebSockets
 
         public void Dispose()
         {
-            this.Close();
+            try
+            {
+                this.Close();
+                _client.Client.Dispose();
+            }
+            catch { }
         }
     }
 

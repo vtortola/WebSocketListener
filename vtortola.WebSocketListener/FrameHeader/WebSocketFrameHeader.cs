@@ -86,7 +86,9 @@ namespace vtortola.WebSockets
                 headerLength = 14;
             }
             else
-                throw new WebSocketException("Protocol error");
+            {
+                throw new WebSocketException("Protocol error [contentLength:" + contentLength + "]");
+            }
 
             return true;
         }

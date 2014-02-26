@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
             value = value > 128 ? value - 128 : value;
 
             if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))
-                throw new WebSocketException("Cannot parse header [option]");
+                throw new WebSocketException("Cannot parse header [option], value was: " + value);
 
             Option = (WebSocketFrameOption)value;
         }
