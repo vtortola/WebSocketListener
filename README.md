@@ -5,7 +5,7 @@ WebSocketListener
 
 `WebSocketListener` is a C# implementation of an asynchronous **WebSocket server** using a `TcpListener`. It **does not use** the `System.Net.WebSockets` namespace, and it **does not need** *Internet Information Server 8*, it should work in any operating system running *Microsoft .NET v4.5*.
 
- * It can work with **Text or Binary** messages.
+ * It can work with both **Text or Binary** messages.
  * It is **fully asynchronous**. 
  * It has the **Ping/Pong functionality built-in**.
  * It allows to **send and receive messages as streams**. WebSocket messages are represented as delimited stream-like objects, this allows integration with other .NET objects like e.g. `StreamReader` and `StreamWriter`. Two different WebSocket messages, yield two different streams.
@@ -13,10 +13,11 @@ WebSocketListener
  * It **handles partial frames transparently**. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.
  * It **handles interleaved control frames transparently**. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
-TODO:
+**TODO**:
  * Improve scalability. Cannot handle more than 1600-2000 clients at the moment.
  * Detect half open connections with the ping/pong. Right now the ping sends a UTC timestamp as payload.
  * Architect extensions to allow compression extensions.
+
 
  ### Quickstart
 
@@ -96,12 +97,6 @@ Also binary messages:
    using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
       await myFileStream.CopyToAsync(messageWriter);
 ```
-   
-Next steps in development include:
 
- * Extension model to allow WebSocket extensions to be plugged in.
- * Deflate extension.
- * Load test.
- * Extension methods to return `Task<String>` and write Strings, so it is easier to use in small projects.
    
 
