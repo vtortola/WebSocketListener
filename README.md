@@ -14,7 +14,7 @@ WebSocketListener
  * It **handles interleaved control frames transparently**. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
 **TODO**:
- * Improve scalability. Cannot handle more than 1600-2000 clients at the moment.
+ * Improve scalability. Cannot handle more than ~~1600-2000~~ 4000 clients at the moment.
  * Detect half open connections with the ping/pong. Right now the ping sends a UTC timestamp as payload.
  * Architect extensions to allow compression extensions.
 
