@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
         internal WebSocketFrameHeader Header { get { return _header; } }
 
         readonly TimeSpan _pingInterval;
-
+        readonly Timer _ping;
         public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingInterval)
         {
             if (client == null)
@@ -33,7 +33,7 @@ namespace vtortola.WebSockets
             LocalEndpoint = (IPEndPoint)_client.Client.LocalEndPoint;
             HttpRequest = httpRequest;
             _pingInterval = pingInterval;
-            PingAsync();
+            _ping = new Timer(Ping, null, _pingInterval, _pingInterval);
         }
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
@@ -119,12 +119,13 @@ namespace vtortola.WebSockets
                 Close();
             }
         }
+
         internal void CleanHeader()
         {
             _header = null;
         }
         
-        internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount, CancellationToken token)
+        internal Int32 ReadInternal(Byte[] buffer, Int32 bufferOffset, Int32 bufferCount)
         {
             try
             {
@@ -140,7 +141,7 @@ namespace vtortola.WebSockets
                 if (!this.IsConnected)
                     return ReturnAndClose();
 
-                var readed = await _client.GetStream().ReadAsync(buffer, bufferOffset, bufferCount, token);
+                var readed = _client.GetStream().Read(buffer, bufferOffset, bufferCount);
 
                 if (_header.Flags.MASK)
                     for (int i = 0; i < readed; i++)
@@ -194,8 +195,8 @@ namespace vtortola.WebSockets
         }
 
         volatile Boolean _messageInCourse = false; 
-        readonly SemaphoreSlim _locker = new SemaphoreSlim(1);
-        internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, CancellationToken token)
+        readonly Object _locker = new Object();
+        internal void WriteInternal(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option)
         {
             try
             {
@@ -204,7 +205,7 @@ namespace vtortola.WebSockets
                 
                 try
                 {
-                    await _locker.WaitAsync(token);
+                    Monitor.Enter(_locker);
 
                     if (!option.IsData() && _messageInCourse)
                         return;
@@ -215,14 +216,14 @@ namespace vtortola.WebSockets
                     {
                         Stream s = _client.GetStream();
                         var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
-                        await s.WriteAsync(header.Raw, 0, header.Raw.Length);
-                        await s.WriteAsync(buffer, offset, count);
+                        s.Write(header.Raw, 0, header.Raw.Length);
+                        s.Write(buffer, offset, count);
                     }
                 }
                 finally
                 {
                     _messageInCourse = !isCompleted;
-                    _locker.Release();
+                    Monitor.Exit(_locker);
                 }
 
             }
@@ -236,25 +237,10 @@ namespace vtortola.WebSockets
             }
         }
 
-        private async Task PingAsync()
+        private void Ping(Object state)
         {
-            try
-            {
-                while (this.IsConnected)
-                {
-                    await Task.Delay(_pingInterval);
-
-                    if (!this.IsConnected)
-                        return;
-
-                    var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
-                    await WriteInternalAsync(array, 0, array.Length, true, false, WebSocketFrameOption.Ping, CancellationToken.None);
-                }
-            }
-            catch(IOException)
-            {
-                Close();
-            }
+            var array = BitConverter.GetBytes(DateTime.UtcNow.ToBinary());
+            this.WriteInternal(array, 0, array.Length, true, false, WebSocketFrameOption.Ping);
         }
         public void Close()
         {

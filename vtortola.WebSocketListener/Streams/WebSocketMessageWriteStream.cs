@@ -15,28 +15,33 @@ namespace vtortola.WebSockets
         volatile Boolean _finished = false;
         readonly Byte[] _internalBuffer;
         Int32 _internalBufferLength;
-        CancellationToken _lastCancellationToken;
 
         public WebSocketMessageWriteStream(WebSocketClient client, WebSocketMessageType messageType)
             : base(client)
         {
             MessageType = messageType;
             _internalBufferLength = 0;
-            _internalBuffer = new Byte[64];
+            _internalBuffer = new Byte[8192];
         }
-       
-        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+
+        public override void Write(byte[] buffer, int offset, int count)
         {
             // http://www.rgagnon.com/javadetails/java-handle-utf8-file-with-bom.html
-            if (count == 3 && buffer.Length >= 3 &&
+            if (buffer.Length >= 3 &&
                 buffer[0] == 239 && buffer[1] == 187 && buffer[2] == 191)
             {
-                return;
+                count -= 3;
+                
+                if(count<=0)
+                    return;
+
+                offset += 3;
             }
 
             if (_internalBufferLength != 0)
             {
-                await _client.WriteInternalAsync(_internalBuffer, 0, _internalBufferLength, false, _headerSent, (WebSocketFrameOption)MessageType, cancellationToken);
+                _client.WriteInternal(_internalBuffer, 0, _internalBufferLength, false, _headerSent, (WebSocketFrameOption)MessageType);
+                _headerSent = true;
             }
 
             _internalBufferLength = Math.Min(count, _internalBuffer.Length);
@@ -45,10 +50,9 @@ namespace vtortola.WebSockets
 
             if (count != 0)
             {
-                await _client.WriteInternalAsync(buffer, offset, count, false, _headerSent, (WebSocketFrameOption)MessageType, cancellationToken);
+                _client.WriteInternal(buffer, offset, count, false, _headerSent, (WebSocketFrameOption)MessageType);
                 _headerSent = true;
             }
-            _lastCancellationToken = cancellationToken;
         }
 
         public override void Close()
@@ -56,7 +60,7 @@ namespace vtortola.WebSockets
             if (!_finished)
             {
                 _finished = true;
-                _client.WriteInternalAsync(_internalBuffer, 0, _internalBufferLength, true, _headerSent, (WebSocketFrameOption)MessageType, _lastCancellationToken!=null?_lastCancellationToken:CancellationToken.None).Wait();
+                _client.WriteInternal(_internalBuffer, 0, _internalBufferLength, true, _headerSent, (WebSocketFrameOption)MessageType);
             }
             base.Close();
         }

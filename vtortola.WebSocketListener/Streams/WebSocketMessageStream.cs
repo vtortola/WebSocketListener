@@ -43,16 +43,6 @@ namespace vtortola.WebSockets
             
         }
 
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("WebSocketMessageStream does not implement this operation");
-        }
-
-        public override Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("WebSocketMessageStream does not implement this operation");
-        }
-
         public override sealed int ReadByte()
         {
             throw new NotSupportedException(SynchronousNotSupported);
@@ -63,12 +53,12 @@ namespace vtortola.WebSockets
             throw new NotSupportedException(SynchronousNotSupported);
         }
 
-        public override sealed int Read(byte[] buffer, int offset, int count)
+        public override int Read(byte[] buffer, int offset, int count)
         {
             throw new NotSupportedException(SynchronousNotSupported);
         }
 
-        public override sealed void Write(byte[] buffer, int offset, int count)
+        public override void Write(byte[] buffer, int offset, int count)
         {
            throw new NotSupportedException(SynchronousNotSupported);
         }

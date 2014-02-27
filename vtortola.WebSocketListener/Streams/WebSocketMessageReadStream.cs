@@ -14,12 +14,12 @@ namespace vtortola.WebSockets
             : base(client)
         { }
 
-        public override async Task<Int32> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override int Read(byte[] buffer, int offset, int count)
         {
             Int32 readed = 0;
             if (_client.Header == null || _client.Header.RemainingBytes != 0)
             {
-                readed = await _client.ReadInternalAsync(buffer, offset, count,  cancellationToken);
+                readed = _client.ReadInternal(buffer, offset, count);
 
                 if (readed == 0)
                     return 0;

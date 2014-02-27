@@ -36,19 +36,19 @@ namespace vtortola.WebSockets
             Request.Cookies = new CookieContainer();
             Request.Headers = new HttpHeadersCollection();
         }
-        public async Task<Boolean> NegotiateWebsocketAsync(NetworkStream clientStream)
+        public Boolean NegotiateWebsocket(NetworkStream clientStream)
         {
             StreamReader sr = new StreamReader(clientStream, Encoding.UTF8);
             StreamWriter sw = new StreamWriter(clientStream);
             sw.AutoFlush = true;
 
-            String line = await sr.ReadLineAsync();
+            String line = sr.ReadLine();
                         
             ParseGET(line);
 
             while (!String.IsNullOrWhiteSpace(line))
             {
-                line = await sr.ReadLineAsync();
+                line = sr.ReadLine();
                 ParseHeader(line);
             }
 
@@ -56,13 +56,12 @@ namespace vtortola.WebSockets
 
             if (!IsWebSocketRequest)
             {
-                await sw.WriteAsync(GetNegotiationErrorResponse());
+                sw.Write(GetNegotiationErrorResponse());
                 clientStream.Close();
                 return false;
             }
             
-            await sw.WriteAsync(GetNegotiationResponse());
-
+            sw.Write(GetNegotiationResponse());
 
             return IsWebSocketRequest;
         }

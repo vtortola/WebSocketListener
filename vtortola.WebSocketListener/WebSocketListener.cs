@@ -43,7 +43,7 @@ namespace vtortola.WebSockets
                     var client = await acceptTask;
                     if (client.Connected && !token.IsCancellationRequested)
                     {
-                        var ws = await Negotiate(client, _pingInterval, token);
+                        var ws = Negotiate(client, _pingInterval);
                         if (ws != null)
                             return ws;
                     }
@@ -52,15 +52,15 @@ namespace vtortola.WebSockets
             return null;
         }
 
-        private async Task<WebSocketClient> Negotiate(TcpClient client, TimeSpan pingInterval, CancellationToken token)
+        private WebSocketClient Negotiate(TcpClient client, TimeSpan pingInterval)
         {
             WebSocketNegotiator negotiator = new WebSocketNegotiator();
-            if(await negotiator.NegotiateWebsocketAsync(client.GetStream()))
-                return CreateWebSocketClient(client, negotiator, pingInterval, token);
+            if(negotiator.NegotiateWebsocket(client.GetStream()))
+                return CreateWebSocketClient(client, negotiator, pingInterval);
             return null;
         }
 
-        public static WebSocketClient CreateWebSocketClient(TcpClient client, WebSocketNegotiator negotiator, TimeSpan pingInterval, CancellationToken token)
+        public static WebSocketClient CreateWebSocketClient(TcpClient client, WebSocketNegotiator negotiator, TimeSpan pingInterval)
         {
             return new WebSocketClient(client, negotiator.Request, pingInterval);
         }
