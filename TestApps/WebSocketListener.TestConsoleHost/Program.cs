@@ -26,12 +26,9 @@ namespace WebSockets.TestConsoleHost
             _log.Info("Starting");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            //ThreadPool.SetMaxThreads(5000, 5000);
-            //ThreadPool.SetMinThreads(2000, 2000);
-
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
-            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(30));
+            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
 
             server.Start();
 
@@ -47,7 +44,7 @@ namespace WebSockets.TestConsoleHost
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            _log.Fatal("HandleConnectionAsync", e.ExceptionObject as Exception);
+            _log.Fatal("Unhandled Exception: ", e.ExceptionObject as Exception);
         }
 
         static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
@@ -61,7 +58,7 @@ namespace WebSockets.TestConsoleHost
                     if (ws == null)
                         continue; // disconnection
 
-                    Log("Client Connected: " + ws.RemoteEndpoint.ToString());
+                    //Log("Client Connected: " + ws.RemoteEndpoint.ToString());
 
                     HandleConnectionAsync(ws, token);
                 }
@@ -132,7 +129,7 @@ namespace WebSockets.TestConsoleHost
             {
                 _connected.Decrement();
             }
-            Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
+            //Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
             
         }
 
