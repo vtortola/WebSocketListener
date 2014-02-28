@@ -9,24 +9,53 @@ namespace vtortola.WebSockets
 {
     public class WebSocketMessageReadStream : WebSocketMessageStream
     {
-        public override bool CanRead { get { return true; } }
+        public override Boolean CanRead { get { return true; } }
         public WebSocketMessageReadStream(WebSocketClient client)
             : base(client)
         { }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
         {
-            Int32 readed = 0;
-            if (_client.Header == null || _client.Header.RemainingBytes != 0)
-            {
-                readed = _client.ReadInternal(buffer, offset, count);
+            if (count < buffer.Length - offset)
+                throw new ArgumentException("There is not space in the array for that length considering that offset.");
 
-                if (readed == 0)
-                    return 0;
+            if (_client.Header == null)
+                return 0;
 
-                this.MessageType = (WebSocketMessageType)_client.Header.Flags.Option;
-            }
-            if (readed == 0 && _client.Header.RemainingBytes == 0)
+            if (_client.Header.ContentLength < (UInt64)count)
+                count = (Int32)_client.Header.ContentLength;
+
+            if (_client.Header.RemainingBytes < (UInt64)count)
+                count = (Int32)_client.Header.RemainingBytes;
+
+            return count;
+        }
+
+        public override sealed Int32 Read(Byte[] buffer, Int32 offset, Int32 count)
+        {
+            count = CheckBoundaries(buffer, offset, count);
+
+            if (count == 0 || !_client.IsConnected)
+                return 0;
+
+            Int32 readed = _client.ReadInternal(buffer, offset, count);
+
+            if (_client.Header.RemainingBytes == 0)
+                _client.CleanHeader();
+
+            return readed;
+        }
+
+        public override sealed async Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
+        {
+            count = CheckBoundaries(buffer, offset, count);
+
+            if (count == 0 || !_client.IsConnected)
+                return 0;
+
+            Int32 readed = await _client.ReadInternalAsync(buffer, offset, count, cancellationToken);
+
+            if (_client.Header.RemainingBytes == 0)
                 _client.CleanHeader();
 
             return readed;

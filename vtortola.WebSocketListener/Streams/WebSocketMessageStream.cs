@@ -24,9 +24,13 @@ namespace vtortola.WebSockets
 
         public WebSocketMessageType MessageType { get; internal set; }
         readonly protected WebSocketClient _client;
+        readonly Task _completed;
         internal WebSocketMessageStream(WebSocketClient client)
         {
             _client = client;
+            TaskCompletionSource<Object> source = new TaskCompletionSource<Object>();
+            source.SetResult(new Object());
+            _completed = source.Task;
         }
         public override bool CanRead { get { return false; } }
         public override sealed bool CanSeek { get { return false; } }
@@ -43,24 +47,49 @@ namespace vtortola.WebSockets
             
         }
 
+        public override sealed Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            return _completed;
+        }
+
         public override sealed int ReadByte()
         {
-            throw new NotSupportedException(SynchronousNotSupported);
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
         public override sealed void WriteByte(byte value)
         {
-            throw new NotSupportedException(SynchronousNotSupported);
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotSupportedException(SynchronousNotSupported);
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
+        }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
+        }
+
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-           throw new NotSupportedException(SynchronousNotSupported);
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
+        }
+
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
         
         public override sealed long Seek(long offset, SeekOrigin origin)

@@ -26,12 +26,12 @@ namespace WebSockets.TestConsoleHost
             _log.Info("Starting");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            ThreadPool.SetMaxThreads(5000, 5000);
-            ThreadPool.SetMinThreads(2000, 2000);
+            //ThreadPool.SetMaxThreads(5000, 5000);
+            //ThreadPool.SetMinThreads(2000, 2000);
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
-            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromMilliseconds(5000));
+            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(30));
 
             server.Start();
 
@@ -83,7 +83,7 @@ namespace WebSockets.TestConsoleHost
                 _connected.Increment();
                 while (ws.IsConnected && !token.IsCancellationRequested)
                 {
-                    using (var messageReader = await ws.ReadMessageAsync(token))
+                    using (var messageReader = await ws.ReadMessageAsync(token).ConfigureAwait(false))
                     {
                         if (messageReader == null)
                             continue; // disconnection
@@ -94,7 +94,7 @@ namespace WebSockets.TestConsoleHost
                         {
                             case WebSocketMessageType.Text:
                                 using (var sr = new StreamReader(messageReader, Encoding.UTF8))
-                                    msg = await sr.ReadToEndAsync();
+                                    msg = await sr.ReadToEndAsync().ConfigureAwait(false);
 
                                 if (String.IsNullOrWhiteSpace(msg))
                                     continue; // disconnection
@@ -102,14 +102,9 @@ namespace WebSockets.TestConsoleHost
                                 _inMessages.Increment();
                                 _inBytes.IncrementBy(msg.Length); // assuming one byte per char for the test sake
 
-                                //Log("Client sent length: " + msg.Length);
-
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
                                 using (var sw = new StreamWriter(messageWriter, Encoding.UTF8))
-                                {
-                                    await sw.WriteAsync(msg.ReverseString());
-                                    await sw.FlushAsync();
-                                }
+                                    await sw.WriteAsync(msg.ReverseString()).ConfigureAwait(false);
 
                                 _outMessages.Increment();
                                 _outBytes.IncrementBy(msg.Length);
@@ -119,7 +114,7 @@ namespace WebSockets.TestConsoleHost
                             case WebSocketMessageType.Binary:
                                 //Log("Array");
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
-                                    await messageReader.CopyToAsync(messageWriter);
+                                    await messageReader.CopyToAsync(messageWriter).ConfigureAwait(false);
                                 break;
                         }
                     }
