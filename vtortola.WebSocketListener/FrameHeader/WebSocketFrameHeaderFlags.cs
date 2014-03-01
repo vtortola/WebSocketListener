@@ -7,6 +7,14 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
+    public sealed class WebSocketExtensionFlags
+    {
+        public Boolean Rsv1 { get; set; }
+        public Boolean Rsv2 { get; set; }
+        public Boolean Rsv3 { get; set; }
+
+        public static readonly WebSocketExtensionFlags None = new WebSocketExtensionFlags();
+    }
     public sealed class WebSocketFrameHeaderFlags
     {
         readonly Boolean[] _byte1, _byte2;
@@ -57,7 +65,7 @@ namespace vtortola.WebSockets
             Option = option;
         }
 
-        public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option)
+        public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             this.Option = option;
             _byte1 = new Boolean[8];
@@ -82,6 +90,34 @@ namespace vtortola.WebSockets
                     this.OPT4 = this.OPT2 = true;
                     break;
             }
+
+            this.RSV1 = extensionFlags.Rsv1;
+            this.RSV2 = extensionFlags.Rsv2;
+            this.RSV3 = extensionFlags.Rsv3;
+        }
+
+        readonly Byte[] _byteHead = new Byte[2];
+        public Byte[] ToBytes(UInt64 length)
+        {
+            Int32 headerLength;
+            if (length <= 125)
+                headerLength = (Int32)length;
+            else if (length < UInt16.MaxValue)
+                headerLength = 126;
+            else if ((UInt64)length < UInt64.MaxValue)
+                headerLength = 127;
+            else
+                throw new WebSocketException("Cannot create a header with a length of " + length);
+
+            BitArray bitArray1 = new BitArray(_byte1);
+
+            bitArray1.CopyTo(_byteHead, 0);
+
+            BitArray bitArray2 = new BitArray(_byte2);
+            bitArray2.CopyTo(_byteHead, 1);
+            _byteHead[1] += (Byte)headerLength;
+
+            return _byteHead;
         }
     }
 }

@@ -104,45 +104,38 @@ namespace vtortola.WebSockets
             return false; 
         }
 
-        public static WebSocketFrameHeader Create(Int32 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option)
+        public static WebSocketFrameHeader Create(Int32 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
-            List<Byte> arrayMaker = new List<Byte>();
+            var flags = new WebSocketFrameHeaderFlags(isComplete, headerSent ? WebSocketFrameOption.Continuation : option, extensionFlags);
 
-            if(isComplete && !headerSent)
-                arrayMaker.Add((Byte)(128 + (Int32)option));
-            else if(isComplete && headerSent)
-                arrayMaker.Add((Byte)(128 + (Int32)WebSocketFrameOption.Continuation));
-            else if(!isComplete && !headerSent)
-                arrayMaker.Add((Byte)(0 + (Int32)option));
-            else if(!isComplete && headerSent)
-                arrayMaker.Add((Byte)(0 + (Int32)WebSocketFrameOption.Continuation));
+            Int32 headerLength;
+            var raw = flags.ToBytes((UInt64)count);
 
-            Int32 headerLength = 2;
-
+            List<Byte> arrayMaker = new List<Byte>(raw);
+            
             if (count <= 125)
             {
-                arrayMaker.Add((Byte)(count));
                 headerLength = 2;
             }
             else if (count < UInt16.MaxValue)
             {
-                arrayMaker.Add(126);
                 Byte[] i16 = BitConverter.GetBytes((UInt16)count).Reverse().ToArray();
                 arrayMaker.AddRange(i16);
                 headerLength = 4;
             }
             else if ((UInt64)count < UInt64.MaxValue)
             {
-                arrayMaker.Add(127);
                 arrayMaker.AddRange(BitConverter.GetBytes((UInt64)count).Reverse().ToArray());
                 headerLength = 10;
             }
-
+            else
+                throw new WebSocketException("Cannot create a header with a length of " + count);
+            
             return new WebSocketFrameHeader()
             {
                 HeaderLength = headerLength,
                 ContentLength = (UInt64)count,
-                Flags = new WebSocketFrameHeaderFlags(isComplete, option),
+                Flags = flags,
                 Raw = arrayMaker.ToArray(),
                 RemainingBytes = (UInt64)count
             };

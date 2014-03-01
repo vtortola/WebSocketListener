@@ -226,17 +226,17 @@ namespace vtortola.WebSockets
                 if (_lastPong.Add(_pingTimeout).Add(_pingInterval) < now)
                     Close();
                 else
-                    this.WriteInternal(BitConverter.GetBytes(now.Ticks), 0, 8, true, false, WebSocketFrameOption.Ping);
+                    this.WriteInternal(BitConverter.GetBytes(now.Ticks), 0, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
             }
         }
 
         readonly SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1);
-        internal void WriteInternal(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option)
+        internal void WriteInternal(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             try
             {
                 _writeSemaphore.Wait(_client.SendTimeout);
-                var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
+                var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 Stream s = _client.GetStream();
                 s.Write(header.Raw, 0, header.Raw.Length);
                 if (count > 0)
@@ -255,12 +255,12 @@ namespace vtortola.WebSockets
                 _writeSemaphore.Release();
             }
         }
-        internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, CancellationToken cancellation)
+        internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
         {
             try
             {
                 await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation);
-                var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
+                var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 Stream s = _client.GetStream();
                 await s.WriteAsync(header.Raw, 0, header.Raw.Length);
                 if(count>0)
@@ -294,7 +294,7 @@ namespace vtortola.WebSockets
                     return;
 
                 if (Interlocked.CompareExchange(ref _gracefullyClosed, 1,0) == 0)
-                    WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose);
+                    WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
                 
                 _client.Close();
             }
