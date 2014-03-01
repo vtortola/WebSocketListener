@@ -22,29 +22,39 @@ namespace vtortola.WebSockets
         public Boolean MASK { get { return _byte2[7]; } private set { _byte2[7] = value; } }
         public WebSocketFrameOption Option { get; private set; }
 
-        public WebSocketFrameHeaderFlags(Byte[] header, Int32 start)
+        public static Boolean TryParse(Byte[] buffer, Int32 offset, out WebSocketFrameHeaderFlags headerFlags)
         {
-            if (header == null || header.Length - start < 2)
-                throw new ArgumentException();
-            _byte1 = new Boolean[8];
-            _byte2 = new Boolean[8];
+            headerFlags = null;
+            if (buffer == null || buffer.Length - offset < 2)
+                return false;
 
-            Byte[] byte1 = new Byte[] { header[0] };
-            Byte[] byte2 = new Byte[] { header[1] };
+            Boolean[] byte1Flags = new Boolean[8];
+            Boolean[] byte2Flags = new Boolean[8];
+
+            Byte[] byte1 = new Byte[] { buffer[0] };
+            Byte[] byte2 = new Byte[] { buffer[1] };
 
             BitArray bitArray = new BitArray(byte1);
-            bitArray.CopyTo(_byte1, 0);
+            bitArray.CopyTo(byte1Flags, 0);
 
             bitArray = new BitArray(byte2);
-            bitArray.CopyTo(_byte2, 0);
+            bitArray.CopyTo(byte2Flags, 0);
 
-            Int32 value = header[0];
+            Int32 value = buffer[0];
             value = value > 128 ? value - 128 : value;
 
             if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))
-                throw new WebSocketException("Cannot parse header [option], value was: " + value);
+                return false;
 
-            Option = (WebSocketFrameOption)value;
+            headerFlags = new WebSocketFrameHeaderFlags(byte1Flags, byte2Flags ,(WebSocketFrameOption)value); 
+            return true;
+        }
+
+        private WebSocketFrameHeaderFlags(Boolean[] byte1Flags, Boolean[] byte2Flags, WebSocketFrameOption option)
+        {
+            _byte1 = byte1Flags;
+            _byte2 = byte2Flags;
+            Option = option;
         }
 
         public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option)

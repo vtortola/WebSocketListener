@@ -10,10 +10,11 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketListener
+    public sealed class WebSocketListener:IDisposable
     {
         readonly TcpListener _listener;
         readonly TimeSpan _pingInterval;
+        Int32 _disposed;
         public WebSocketListener(IPEndPoint endpoint,TimeSpan pingInterval)
         {
             _listener = new TcpListener(endpoint);
@@ -56,13 +57,37 @@ namespace vtortola.WebSockets
         {
             WebSocketNegotiator negotiator = new WebSocketNegotiator();
             if(negotiator.NegotiateWebsocket(client.GetStream()))
-                return CreateWebSocketClient(client, negotiator, pingInterval);
+                return new WebSocketClient(client, negotiator.Request, pingInterval);
             return null;
         }
 
-        public static WebSocketClient CreateWebSocketClient(TcpClient client, WebSocketNegotiator negotiator, TimeSpan pingInterval)
+        //private async Task<WebSocketClient> NegotiateAsync(TcpClient client, TimeSpan pingInterval)
+        //{
+        //    WebSocketNegotiator negotiator = new WebSocketNegotiator();
+        //    if (await negotiator.NegotiateWebsocketAsync(client.GetStream()))
+        //        return new WebSocketClient(client, negotiator.Request, pingInterval);
+        //    return null;
+        //}
+
+        private void Dispose(Boolean disposing)
         {
-            return new WebSocketClient(client, negotiator.Request, pingInterval);
+            if(Interlocked.CompareExchange(ref _disposed,1,0)==0)
+            {
+                if (disposing)
+                    GC.SuppressFinalize(this);
+                this.Stop();
+                _listener.Server.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~WebSocketListener()
+        {
+            Dispose(false);
         }
     }
 }

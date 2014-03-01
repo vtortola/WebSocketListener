@@ -53,7 +53,7 @@
     <Compile Include="WebSocketException.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeader.cs" />
     <Compile Include="FrameHeader\WebSocketFrameOption.cs" />
-    <Compile Include="HttpNegotiation\WebSocketListenerExtension.cs" />
+    <Compile Include="HttpNegotiation\WebSocketEncodingExtension.cs" />
     <Compile Include="Streams\WebSocketMessageReadStream.cs" />
     <Compile Include="Streams\WebSocketMessageStream.cs" />
     <Compile Include="WebSocketListener.cs" />

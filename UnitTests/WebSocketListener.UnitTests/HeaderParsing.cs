@@ -45,7 +45,8 @@ namespace WebSocketListener.UnitTests
         public void With_WebSocketFrameHeaderFlags_Parse()
         {
             Byte[] header = GenerateHeader(true, false, false, false, false, false, false,true, false);
-            WebSocketFrameHeaderFlags flags = new WebSocketFrameHeaderFlags(header, 0);
+            WebSocketFrameHeaderFlags flags;
+            Assert.IsTrue(WebSocketFrameHeaderFlags.TryParse(header, 0, out flags));
             Assert.IsTrue(flags.FIN);
             Assert.IsTrue(flags.OPT1);
             Assert.IsTrue(flags.Option == WebSocketFrameOption.Text);
@@ -55,7 +56,7 @@ namespace WebSocketListener.UnitTests
 
             header = GenerateHeader(false, false, false, false, false, false, false, true, true);
 
-            flags = new WebSocketFrameHeaderFlags(header, 0);
+            Assert.IsTrue(WebSocketFrameHeaderFlags.TryParse(header, 0, out flags));
             Assert.IsFalse(flags.FIN);
             Assert.IsTrue(flags.OPT1);
             Assert.IsTrue(flags.Option == WebSocketFrameOption.Text);
@@ -65,7 +66,7 @@ namespace WebSocketListener.UnitTests
 
             header = GenerateHeader(false, false, false, false, false, false, true, false, true);
 
-            flags = new WebSocketFrameHeaderFlags(header, 0);
+            Assert.IsTrue(WebSocketFrameHeaderFlags.TryParse(header, 0, out flags));
             Assert.IsFalse(flags.FIN);
             Assert.IsFalse(flags.OPT1);
             Assert.IsFalse(flags.Option == WebSocketFrameOption.Text);
@@ -75,7 +76,7 @@ namespace WebSocketListener.UnitTests
 
             header = GenerateHeader(true, false, false, false, true, false, false, true, true);
 
-            flags = new WebSocketFrameHeaderFlags(header, 0);
+            Assert.IsTrue(WebSocketFrameHeaderFlags.TryParse(header, 0, out flags));
             Assert.IsTrue(flags.FIN);
             Assert.IsTrue(flags.OPT1);
             Assert.IsFalse(flags.Option == WebSocketFrameOption.Text);

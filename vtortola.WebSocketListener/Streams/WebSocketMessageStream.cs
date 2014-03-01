@@ -8,20 +8,8 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    /*
-     * Despite of existing ways of invoking async methods synchronously,
-     * none of them seems to be safe enough when building a library.
-     * 
-     * It is very unlikely, that a WebSocket server will be built on 
-     * a single threaded SynchronizationContext like ASP.NET, WCF, etc...
-     * But there is still a risk, so I have decided to forbid sync operations
-     * all the way.
-     */
     public abstract class WebSocketMessageStream:Stream
     {
-        public static readonly String SynchronousNotSupported = "WebSocketMessageStream only supports asynchronous operations. Ensure you are not Closing or Flushing synchronously this stream or any parent stream like object (StreamWriter,... etc...)";
-
-
         public WebSocketMessageType MessageType { get; internal set; }
         readonly protected WebSocketClient _client;
         readonly Task _completed;
@@ -100,6 +88,11 @@ namespace vtortola.WebSockets
         public override sealed void SetLength(long value)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
+        }
+
+        protected override sealed void Dispose(bool disposing)
+        {
+            
         }
     }
 }

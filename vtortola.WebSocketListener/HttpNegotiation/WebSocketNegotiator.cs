@@ -38,10 +38,8 @@ namespace vtortola.WebSockets
         }
         public Boolean NegotiateWebsocket(NetworkStream clientStream)
         {
-            StreamReader sr = new StreamReader(clientStream, Encoding.UTF8);
-            StreamWriter sw = new StreamWriter(clientStream);
-            sw.AutoFlush = true;
-
+            StreamReader sr = new StreamReader(clientStream, Encoding.ASCII);
+            
             String line = sr.ReadLine();
                         
             ParseGET(line);
@@ -54,15 +52,20 @@ namespace vtortola.WebSockets
 
             Finish();
 
+            StreamWriter sw = new StreamWriter(clientStream, Encoding.ASCII, 1024);
+
             if (!IsWebSocketRequest)
             {
-                sw.Write(GetNegotiationErrorResponse());
+                SendNegotiationErrorResponse(sw);
+                sw.Flush();
                 clientStream.Close();
-                return false;
+            }
+            else
+            {
+                SendNegotiationResponse(sw);
+                sw.Flush();
             }
             
-            sw.Write(GetNegotiationResponse());
-
             return IsWebSocketRequest;
         }
         private void ParseGET(String line)
@@ -84,28 +87,27 @@ namespace vtortola.WebSockets
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             _headers.Add(key, value);
         }
-        private String GetNegotiationResponse()
+        private void SendNegotiationResponse(StreamWriter sw)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("HTTP/1.1 101 Switching Protocols\r\n");
-            sb.Append("Upgrade: websocket\r\n");
-            sb.Append("Connection: Upgrade\r\n");
-            sb.Append("Sec-WebSocket-Accept: ");
-            sb.Append(GenerateHandshake());
-            sb.Append("\r\n");
-            sb.Append("Sec-WebSocket-Protocol: ");
+            sw.Write("HTTP/1.1 101 Switching Protocols\r\n");
+            sw.Write("Upgrade: websocket\r\n");
+            sw.Write("Connection: Upgrade\r\n");
+            sw.Write("Sec-WebSocket-Accept: ");
+            sw.Write(GenerateHandshake());
+            
             if (_headers.ContainsKey("SEC-WEBSOCKET-PROTOCOL"))
-                sb.Append(_headers["SEC-WEBSOCKET-PROTOCOL"]);
-            sb.Append("\r\n");
-            sb.Append("\r\n");
-            return sb.ToString();
+            {
+                sw.Write("\r\n");
+                sw.Write("Sec-WebSocket-Protocol: ");
+                sw.Write(_headers["SEC-WEBSOCKET-PROTOCOL"]);
+            }
+            sw.Write("\r\n");
+            sw.Write("\r\n");
         }
-        private String GetNegotiationErrorResponse()
+        private void SendNegotiationErrorResponse(StreamWriter sw)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("HTTP/1.1 404 Bad Request\r\n");
-            sb.Append("\r\n");
-            return sb.ToString();
+            sw.Write("HTTP/1.1 404 Bad Request\r\n");
+            sw.Write("\r\n");
         }
         private String GenerateHandshake()
         {

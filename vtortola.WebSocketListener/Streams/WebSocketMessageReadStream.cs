@@ -9,11 +9,10 @@ namespace vtortola.WebSockets
 {
     public class WebSocketMessageReadStream : WebSocketMessageStream
     {
-        public override Boolean CanRead { get { return true; } }
+        public override sealed Boolean CanRead { get { return true; } }
         public WebSocketMessageReadStream(WebSocketClient client)
             : base(client)
         { }
-
         private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
         {
             if (count < buffer.Length - offset)

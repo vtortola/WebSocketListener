@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketClient : IDisposable
+    public sealed class WebSocketClient : IDisposable
     {
         readonly TcpClient _client;
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
-        volatile Boolean _closed;
-        Int32 _gracefullyClosed;
-        public Boolean IsConnected { get { return !_closed &&_client.Client.Connected; } }
+
+        Int32 _gracefullyClosed, _closed, _disposed;
+        public Boolean IsConnected { get { return _closed!=1 &&_client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
 
         internal WebSocketFrameHeader Header { get; private set; }
@@ -35,7 +35,7 @@ namespace vtortola.WebSockets
             _pingTimeout = pingTimeOut;
             _lastPong = DateTime.Now.Add(_pingTimeout);
             _pingInterval = TimeSpan.FromMilliseconds( Math.Min(5000, pingTimeOut.TotalMilliseconds / 4));
-            PingAsync();
+            //PingAsync();
         }
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
@@ -60,12 +60,12 @@ namespace vtortola.WebSockets
         {
             try
             {
-                Int32 readed = 0, headerLength;
-                UInt64 contentLength;
+                Int32 readed = 0;
                 NetworkStream clientStream = _client.GetStream();
 
                 while (this.IsConnected && Header == null)
                 {
+                    WebSocketFrameHeader header;
                     do
                     { 
                         // read small frame
@@ -79,7 +79,7 @@ namespace vtortola.WebSockets
                     while (readed < 6);
 
                     // Checking for small frame
-                    if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
+                    if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
                     {   // Read for medium frame
                         if (!clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
                         {
@@ -88,7 +88,7 @@ namespace vtortola.WebSockets
                         }
 
                         // check for medium frame
-                        if (!WebSocketFrameHeader.TryParseLengths(_headerBuffer, 0, readed, out headerLength, out contentLength))
+                        if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
                         { 
                             // read for large frame
                             if (!clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
@@ -96,6 +96,10 @@ namespace vtortola.WebSockets
                                 Close();
                                 return;
                             }
+
+                            // check for large frame
+                            if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
+                                throw new WebSocketException("Cannot understand frame header");
                         }
                     }
 
@@ -104,10 +108,6 @@ namespace vtortola.WebSockets
                         Close();
                         return;
                     }
-
-                    WebSocketFrameHeader header;
-                    if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
-                        throw new WebSocketException("Cannot understand header");
 
                     Header = header;
 
@@ -127,9 +127,7 @@ namespace vtortola.WebSockets
             {
                 Close();
             }
-        }
-
-
+        }        
         internal void CleanHeader()
         {
             Header = null;
@@ -140,8 +138,7 @@ namespace vtortola.WebSockets
             {
                 var readed = await _client.GetStream().ReadAsync(buffer, offset, count, cancellationToken);
 
-                if (Header.Flags.MASK)
-                    DecodeMaskedData(buffer, offset, readed);
+                DecodeMaskedData(buffer, offset, readed);
 
                 return readed;
             }
@@ -160,8 +157,7 @@ namespace vtortola.WebSockets
             {
                 var readed = _client.GetStream().Read(buffer, offset, count);
 
-                if (Header.Flags.MASK)
-                    DecodeMaskedData(buffer, offset, readed);
+                DecodeMaskedData(buffer, offset, readed);
 
                 return readed;
             }
@@ -208,9 +204,8 @@ namespace vtortola.WebSockets
                     while (Header.RemainingBytes > 0)
                     {
                         readed = clientStream.Read(_controlFrameBuffer, readed, contentLength - readed);
-                        if (Header.Flags.MASK)
-                            for (int i = 0; i < readed; i++)
-                                _controlFrameBuffer[i] = Header.DecodeByte(_controlFrameBuffer[i]);
+                        for (int i = 0; i < readed; i++)
+                             _controlFrameBuffer[i] = Header.DecodeByte(_controlFrameBuffer[i]);
                     }
                     var ticks = BitConverter.ToInt64(_controlFrameBuffer, 0);
                     if (ticks >= DateTime.MinValue.Ticks && ticks <= DateTime.MaxValue.Ticks)
@@ -241,8 +236,8 @@ namespace vtortola.WebSockets
             try
             {
                 _writeSemaphore.Wait(_client.SendTimeout);
-                Stream s = _client.GetStream();
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
+                Stream s = _client.GetStream();
                 s.Write(header.Raw, 0, header.Raw.Length);
                 if (count > 0)
                     s.Write(buffer, offset, count);
@@ -265,8 +260,8 @@ namespace vtortola.WebSockets
             try
             {
                 await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation);
-                Stream s = _client.GetStream();
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option);
+                Stream s = _client.GetStream();
                 await s.WriteAsync(header.Raw, 0, header.Raw.Length);
                 if(count>0)
                     await s.WriteAsync(buffer, offset, count);
@@ -284,38 +279,52 @@ namespace vtortola.WebSockets
                 _writeSemaphore.Release();
             }
         }
-
-        static readonly Byte[] _emptyFrame = new Byte[0];
-        public void Close()
-        {
-            try
-            {
-                if (Interlocked.CompareExchange(ref _gracefullyClosed, 1,0) == 0)
-                    WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose);
-                
-                _client.Close();
-            }
-            catch { }
-            finally
-            {
-                _closed = true;
-            }
-        }
-
         private Int32 ReturnAndClose()
         {
             this.Close();
             return 0;
         }
 
-        public void Dispose()
+        static readonly Byte[] _emptyFrame = new Byte[0];
+        public void Close()
         {
             try
             {
-                this.Close();
-                _client.Client.Dispose();
+                if (Interlocked.CompareExchange(ref _closed, 1, 0) == 1)
+                    return;
+
+                if (Interlocked.CompareExchange(ref _gracefullyClosed, 1,0) == 0)
+                    WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose);
+                
+                _client.Close();
             }
             catch { }
+        }
+
+        private void Dispose(Boolean disposing)
+        {
+            if (Interlocked.CompareExchange(ref _disposed, 1,0) == 0)
+            {
+                if (disposing)
+                    GC.SuppressFinalize(this);
+
+                try
+                {
+                    this.Close();
+                    _client.Client.Dispose();
+                }
+                catch { }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);   
+        }
+
+        ~WebSocketClient()
+        {
+            Dispose(false);
         }
     }
 
