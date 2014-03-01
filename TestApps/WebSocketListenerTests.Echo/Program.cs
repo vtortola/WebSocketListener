@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -10,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
 
-namespace WebSockets.TestConsoleHost
+namespace WebSocketListenerTests.Echo
 {
     class Program
     {
@@ -23,16 +22,16 @@ namespace WebSockets.TestConsoleHost
                 return;
 
             log4net.Config.XmlConfigurator.Configure();
-            _log.Info("Starting");
+            _log.Info("Starting Echo Server");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8001);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8002);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
 
             server.Start();
 
-            Log("Server started at " + endpoint.ToString());
+            Log("Echo Server started at " + endpoint.ToString());
 
             var task = AcceptWebSocketClients(server, cancellation.Token);
 
@@ -58,11 +57,9 @@ namespace WebSockets.TestConsoleHost
                     if (ws == null)
                         continue; // disconnection
 
-                    //Log("Client Connected: " + ws.RemoteEndpoint.ToString());
-
                     HandleConnectionAsync(ws, token);
                 }
-                catch(Exception aex)
+                catch (Exception aex)
                 {
                     var ex = aex.GetBaseException();
                     _log.Error("AcceptWebSocketClients", ex);
@@ -90,21 +87,11 @@ namespace WebSockets.TestConsoleHost
                         switch (messageReader.MessageType)
                         {
                             case WebSocketMessageType.Text:
-                                using (var sr = new StreamReader(messageReader, Encoding.UTF8))
-                                    msg = await sr.ReadToEndAsync().ConfigureAwait(false);
-
-                                if (String.IsNullOrWhiteSpace(msg))
-                                    continue; // disconnection
-
+                                
                                 _inMessages.Increment();
-                                _inBytes.IncrementBy(msg.Length); // assuming one byte per char for the test sake
-
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
-                                using (var sw = new StreamWriter(messageWriter, Encoding.UTF8))
-                                    await sw.WriteAsync(msg.ReverseString()).ConfigureAwait(false);
-
+                                    await messageReader.CopyToAsync(messageWriter, 8192).ConfigureAwait(false);
                                 _outMessages.Increment();
-                                _outBytes.IncrementBy(msg.Length);
 
                                 break;
 
@@ -130,7 +117,7 @@ namespace WebSockets.TestConsoleHost
                 _connected.Decrement();
             }
             //Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
-            
+
         }
 
         static void Log(String line)
@@ -198,7 +185,7 @@ namespace WebSockets.TestConsoleHost
 
                 return false;
             }
-        }       
+        }
 
     }
 
@@ -211,4 +198,5 @@ namespace WebSockets.TestConsoleHost
             return new String(s.Reverse().ToArray());
         }
     }
+
 }

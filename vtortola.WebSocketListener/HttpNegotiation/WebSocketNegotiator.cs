@@ -121,17 +121,18 @@ namespace vtortola.WebSockets
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
             if(_headers.ContainsKey("Sec-WebSocket-Extensions"))
             {
-                var extensions = _headers["Sec-WebSocket-Extensions"].Split(',');
-                AssertArrayIsAtLeast(extensions, 2, "Cannot parse extension");
+                var header = _headers["Sec-WebSocket-Extensions"];
+                var extensions = header.Split(',');
+                AssertArrayIsAtLeast(extensions, 2, "Cannot parse extension [" + header +"]");
                 foreach (var extension in extensions)
                 {
                     List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
                     var parts = extension.Split(';');
-                    AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension");
+                    AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension [" + header + "]");
                     foreach (var part in parts.Skip(1))
                     {
                         var optParts = part.Split('=');
-                        AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options");
+                        AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options [" + header + "]");
                         if(optParts.Length==1)
                             extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption=true });
                         else

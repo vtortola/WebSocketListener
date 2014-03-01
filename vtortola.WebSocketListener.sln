@@ -7,13 +7,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSocketListener"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestApps", "TestApps", "{9819EE57-0EFF-431A-94B8-CCAAA2403443}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListener.TestConsoleHost", "TestApps\WebSocketListener.TestConsoleHost\WebSocketListener.TestConsoleHost.csproj", "{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebSocketListener.Web", "TestApps\TestWebSocketListener.Web\TestWebSocketListener.Web.csproj", "{6964319A-3F06-4FE4-957B-C7548ADCE3E1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{45AC3A8B-FEC2-4499-820E-5596B81DF98A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListener.UnitTests", "UnitTests\WebSocketListener.UnitTests\WebSocketListener.UnitTests.csproj", "{760B2894-2A33-4DA7-AD94-101A41015172}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerTests.ReverseEcho", "TestApps\WebSocketListenerTests.ReverseEcho\WebSocketListenerTests.ReverseEcho.csproj", "{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerTests.Echo", "TestApps\WebSocketListenerTests.Echo\WebSocketListenerTests.Echo.csproj", "{9586718A-CBF0-4E42-9FAC-81C09B59DF47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,10 +27,6 @@ Global
 		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -37,13 +35,22 @@ Global
 		{760B2894-2A33-4DA7-AD94-101A41015172}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{760B2894-2A33-4DA7-AD94-101A41015172}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{760B2894-2A33-4DA7-AD94-101A41015172}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60} = {9819EE57-0EFF-431A-94B8-CCAAA2403443}
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1} = {9819EE57-0EFF-431A-94B8-CCAAA2403443}
+		{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60} = {9819EE57-0EFF-431A-94B8-CCAAA2403443}
+		{9586718A-CBF0-4E42-9FAC-81C09B59DF47} = {9819EE57-0EFF-431A-94B8-CCAAA2403443}
 		{760B2894-2A33-4DA7-AD94-101A41015172} = {45AC3A8B-FEC2-4499-820E-5596B81DF98A}
 	EndGlobalSection
 EndGlobal

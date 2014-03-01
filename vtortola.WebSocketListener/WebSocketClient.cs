@@ -179,6 +179,7 @@ namespace vtortola.WebSockets
             for (int i = 0; i < readed; i++)
                 buffer[i + bufferOffset] = Header.DecodeByte(buffer[i + bufferOffset]);
         }
+
         readonly Byte[] _controlFrameBuffer = new Byte[125];
         private void ProcessControlFrame(NetworkStream clientStream)
         {
@@ -199,7 +200,7 @@ namespace vtortola.WebSockets
                 case WebSocketFrameOption.Ping:
                     break;
 
-                case WebSocketFrameOption.Pong: // removing the pong frame from the stream, TODO: parse and control timeout
+                case WebSocketFrameOption.Pong:
                     Int32 contentLength =  _controlFrameBuffer.Length;
                     if (Header.ContentLength < 125)
                         contentLength = (Int32)Header.ContentLength;
@@ -218,7 +219,6 @@ namespace vtortola.WebSockets
                 default: throw new WebSocketException("Unexpected header option '" + Header.Flags.Option.ToString() + "'");
             }
         }
-
         private async Task PingAsync()
         {
             await Task.Yield();
@@ -260,7 +260,6 @@ namespace vtortola.WebSockets
                 _writeSemaphore.Release();
             }
         }
-
         internal async Task WriteInternalAsync(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, CancellationToken cancellation)
         {
             try
@@ -294,10 +293,13 @@ namespace vtortola.WebSockets
                 if (Interlocked.CompareExchange(ref _gracefullyClosed, 1,0) == 0)
                     WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose);
                 
-                _closed = true;
                 _client.Close();
             }
             catch { }
+            finally
+            {
+                _closed = true;
+            }
         }
 
         private Int32 ReturnAndClose()

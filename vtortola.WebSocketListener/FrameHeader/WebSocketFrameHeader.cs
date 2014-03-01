@@ -25,12 +25,10 @@ namespace vtortola.WebSockets
             RemainingBytes--;
             return (Byte)(b ^ _key[cursor++ % 4]);
         }
-
         public WebSocketFrameHeader()
         {
             _key = new Byte[4];
         }
-
         public static Boolean TryParseFrameLength(Byte[] frameStart, Int32 offset, Int32 count, out UInt64 frameLength)
         {
             Int32 header;
@@ -44,7 +42,6 @@ namespace vtortola.WebSockets
             frameLength = 0;
             return false;
         }
-        
         public static Boolean TryParseLengths(Byte[] frameStart, Int32 offset, Int32 count, out Int32 headerLength, out UInt64 contentLength)
         {
             contentLength = 0;
