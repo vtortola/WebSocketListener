@@ -35,7 +35,7 @@ namespace vtortola.WebSockets
             _pingTimeout = pingTimeOut;
             _lastPong = DateTime.Now.Add(_pingTimeout);
             _pingInterval = TimeSpan.FromMilliseconds( Math.Min(5000, pingTimeOut.TotalMilliseconds / 4));
-            //PingAsync();
+            PingAsync();
         }
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)

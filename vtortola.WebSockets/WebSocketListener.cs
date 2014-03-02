@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets;
 
 namespace vtortola.WebSockets
 {
@@ -15,37 +16,26 @@ namespace vtortola.WebSockets
         readonly TcpListener _listener;
         readonly TimeSpan _pingInterval;
         Int32 _isDisposed;
-        volatile Boolean _isStarted;
-        readonly List<IWebSocketEncodingExtension> _encodingExtensions;
-        public IReadOnlyList<IWebSocketEncodingExtension> EncodingExtensions
-        {
-            get { return _encodingExtensions; }
-        } 
+        public Boolean IsStarted { get; private set; }
+
+        public WebSocketEncodingExtensionCollection Extensions { get; private set; }
 
         public WebSocketListener(IPEndPoint endpoint,TimeSpan pingInterval)
         {
             _listener = new TcpListener(endpoint);
             _pingInterval = pingInterval;
-            _encodingExtensions = new List<IWebSocketEncodingExtension>();
-        }
-
-        public void RegisterExtension(IWebSocketEncodingExtension extension)
-        {
-            if (_isStarted)
-                throw new WebSocketException("Extensions cannot be added after the service is started");
-
-            _encodingExtensions.Add(extension);
+            Extensions = new WebSocketEncodingExtensionCollection(this);
         }
 
         public void Start()
         {
-            _isStarted = true;
+            IsStarted = true;
             _listener.Start();
         }
 
         public void Stop()
         {
-            _isStarted = false;
+            IsStarted = false;
             _listener.Stop();
         }
 

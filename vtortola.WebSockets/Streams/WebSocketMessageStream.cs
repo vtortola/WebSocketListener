@@ -10,16 +10,8 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        public WebSocketFrameHeader Header { get; private set; }
-
         readonly protected WebSocketClient _client;
         readonly Task _completed;
-        internal WebSocketMessageStream(WebSocketClient client, WebSocketFrameHeader header)
-            :this(client)
-        {
-            Header = header;
-        }
-
         internal WebSocketMessageStream(WebSocketClient client)
         {
             _client = client;
