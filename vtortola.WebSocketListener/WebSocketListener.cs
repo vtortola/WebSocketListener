@@ -14,20 +14,38 @@ namespace vtortola.WebSockets
     {
         readonly TcpListener _listener;
         readonly TimeSpan _pingInterval;
-        Int32 _disposed;
+        Int32 _isDisposed;
+        volatile Boolean _isStarted;
+        readonly List<IWebSocketEncodingExtension> _encodingExtensions;
+        public IReadOnlyList<IWebSocketEncodingExtension> EncodingExtensions
+        {
+            get { return _encodingExtensions; }
+        } 
+
         public WebSocketListener(IPEndPoint endpoint,TimeSpan pingInterval)
         {
             _listener = new TcpListener(endpoint);
             _pingInterval = pingInterval;
+            _encodingExtensions = new List<IWebSocketEncodingExtension>();
+        }
+
+        public void RegisterExtension(IWebSocketEncodingExtension extension)
+        {
+            if (_isStarted)
+                throw new WebSocketException("Extensions cannot be added after the service is started");
+
+            _encodingExtensions.Add(extension);
         }
 
         public void Start()
         {
+            _isStarted = true;
             _listener.Start();
         }
 
         public void Stop()
         {
+            _isStarted = false;
             _listener.Stop();
         }
 
@@ -61,17 +79,9 @@ namespace vtortola.WebSockets
             return null;
         }
 
-        //private async Task<WebSocketClient> NegotiateAsync(TcpClient client, TimeSpan pingInterval)
-        //{
-        //    WebSocketNegotiator negotiator = new WebSocketNegotiator();
-        //    if (await negotiator.NegotiateWebsocketAsync(client.GetStream()))
-        //        return new WebSocketClient(client, negotiator.Request, pingInterval);
-        //    return null;
-        //}
-
         private void Dispose(Boolean disposing)
         {
-            if(Interlocked.CompareExchange(ref _disposed,1,0)==0)
+            if(Interlocked.CompareExchange(ref _isDisposed,1,0)==0)
             {
                 if (disposing)
                     GC.SuppressFinalize(this);

@@ -9,9 +9,14 @@ namespace vtortola.WebSockets
 {
     public class WebSocketMessageReadStream : WebSocketMessageStream
     {
+        public WebSocketMessageType MessageType 
+        { 
+            get { return (WebSocketMessageType)Header.Flags.Option; } 
+        }
+
         public override sealed Boolean CanRead { get { return true; } }
-        public WebSocketMessageReadStream(WebSocketClient client)
-            : base(client)
+        public WebSocketMessageReadStream(WebSocketClient client, WebSocketFrameHeader header)
+            : base(client,header)
         { }
         private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
         {

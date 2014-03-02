@@ -10,9 +10,16 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        public WebSocketMessageType MessageType { get; internal set; }
+        public WebSocketFrameHeader Header { get; private set; }
+
         readonly protected WebSocketClient _client;
         readonly Task _completed;
+        internal WebSocketMessageStream(WebSocketClient client, WebSocketFrameHeader header)
+            :this(client)
+        {
+            Header = header;
+        }
+
         internal WebSocketMessageStream(WebSocketClient client)
         {
             _client = client;
@@ -20,6 +27,7 @@ namespace vtortola.WebSockets
             source.SetResult(new Object());
             _completed = source.Task;
         }
+
         public override bool CanRead { get { return false; } }
         public override sealed bool CanSeek { get { return false; } }
         public override bool CanWrite { get { return false; } }

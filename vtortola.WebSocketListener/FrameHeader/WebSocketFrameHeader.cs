@@ -18,7 +18,7 @@ namespace vtortola.WebSockets
 
         readonly Byte[] _key;
 
-        public WebSocketFrameHeader()
+        private WebSocketFrameHeader()
         {
             _key = new Byte[4];
         }

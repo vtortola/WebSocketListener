@@ -40,13 +40,10 @@ namespace vtortola.WebSockets
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            var message = new WebSocketMessageReadStream(this);
             await AwaitHeaderAsync(token);
+            var message = new WebSocketMessageReadStream(this, Header);
             if (this.IsConnected && Header != null)
-            {
-                message.MessageType = (WebSocketMessageType)Header.Flags.Option;
                 return message;
-            }
             return null;
         }
 
