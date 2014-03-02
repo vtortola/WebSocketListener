@@ -54,9 +54,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\vtortola.WebSocketListener\vtortola.WebSocketListener.csproj">
+    <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
       <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
-      <Name>vtortola.WebSocketListener</Name>
+      <Name>vtortola.WebSockets</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

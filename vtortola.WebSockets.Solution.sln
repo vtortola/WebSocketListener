@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSocketListener", "vtortola.WebSocketListener\vtortola.WebSocketListener.csproj", "{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestApps", "TestApps", "{9819EE57-0EFF-431A-94B8-CCAAA2403443}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebSocketListener.Web", "TestApps\TestWebSocketListener.Web\TestWebSocketListener.Web.csproj", "{6964319A-3F06-4FE4-957B-C7548ADCE3E1}"
@@ -17,16 +15,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerTests.Reve
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerTests.Echo", "TestApps\WebSocketListenerTests.Echo\WebSocketListenerTests.Echo.csproj", "{9586718A-CBF0-4E42-9FAC-81C09B59DF47}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets", "vtortola.WebSockets\vtortola.WebSockets.csproj", "{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6964319A-3F06-4FE4-957B-C7548ADCE3E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -43,6 +39,10 @@ Global
 		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9586718A-CBF0-4E42-9FAC-81C09B59DF47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
