@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
+using vtortola.WebSockets.Deflate;
 
 namespace WebSocketListenerTests.ReverseEcho
 {
@@ -30,7 +31,7 @@ namespace WebSocketListenerTests.ReverseEcho
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-            //server.Extensions.RegisterExtension(new deflateExtension());
+            server.Extensions.RegisterExtension(new WebSocketDeflateExtension());
             server.Start();
 
             Log("Reverse Echo Server started at " + endpoint.ToString());
@@ -214,103 +215,4 @@ namespace WebSocketListenerTests.ReverseEcho
             return new String(s.Reverse().ToArray());
         }
     }
-
-    public class deflateExtension : IWebSocketEncodingExtension
-    {
-        public string Name { get { return "permessage-deflate"; } }
-
-        public bool IsRequired { get { return false; } }
-
-        public int Order { get { return 0; } }
-
-        public bool TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketEncodingExtensionContext context)
-        {
-            extensionResponse = new WebSocketExtension(Name, new List<WebSocketExtensionOption>(new[] { new WebSocketExtensionOption() { Name = "server_no_context_takeover" }, new WebSocketExtensionOption() { Name = "client_no_context_takeover" } }));
-            context = new deflateContext();
-            return true;
-        }
-    }
-
-    public class deflateContext : IWebSocketEncodingExtensionContext
-    {
-        public WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message)
-        {
-            if (message.Flags.RSV1)
-            {
-                return new deflateMessageRead(message);
-            }
-            else
-            {
-                return message;
-            }
-        }
-
-        public WebSocketMessageWriteStream ExtendWriter(WebSocketMessageWriteStream message)
-        {
-            message.ExtensionFlags.Rsv1 = true;
-            return new deflateMessageWrite(message);
-            //return message;
-        }
-    }
-
-    public class deflateMessageRead : WebSocketMessageReadStream
-    {
-        readonly WebSocketMessageReadStream _inner;
-        readonly DeflateStream _deflate;
-
-        public deflateMessageRead(WebSocketMessageReadStream inner)
-        {
-            _inner = inner;
-            _deflate = new DeflateStream(_inner, CompressionMode.Decompress, true);
-        }
-
-        public override WebSocketMessageType MessageType { get { return _inner.MessageType; } }
-
-        public override WebSocketFrameHeaderFlags Flags { get { return _inner.Flags; } }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            var r = _deflate.Read(buffer, offset, count);
-            return r;
-        }
-
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return _deflate.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-    }
-
-    public class deflateMessageWrite : WebSocketMessageWriteStream
-    {
-        readonly WebSocketMessageWriteStream _inner;
-        readonly DeflateStream _deflate;
-
-        public deflateMessageWrite(WebSocketMessageWriteStream inner)
-        {
-            _inner = inner;
-            _deflate = new DeflateStream(_inner, CompressionMode.Compress, true);
-        }
-        
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            RemoveUTF8BOM(buffer, ref offset, ref count);
-            if (count == 0)
-                return;
-            _deflate.Write(buffer, offset, count);
-        }
-
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return _deflate.WriteAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override void Close()
-        {
-            _deflate.Close();
-            _inner.Close();
-        }
-    }
-
-
-
 }

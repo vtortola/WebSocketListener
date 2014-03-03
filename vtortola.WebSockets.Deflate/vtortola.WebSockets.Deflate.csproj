@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BDAA61C6-4FA6-420E-8D8F-963B40EB1C60}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{3BFDAE73-A6A9-40B9-9026-84DD005BBAC9}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WebSocketListenerTests.ReverseEcho</RootNamespace>
-    <AssemblyName>WebSocketListenerTests.ReverseEcho</AssemblyName>
+    <RootNamespace>vtortola.WebSockets.Deflate</RootNamespace>
+    <AssemblyName>vtortola.WebSockets.Deflate</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,20 +22,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>
-    </DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net">
-      <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -46,19 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="WebSocketDeflateContext.cs" />
+    <Compile Include="WebSocketDeflateExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebSocketDeflateReadStream.cs" />
+    <Compile Include="WebSocketDeflateWriteStream.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj">
-      <Project>{3bfdae73-a6a9-40b9-9026-84dd005bbac9}</Project>
-      <Name>vtortola.WebSockets.Deflate</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
+    <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj">
       <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
       <Name>vtortola.WebSockets</Name>
     </ProjectReference>
