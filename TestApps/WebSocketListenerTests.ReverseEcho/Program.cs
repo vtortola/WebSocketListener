@@ -93,7 +93,7 @@ namespace WebSocketListenerTests.ReverseEcho
                         {
                             case WebSocketMessageType.Text:
                                 using (var sr = new StreamReader(messageReader, Encoding.UTF8))
-                                    msg = sr.ReadToEnd();
+                                    msg = await sr.ReadToEndAsync();
 
                                 if (String.IsNullOrWhiteSpace(msg))
                                     continue; // disconnection

@@ -52,6 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\WebSocketMessageReadStream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
+    <Compile Include="Tools\AsyncResultTask.cs" />
     <Compile Include="WebSocketClient.cs" />
     <Compile Include="WebSocketException.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeader.cs" />

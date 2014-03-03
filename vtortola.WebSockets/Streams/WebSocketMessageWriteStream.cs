@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
@@ -17,6 +19,28 @@ namespace vtortola.WebSockets
         public WebSocketMessageWriteStream()
         {
             ExtensionFlags = new WebSocketExtensionFlags();
+        }
+        public override sealed IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count),state);
+            wrapper.Task.ContinueWith(t =>
+            {
+                if (callback != null)
+                    callback(wrapper.Task);
+            });
+            return wrapper.Task;
+        }
+        public override sealed void EndWrite(IAsyncResult asyncResult)
+        {
+            try
+            {
+                ((AsyncResultTask)asyncResult).Task.Wait();
+            }
+            catch (AggregateException ex)
+            {
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw;
+            }
         }
 
         protected override void Dispose(bool disposing)

@@ -28,7 +28,6 @@ namespace WebSocketListenerTests.Echo
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8002);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());
