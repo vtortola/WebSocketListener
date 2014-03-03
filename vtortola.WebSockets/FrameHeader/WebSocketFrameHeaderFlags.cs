@@ -38,17 +38,28 @@ namespace vtortola.WebSockets
 
             Boolean[] byte1Flags = new Boolean[8];
             Boolean[] byte2Flags = new Boolean[8];
+            Boolean[] option = new Boolean[8];
 
             Byte[] byte1 = new Byte[] { buffer[0] };
             Byte[] byte2 = new Byte[] { buffer[1] };
+            Byte[] optionByte = new Byte[1];
 
             BitArray bitArray = new BitArray(byte1);
             bitArray.CopyTo(byte1Flags, 0);
+            bitArray.CopyTo(option, 0);
 
             bitArray = new BitArray(byte2);
             bitArray.CopyTo(byte2Flags, 0);
 
-            Int32 value = buffer[0];
+            option[7] = false;
+            option[6] = false;
+            option[5] = false;
+            option[4] = false;
+
+            bitArray = new BitArray(option);
+            bitArray.CopyTo(optionByte,0);
+
+            Int32 value = optionByte[0];
             value = value > 128 ? value - 128 : value;
 
             if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))

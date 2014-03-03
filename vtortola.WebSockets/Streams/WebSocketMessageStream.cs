@@ -10,11 +10,9 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        readonly protected WebSocketClient _client;
         readonly Task _completed;
-        internal WebSocketMessageStream(WebSocketClient client)
+        internal WebSocketMessageStream()
         {
-            _client = client;
             TaskCompletionSource<Object> source = new TaskCompletionSource<Object>();
             source.SetResult(new Object());
             _completed = source.Task;
@@ -90,7 +88,7 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-        protected override sealed void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
             
         }

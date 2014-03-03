@@ -12,11 +12,14 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketNegotiator
+    public class WebSocketHandshaker
     {
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
+        private WebSocketEncodingExtensionCollection RequestExtensions;
         public WebSocketHttpRequest Request { get; private set; }
+        readonly List<WebSocketExtension> _responseExtensions;
+        public List<IWebSocketEncodingExtensionContext> NegotiatedExtensions { get; private set; }
         public Boolean IsWebSocketRequest
         {
             get
@@ -28,45 +31,76 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
             }
         }
-        public WebSocketNegotiator()
+        public WebSocketHandshaker(WebSocketEncodingExtensionCollection extensions)
         {
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
             Request = new WebSocketHttpRequest();
             Request.Cookies = new CookieContainer();
             Request.Headers = new HttpHeadersCollection();
+            RequestExtensions = extensions;
+            _responseExtensions = new List<WebSocketExtension>();
+            NegotiatedExtensions = new List<IWebSocketEncodingExtensionContext>();
         }
-        public Boolean NegotiateWebsocket(NetworkStream clientStream)
+
+        public Boolean NegotiatesWebsocket(NetworkStream clientStream)
         {
-            StreamReader sr = new StreamReader(clientStream, Encoding.ASCII);
+            ReadHttpRequest(clientStream);
+
+            ConsolidateObjectModel();
+
+            if (IsWebSocketRequest)
+                SelectExtensions();
             
-            String line = sr.ReadLine();
+            WriteHttpResponse(clientStream);
                         
-            ParseGET(line);
-
-            while (!String.IsNullOrWhiteSpace(line))
-            {
-                line = sr.ReadLine();
-                ParseHeader(line);
-            }
-
-            Finish();
-
-            StreamWriter sw = new StreamWriter(clientStream, Encoding.ASCII, 1024);
-
-            if (!IsWebSocketRequest)
-            {
-                SendNegotiationErrorResponse(sw);
-                sw.Flush();
-                clientStream.Close();
-            }
-            else
-            {
-                SendNegotiationResponse(sw);
-                sw.Flush();
-            }
-            
             return IsWebSocketRequest;
+        }
+
+        private void SelectExtensions()
+        {
+            IWebSocketEncodingExtensionContext context;
+            WebSocketExtension extensionResponse;
+            foreach (var extRequest in Request.WebSocketExtensions)
+            {
+                var extension = RequestExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
+                if (extension != null && extension.TryNegotiate(Request, out extensionResponse, out context))
+                {
+                    NegotiatedExtensions.Add(context);
+                    _responseExtensions.Add(extensionResponse);
+                }
+            }
+        }
+
+        private void WriteHttpResponse(NetworkStream clientStream)
+        {
+            using (StreamWriter sw = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            {
+                if (!IsWebSocketRequest)
+                {
+                    SendNegotiationErrorResponse(sw);
+                    clientStream.Close();
+                }
+                else
+                {
+                    SendNegotiationResponse(sw);
+                }
+            }
+        }
+        private void ReadHttpRequest(NetworkStream clientStream)
+        {
+            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, 1024, true))
+            {
+                String line = sr.ReadLine();
+
+                ParseGET(line);
+
+                while (!String.IsNullOrWhiteSpace(line))
+                {
+                    line = sr.ReadLine();
+                    ParseHeader(line);
+                }
+            }
         }
         private void ParseGET(String line)
         {
@@ -101,6 +135,37 @@ namespace vtortola.WebSockets
                 sw.Write("Sec-WebSocket-Protocol: ");
                 sw.Write(_headers["SEC-WEBSOCKET-PROTOCOL"]);
             }
+
+            if (_responseExtensions.Any())
+            {
+                Boolean firstExt=true, firstOpt=true;
+                sw.Write("\r\n");
+                sw.Write("Sec-WebSocket-Extensions: ");
+                foreach (var extension in _responseExtensions)
+                {
+                    if(!firstExt)
+                        sw.Write(",");
+
+                    sw.Write(extension.Name);
+                    var serverAcceptedOptions = extension.Options.Where(x => !x.ClientAvailableOption);
+                    if(extension.Options.Any())
+                    {
+                        foreach (var extOption in serverAcceptedOptions)
+                        {
+                            if(!firstOpt)
+                                sw.Write(";");
+
+                            sw.Write(extOption.Name);
+                            sw.Write("=");
+                            sw.Write(extOption.Value);
+                            
+                            firstOpt = false;
+                        }
+                        firstExt = false;
+                    }
+                }
+            }
+
             sw.Write("\r\n");
             sw.Write("\r\n");
         }
@@ -113,7 +178,7 @@ namespace vtortola.WebSockets
         {
             return Convert.ToBase64String(_sha1.ComputeHash(Encoding.UTF8.GetBytes(_headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
         }
-        private void Finish()
+        private void ConsolidateObjectModel()
         {
             if(_headers.ContainsKey("Cookie"))
             {

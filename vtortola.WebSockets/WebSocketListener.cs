@@ -63,12 +63,12 @@ namespace vtortola.WebSockets
 
         private WebSocketClient Negotiate(TcpClient client, TimeSpan pingInterval)
         {
-            WebSocketNegotiator negotiator = new WebSocketNegotiator();
-            if(negotiator.NegotiateWebsocket(client.GetStream()))
-                return new WebSocketClient(client, negotiator.Request, pingInterval);
+            WebSocketHandshaker handShaker = new WebSocketHandshaker(Extensions);
+            if(handShaker.NegotiatesWebsocket(client.GetStream()))
+                return new WebSocketClient(client, handShaker.Request, pingInterval, handShaker.NegotiatedExtensions);
             return null;
         }
-
+                
         private void Dispose(Boolean disposing)
         {
             if(Interlocked.CompareExchange(ref _isDisposed,1,0)==0)

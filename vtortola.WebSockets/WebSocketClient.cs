@@ -24,7 +24,9 @@ namespace vtortola.WebSockets
 
         readonly TimeSpan _pingInterval,_pingTimeout;
         DateTime _lastPong;
-        public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut)
+
+        readonly IReadOnlyList<IWebSocketEncodingExtensionContext> _extensions;
+        public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketEncodingExtensionContext> extensions)
         {
             if (client == null)
                 throw new ArgumentNullException("client");
@@ -35,21 +37,33 @@ namespace vtortola.WebSockets
             _pingTimeout = pingTimeOut;
             _lastPong = DateTime.Now.Add(_pingTimeout);
             _pingInterval = TimeSpan.FromMilliseconds( Math.Min(5000, pingTimeOut.TotalMilliseconds / 4));
+            _extensions = extensions;
             PingAsync();
         }
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
             await AwaitHeaderAsync(token);
-            var message = new WebSocketMessageReadStream(this, Header);
+            WebSocketMessageReadStream reader = new WebSocketMessageReadNetworkStream(this, Header);
+
             if (this.IsConnected && Header != null)
-                return message;
+            {
+                foreach (var extension in _extensions)
+                    reader = extension.ExtendReader(reader);
+                return reader;
+            }
+
             return null;
         }
 
         public WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
-            return new WebSocketMessageWriteStream(this,messageType);
+            WebSocketMessageWriteStream writer = new WebSocketMessageWriteNetworkStream(this, messageType);
+
+            foreach (var extension in _extensions)
+                writer = extension.ExtendWriter(writer);
+
+            return writer;
         }
 
         readonly Byte[] _headerBuffer = new Byte[14];

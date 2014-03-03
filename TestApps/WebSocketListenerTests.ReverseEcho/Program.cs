@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -91,7 +92,7 @@ namespace WebSocketListenerTests.ReverseEcho
                         {
                             case WebSocketMessageType.Text:
                                 using (var sr = new StreamReader(messageReader, Encoding.UTF8))
-                                    msg = await sr.ReadToEndAsync().ConfigureAwait(false);
+                                    msg = sr.ReadToEnd();
 
                                 if (String.IsNullOrWhiteSpace(msg))
                                     continue; // disconnection

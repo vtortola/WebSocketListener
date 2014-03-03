@@ -16,6 +16,11 @@ namespace vtortola.WebSockets
             Name = name;
             Options = new ReadOnlyCollection<WebSocketExtensionOption>(options);
         }
+        public WebSocketExtension(String name)
+        {
+            Name = name;
+            Options = new ReadOnlyCollection<WebSocketExtensionOption>(new List<WebSocketExtensionOption>());
+        }
     }
 
     public class WebSocketExtensionOption

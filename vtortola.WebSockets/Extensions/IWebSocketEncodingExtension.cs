@@ -8,10 +8,15 @@ namespace vtortola.WebSockets
 {
     public interface IWebSocketEncodingExtension
     {
+        String Name { get;}
         Boolean IsRequired { get; }
         Int32 Order { get; }
-        IEnumerable<WebSocketExtension> Negotiate(WebSocketHttpRequest request);
-        WebSocketMessageReadStream WrapReader(WebSocketMessageReadStream message);
-        WebSocketMessageWriteStream WrapWriter(WebSocketMessageWriteStream message);
+        Boolean TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketEncodingExtensionContext context);
+    }
+
+    public interface IWebSocketEncodingExtensionContext
+    {
+        WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message);
+        WebSocketMessageWriteStream ExtendWriter(WebSocketMessageWriteStream message);
     }
 }
