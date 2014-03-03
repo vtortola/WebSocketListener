@@ -9,12 +9,25 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketExtensionFlags
     {
-        public Boolean Rsv1 { get; set; }
-        public Boolean Rsv2 { get; set; }
-        public Boolean Rsv3 { get; set; }
+        Boolean _rsv1, _rsv2, _rsv3;
+        public Boolean Rsv1 { get { return _rsv1; } set { _rsv1 = value && !_none; } }
+        public Boolean Rsv2 { get { return _rsv2; } set { _rsv2 = value && !_none; } }
+        public Boolean Rsv3 { get { return _rsv3; } set { _rsv3 = value && !_none; } }
 
-        public static readonly WebSocketExtensionFlags None = new WebSocketExtensionFlags();
+        readonly Boolean _none;
+        public WebSocketExtensionFlags()
+        {
+            _none = false;
+        }
+
+        private WebSocketExtensionFlags(Boolean none)
+        {
+            _none = true;
+        }
+
+        public static readonly WebSocketExtensionFlags None = new WebSocketExtensionFlags(true);
     }
+
     public sealed class WebSocketFrameHeaderFlags
     {
         readonly Boolean[] _byte1, _byte2;
@@ -83,6 +96,11 @@ namespace vtortola.WebSockets
             _byte2 = new Boolean[8];
 
             _byte1[7] = isComplete;
+
+            this.RSV1 = extensionFlags.Rsv1;
+            this.RSV2 = extensionFlags.Rsv2;
+            this.RSV3 = extensionFlags.Rsv3;
+
             switch (option)
             {
                 case WebSocketFrameOption.Text:
@@ -100,11 +118,11 @@ namespace vtortola.WebSockets
                 case WebSocketFrameOption.Pong:
                     this.OPT4 = this.OPT2 = true;
                     break;
+                case WebSocketFrameOption.Continuation:
+                    this.RSV1 = this.RSV2 = this.RSV3 = false;
+                    break;
             }
 
-            this.RSV1 = extensionFlags.Rsv1;
-            this.RSV2 = extensionFlags.Rsv2;
-            this.RSV3 = extensionFlags.Rsv3;
         }
 
         readonly Byte[] _byteHead = new Byte[2];

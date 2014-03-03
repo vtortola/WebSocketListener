@@ -11,6 +11,9 @@ namespace vtortola.WebSockets
     {
         public String Name { get; private set; }
         public IReadOnlyList<WebSocketExtensionOption> Options { get; private set; }
+
+        static readonly ReadOnlyCollection<WebSocketExtensionOption> _empty = new ReadOnlyCollection<WebSocketExtensionOption>(new List<WebSocketExtensionOption>());
+
         public WebSocketExtension(String name, List<WebSocketExtensionOption> options)
         {
             Name = name;
@@ -19,14 +22,14 @@ namespace vtortola.WebSockets
         public WebSocketExtension(String name)
         {
             Name = name;
-            Options = new ReadOnlyCollection<WebSocketExtensionOption>(new List<WebSocketExtensionOption>());
+            Options = _empty;
         }
     }
 
     public class WebSocketExtensionOption
     {
-        public String Name { get; internal set; }
-        public String Value { get; internal set; }
-        public Boolean ClientAvailableOption { get; internal set; }
+        public String Name { get; set; }
+        public String Value { get; set; }
+        public Boolean ClientAvailableOption { get; set; }
     }
 }

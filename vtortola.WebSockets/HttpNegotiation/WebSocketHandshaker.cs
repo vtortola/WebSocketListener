@@ -25,7 +25,7 @@ namespace vtortola.WebSockets
             get
             {
                 return _headers.ContainsKey("Host") &&
-                       _headers.ContainsKey("Upgrade") && _headers["Upgrade"] == "websocket" &&
+                       _headers.ContainsKey("Upgrade") && "websocket".Equals(_headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase ) &&
                        _headers.ContainsKey("Connection") &&
                        _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
                        _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
@@ -79,6 +79,7 @@ namespace vtortola.WebSockets
                 if (!IsWebSocketRequest)
                 {
                     SendNegotiationErrorResponse(sw);
+                    sw.Flush();
                     clientStream.Close();
                 }
                 else
@@ -150,15 +151,18 @@ namespace vtortola.WebSockets
                     var serverAcceptedOptions = extension.Options.Where(x => !x.ClientAvailableOption);
                     if(extension.Options.Any())
                     {
+                        sw.Write(";");
                         foreach (var extOption in serverAcceptedOptions)
                         {
                             if(!firstOpt)
                                 sw.Write(";");
 
                             sw.Write(extOption.Name);
-                            sw.Write("=");
-                            sw.Write(extOption.Value);
-                            
+                            if (extOption.Value != null)
+                            {
+                                sw.Write("=");
+                                sw.Write(extOption.Value);
+                            }
                             firstOpt = false;
                         }
                         firstExt = false;

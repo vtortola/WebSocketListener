@@ -16,6 +16,11 @@ namespace vtortola.WebSockets
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
 
+        public int ReceiveBufferSize { get { return _client.ReceiveBufferSize; } set { _client.ReceiveBufferSize = value; } }
+        public int ReceiveTimeout { get { return _client.ReceiveTimeout; } set { _client.ReceiveTimeout = value; } }
+        public int SendBufferSize { get { return _client.SendBufferSize; } set { _client.SendBufferSize = value; } }
+        public int SendTimeout { get { return _client.SendTimeout; } set { _client.SendTimeout = value; } }
+
         Int32 _gracefullyClosed, _closed, _disposed;
         public Boolean IsConnected { get { return _closed!=1 &&_client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }

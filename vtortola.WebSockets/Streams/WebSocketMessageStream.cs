@@ -10,19 +10,19 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        readonly Task _completed;
-        internal WebSocketMessageStream()
+        static readonly Task _completed;
+        static WebSocketMessageStream()
         {
             TaskCompletionSource<Object> source = new TaskCompletionSource<Object>();
-            source.SetResult(new Object());
+            source.SetResult(null);
             _completed = source.Task;
         }
 
-        public override bool CanRead { get { return false; } }
-        public override sealed bool CanSeek { get { return false; } }
-        public override bool CanWrite { get { return false; } }
-        public override sealed long Length { get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } }
-        public override sealed long Position 
+        public override Boolean CanRead { get { return false; } }
+        public override sealed Boolean CanSeek { get { return false; } }
+        public override Boolean CanWrite { get { return false; } }
+        public override sealed Int64 Length { get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } }
+        public override sealed Int64 Position 
         { 
             get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } 
             set { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } 
