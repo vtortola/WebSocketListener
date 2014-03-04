@@ -43,7 +43,7 @@ namespace vtortola.WebSockets
             NegotiatedExtensions = new List<IWebSocketEncodingExtensionContext>();
         }
 
-        public Boolean NegotiatesWebsocket(NetworkStream clientStream)
+        public Boolean NegotiatesWebsocket(Stream clientStream)
         {
             ReadHttpRequest(clientStream);
 
@@ -51,9 +51,9 @@ namespace vtortola.WebSockets
 
             if (IsWebSocketRequest)
                 SelectExtensions();
-            
-            WriteHttpResponse(clientStream);
-                        
+
+            WriteHttpResponse(clientStream);  
+
             return IsWebSocketRequest;
         }
 
@@ -72,7 +72,7 @@ namespace vtortola.WebSockets
             }
         }
 
-        private void WriteHttpResponse(NetworkStream clientStream)
+        private void WriteHttpResponse(Stream clientStream)
         {
             using (StreamWriter sw = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
@@ -88,7 +88,7 @@ namespace vtortola.WebSockets
                 }
             }
         }
-        private void ReadHttpRequest(NetworkStream clientStream)
+        private void ReadHttpRequest(Stream clientStream)
         {
             using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, 1024, true))
             {

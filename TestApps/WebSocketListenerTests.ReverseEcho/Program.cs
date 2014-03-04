@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,10 +29,16 @@ namespace WebSocketListenerTests.ReverseEcho
             _log.Info("Starting Reverse Echo Server");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
+            //X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            //store.Open(OpenFlags.ReadOnly);
+            //store.Certificates.Count.ToString();
+            //var certificate = store.Certificates[0];
+            //store.Close();
+
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-            server.Extensions.RegisterExtension(new WebSocketDeflateExtension());
+            //server.Extensions.RegisterExtension(new WebSocketDeflateExtension());
             server.Start();
 
             Log("Reverse Echo Server started at " + endpoint.ToString());
@@ -63,6 +70,7 @@ namespace WebSocketListenerTests.ReverseEcho
                     //Log("Client Connected: " + ws.RemoteEndpoint.ToString());
 
                     HandleConnectionAsync(ws, token);
+
                 }
                 catch(Exception aex)
                 {

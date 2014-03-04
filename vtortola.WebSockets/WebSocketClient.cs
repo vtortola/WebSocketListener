@@ -13,25 +13,23 @@ namespace vtortola.WebSockets
     public sealed class WebSocketClient : IDisposable
     {
         readonly TcpClient _client;
+        readonly Stream _clientStream;
+        Int32 _gracefullyClosed, _closed, _disposed;
+        readonly TimeSpan _pingInterval, _pingTimeout;
+        DateTime _lastPong;
+        readonly IReadOnlyList<IWebSocketEncodingExtensionContext> _extensions;
+
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
-
         public int ReceiveBufferSize { get { return _client.ReceiveBufferSize; } set { _client.ReceiveBufferSize = value; } }
         public int ReceiveTimeout { get { return _client.ReceiveTimeout; } set { _client.ReceiveTimeout = value; } }
         public int SendBufferSize { get { return _client.SendBufferSize; } set { _client.SendBufferSize = value; } }
         public int SendTimeout { get { return _client.SendTimeout; } set { _client.SendTimeout = value; } }
-
-        Int32 _gracefullyClosed, _closed, _disposed;
-        public Boolean IsConnected { get { return _closed!=1 &&_client.Client.Connected; } }
+        public Boolean IsConnected { get { return _closed != 1 && _client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
-
         internal WebSocketFrameHeader Header { get; private set; }
-
-        readonly TimeSpan _pingInterval,_pingTimeout;
-        DateTime _lastPong;
-
-        readonly IReadOnlyList<IWebSocketEncodingExtensionContext> _extensions;
-        public WebSocketClient(TcpClient client, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketEncodingExtensionContext> extensions)
+                
+        public WebSocketClient(TcpClient client, Stream clientStream, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketEncodingExtensionContext> extensions)
         {
             if (client == null)
                 throw new ArgumentNullException("client");
@@ -43,6 +41,7 @@ namespace vtortola.WebSockets
             _lastPong = DateTime.Now.Add(_pingTimeout);
             _pingInterval = TimeSpan.FromMilliseconds( Math.Min(5000, pingTimeOut.TotalMilliseconds / 4));
             _extensions = extensions;
+            _clientStream = clientStream;
             PingAsync();
         }
                 
@@ -77,15 +76,13 @@ namespace vtortola.WebSockets
             try
             {
                 Int32 readed = 0;
-                NetworkStream clientStream = _client.GetStream();
-
                 while (this.IsConnected && Header == null)
                 {
                     WebSocketFrameHeader header;
                     do
                     { 
                         // read small frame
-                        readed += await clientStream.ReadAsync(_headerBuffer, 0, 6, token); // 6 = 2 minimal header + 4 key
+                        readed += await _clientStream.ReadAsync(_headerBuffer, 0, 6, token); // 6 = 2 minimal header + 4 key
                         if (readed == 0 || token.IsCancellationRequested)
                         {
                             Close();
@@ -97,7 +94,7 @@ namespace vtortola.WebSockets
                     // Checking for small frame
                     if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
                     {   // Read for medium frame
-                        if (!clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
+                        if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
                         {
                             Close();
                             return;
@@ -107,7 +104,7 @@ namespace vtortola.WebSockets
                         if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
                         { 
                             // read for large frame
-                            if (!clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
+                            if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
                             {
                                 Close();
                                 return;
@@ -129,7 +126,7 @@ namespace vtortola.WebSockets
 
                     if (!Header.Flags.Option.IsData())
                     {
-                        ProcessControlFrame(clientStream);
+                        ProcessControlFrame(_clientStream);
                         readed = 0;
                         Header = null;
                     }
@@ -152,7 +149,7 @@ namespace vtortola.WebSockets
         {
             try
             {
-                var readed = await _client.GetStream().ReadAsync(buffer, offset, count, cancellationToken);
+                var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken);
 
                 DecodeMaskedData(buffer, offset, readed);
 
@@ -171,7 +168,7 @@ namespace vtortola.WebSockets
         {
             try
             {
-                var readed = _client.GetStream().Read(buffer, offset, count);
+                var readed = _clientStream.Read(buffer, offset, count);
 
                 DecodeMaskedData(buffer, offset, readed);
 
@@ -193,7 +190,7 @@ namespace vtortola.WebSockets
         }
 
         readonly Byte[] _controlFrameBuffer = new Byte[125];
-        private void ProcessControlFrame(NetworkStream clientStream)
+        private void ProcessControlFrame(Stream clientStream)
         {
             switch (Header.Flags.Option)
             {
@@ -253,10 +250,9 @@ namespace vtortola.WebSockets
             {
                 _writeSemaphore.Wait(_client.SendTimeout);
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
-                Stream s = _client.GetStream();
-                s.Write(header.Raw, 0, header.Raw.Length);
+                _clientStream.Write(header.Raw, 0, header.Raw.Length);
                 if (count > 0)
-                    s.Write(buffer, offset, count);
+                    _clientStream.Write(buffer, offset, count);
             }
             catch (InvalidOperationException)
             {
@@ -277,10 +273,10 @@ namespace vtortola.WebSockets
             {
                 await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation);
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
-                Stream s = _client.GetStream();
-                await s.WriteAsync(header.Raw, 0, header.Raw.Length);
+
+                await _clientStream.WriteAsync(header.Raw, 0, header.Raw.Length);
                 if(count>0)
-                    await s.WriteAsync(buffer, offset, count);
+                    await _clientStream.WriteAsync(buffer, offset, count);
             }
             catch (InvalidOperationException)
             {
@@ -311,7 +307,8 @@ namespace vtortola.WebSockets
 
                 if (Interlocked.CompareExchange(ref _gracefullyClosed, 1,0) == 0)
                     WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
-                
+
+                _clientStream.Close();
                 _client.Close();
             }
             catch { }
