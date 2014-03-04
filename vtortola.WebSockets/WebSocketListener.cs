@@ -1,16 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using vtortola.WebSockets;
 
 namespace vtortola.WebSockets
 {
@@ -19,21 +12,16 @@ namespace vtortola.WebSockets
         readonly TcpListener _listener;
         readonly TimeSpan _pingInterval;
         Int32 _isDisposed;
-        readonly X509Certificate _certificate;
 
         public Boolean IsStarted { get; private set; }
-        public WebSocketEncodingExtensionCollection Extensions { get; private set; }
+        public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
+        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
         public WebSocketListener(IPEndPoint endpoint,TimeSpan pingInterval)
         {
             _listener = new TcpListener(endpoint);
             _pingInterval = pingInterval;
-            Extensions = new WebSocketEncodingExtensionCollection(this);
-        }
-
-        public WebSocketListener(IPEndPoint endpoint, TimeSpan pingInterval, X509Certificate certificate)
-            :this(endpoint, pingInterval)
-        {
-            _certificate = certificate;
+            MessageExtensions = new WebSocketMessageExtensionCollection(this);
+            ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
         }
 
         public void Start()
@@ -72,19 +60,11 @@ namespace vtortola.WebSockets
 
         private WebSocketClient Negotiate(TcpClient client, TimeSpan pingInterval)
         {
-            WebSocketHandshaker handShaker = new WebSocketHandshaker(Extensions);
-            Stream stream = null;
+            WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
 
-            if (_certificate != null)
-            {
-                var ssl = new SslStream(client.GetStream(), true);
-                ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Tls, true);
-                stream = ssl;
-            }
-            else
-            {
-                stream = client.GetStream();
-            }
+            Stream stream = client.GetStream();
+            foreach (var conExt in ConnectionExtensions)
+                stream = conExt.ExtendConnection(stream);
 
             if (handShaker.NegotiatesWebsocket(stream))
                 return new WebSocketClient(client, stream, handShaker.Request, pingInterval, handShaker.NegotiatedExtensions);

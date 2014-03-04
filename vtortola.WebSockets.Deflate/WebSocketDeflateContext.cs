@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateContext : IWebSocketEncodingExtensionContext
+    public sealed class WebSocketDeflateContext : IWebSocketMessageExtensionContext
     {
         public WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message)
         {

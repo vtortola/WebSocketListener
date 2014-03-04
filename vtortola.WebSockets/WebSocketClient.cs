@@ -17,7 +17,7 @@ namespace vtortola.WebSockets
         Int32 _gracefullyClosed, _closed, _disposed;
         readonly TimeSpan _pingInterval, _pingTimeout;
         DateTime _lastPong;
-        readonly IReadOnlyList<IWebSocketEncodingExtensionContext> _extensions;
+        readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
 
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
@@ -29,7 +29,7 @@ namespace vtortola.WebSockets
         public WebSocketHttpRequest HttpRequest { get; private set; }
         internal WebSocketFrameHeader Header { get; private set; }
                 
-        public WebSocketClient(TcpClient client, Stream clientStream, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketEncodingExtensionContext> extensions)
+        public WebSocketClient(TcpClient client, Stream clientStream, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
             if (client == null)
                 throw new ArgumentNullException("client");

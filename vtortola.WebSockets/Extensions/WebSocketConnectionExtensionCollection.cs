@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketEncodingExtensionCollection : IReadOnlyCollection<IWebSocketEncodingExtension>
+    public sealed class WebSocketConnectionExtensionCollection : IReadOnlyCollection<IWebSocketConnectionExtension>
     {
-        readonly List<IWebSocketEncodingExtension> _extensions;
+        readonly List<IWebSocketConnectionExtension> _extensions;
         readonly WebSocketListener _listener;
 
-        public WebSocketEncodingExtensionCollection(WebSocketListener webSocketListener)
+        public WebSocketConnectionExtensionCollection(WebSocketListener webSocketListener)
         {
             _listener = webSocketListener;
-            _extensions = new List<IWebSocketEncodingExtension>();
+            _extensions = new List<IWebSocketConnectionExtension>();
         }
 
-        public void RegisterExtension(IWebSocketEncodingExtension extension)
+        public void RegisterExtension(IWebSocketConnectionExtension extension)
         {
             if (_listener.IsStarted)
                 throw new WebSocketException("Extensions cannot be added after the service is started");
@@ -30,7 +30,7 @@ namespace vtortola.WebSockets
             get { return _extensions.Count; }
         }
 
-        public IEnumerator<IWebSocketEncodingExtension> GetEnumerator()
+        public IEnumerator<IWebSocketConnectionExtension> GetEnumerator()
         {
             return _extensions.GetEnumerator();
         }
@@ -40,4 +40,5 @@ namespace vtortola.WebSockets
             return _extensions.GetEnumerator();
         }
     }
+
 }

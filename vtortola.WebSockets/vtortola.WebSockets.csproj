@@ -44,7 +44,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions\WebSocketEncodingExtensionCollection.cs" />
+    <Compile Include="Extensions\IWebSocketConnectionExtension.cs" />
+    <Compile Include="Extensions\WebSocketSecureConnectionExtension.cs" />
+    <Compile Include="Extensions\WebSocketConnectionExtensionCollection.cs" />
+    <Compile Include="Extensions\WebSocketMessageExtensionCollection.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeaderFlags.cs" />
     <Compile Include="HttpNegotiation\HttpHeadersCollection.cs" />
     <Compile Include="HttpNegotiation\WebSocketException.cs" />
@@ -57,7 +60,7 @@
     <Compile Include="WebSocketException.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeader.cs" />
     <Compile Include="FrameHeader\WebSocketFrameOption.cs" />
-    <Compile Include="Extensions\IWebSocketEncodingExtension.cs" />
+    <Compile Include="Extensions\IWebSocketMessageExtension.cs" />
     <Compile Include="Streams\WebSocketMessageReadNetworkStream.cs" />
     <Compile Include="Streams\WebSocketMessageStream.cs" />
     <Compile Include="WebSocketListener.cs" />

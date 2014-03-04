@@ -16,10 +16,10 @@ namespace vtortola.WebSockets
     {
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
-        private WebSocketEncodingExtensionCollection RequestExtensions;
+        private WebSocketMessageExtensionCollection RequestExtensions;
         public WebSocketHttpRequest Request { get; private set; }
         readonly List<WebSocketExtension> _responseExtensions;
-        public List<IWebSocketEncodingExtensionContext> NegotiatedExtensions { get; private set; }
+        public List<IWebSocketMessageExtensionContext> NegotiatedExtensions { get; private set; }
         public Boolean IsWebSocketRequest
         {
             get
@@ -31,7 +31,7 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
             }
         }
-        public WebSocketHandshaker(WebSocketEncodingExtensionCollection extensions)
+        public WebSocketHandshaker(WebSocketMessageExtensionCollection extensions)
         {
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
@@ -40,7 +40,7 @@ namespace vtortola.WebSockets
             Request.Headers = new HttpHeadersCollection();
             RequestExtensions = extensions;
             _responseExtensions = new List<WebSocketExtension>();
-            NegotiatedExtensions = new List<IWebSocketEncodingExtensionContext>();
+            NegotiatedExtensions = new List<IWebSocketMessageExtensionContext>();
         }
 
         public Boolean NegotiatesWebsocket(Stream clientStream)
@@ -59,7 +59,7 @@ namespace vtortola.WebSockets
 
         private void SelectExtensions()
         {
-            IWebSocketEncodingExtensionContext context;
+            IWebSocketMessageExtensionContext context;
             WebSocketExtension extensionResponse;
             foreach (var extRequest in Request.WebSocketExtensions)
             {

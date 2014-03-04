@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public interface IWebSocketEncodingExtension
+    public interface IWebSocketMessageExtension
     {
         String Name { get;}
         Boolean IsRequired { get; }
         Int32 Order { get; }
-        Boolean TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketEncodingExtensionContext context);
+        Boolean TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketMessageExtensionContext context);
     }
 
-    public interface IWebSocketEncodingExtensionContext
+    public interface IWebSocketMessageExtensionContext
     {
         WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message);
         WebSocketMessageWriteStream ExtendWriter(WebSocketMessageWriteStream message);

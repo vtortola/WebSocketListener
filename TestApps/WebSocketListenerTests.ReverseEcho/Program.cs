@@ -38,7 +38,8 @@ namespace WebSocketListenerTests.ReverseEcho
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-            //server.Extensions.RegisterExtension(new WebSocketDeflateExtension());
+            //server.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
+            //server.ConnectionExtensions.RegisterExtension(new SslWebSocketConnectionExtension(certificate));
             server.Start();
 
             Log("Reverse Echo Server started at " + endpoint.ToString());
