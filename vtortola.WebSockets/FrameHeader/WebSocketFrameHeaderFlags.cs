@@ -30,18 +30,38 @@ namespace vtortola.WebSockets
 
     public sealed class WebSocketFrameHeaderFlags
     {
-        readonly Boolean[] _byte1, _byte2;
+        Byte _byte1, _byte2;
 
-        public Boolean FIN { get { return _byte1[7]; } private set { _byte1[7] = value; } }
-        public Boolean RSV1 { get { return _byte1[6]; } private set { _byte1[6] = value; } }
-        public Boolean RSV2 { get { return _byte1[5]; } private set { _byte1[5] = value; } }
-        public Boolean RSV3 { get { return _byte1[4]; } private set { _byte1[4] = value; } }
-        public Boolean OPT4 { get { return _byte1[3]; } private set { _byte1[3] = value; } }
-        public Boolean OPT3 { get { return _byte1[2]; } private set { _byte1[2] = value; } }
-        public Boolean OPT2 { get { return _byte1[1]; } private set { _byte1[1] = value; } }
-        public Boolean OPT1 { get { return _byte1[0]; } private set { _byte1[0] = value; } }
-        public Boolean MASK { get { return _byte2[7]; } private set { _byte2[7] = value; } }
+        public Boolean FIN { get { return GetBit(_byte1, 7); } private set { SetBit(ref _byte1, 7, value); } }
+        public Boolean RSV1 { get { return GetBit(_byte1, 6); } private set { SetBit(ref _byte1, 6, value); } }
+        public Boolean RSV2 { get { return GetBit(_byte1, 5); } private set { SetBit(ref _byte1, 5, value); } }
+        public Boolean RSV3 { get { return GetBit(_byte1, 4); } private set { SetBit(ref _byte1, 4, value); } }
+        public Boolean OPT4 { get { return GetBit(_byte1, 3); } private set { SetBit(ref _byte1, 3, value); } }
+        public Boolean OPT3 { get { return GetBit(_byte1, 2); } private set { SetBit(ref _byte1, 2, value); } }
+        public Boolean OPT2 { get { return GetBit(_byte1, 1); } private set { SetBit(ref _byte1, 1, value); } }
+        public Boolean OPT1 { get { return GetBit(_byte1, 0); } private set { SetBit(ref _byte1, 0, value); } }
+        public Boolean MASK { get { return GetBit(_byte2, 7); } private set { SetBit(ref _byte2, 7, value); } }
         public WebSocketFrameOption Option { get; private set; }
+
+        public static void SetBit(ref byte aByte, int pos, bool value)
+        {
+            if (value)
+            {
+                //left-shift 1, then bitwise OR
+                aByte = (byte)(aByte | (1 << pos));
+            }
+            else
+            {
+                //left-shift 1, then take complement, then bitwise AND
+                aByte = (byte)(aByte & ~(1 << pos));
+            }
+        }
+
+        public static bool GetBit(byte aByte, int pos)
+        {
+            //left-shift 1, then bitwise AND, then check for non-zero
+            return ((aByte & (1 << pos)) != 0);
+        }
 
         public static Boolean TryParse(Byte[] buffer, Int32 offset, out WebSocketFrameHeaderFlags headerFlags)
         {
@@ -49,53 +69,35 @@ namespace vtortola.WebSockets
             if (buffer == null || buffer.Length - offset < 2)
                 return false;
 
-            Boolean[] byte1Flags = new Boolean[8];
-            Boolean[] byte2Flags = new Boolean[8];
-            Boolean[] option = new Boolean[8];
-
-            Byte[] byte1 = new Byte[] { buffer[0] };
-            Byte[] byte2 = new Byte[] { buffer[1] };
-            Byte[] optionByte = new Byte[1];
-
-            BitArray bitArray = new BitArray(byte1);
-            bitArray.CopyTo(byte1Flags, 0);
-            bitArray.CopyTo(option, 0);
-
-            bitArray = new BitArray(byte2);
-            bitArray.CopyTo(byte2Flags, 0);
-
-            option[7] = false;
-            option[6] = false;
-            option[5] = false;
-            option[4] = false;
-
-            bitArray = new BitArray(option);
-            bitArray.CopyTo(optionByte,0);
-
-            Int32 value = optionByte[0];
+            var optionByte = buffer[0];
+            SetBit(ref optionByte, 7, false);
+            SetBit(ref optionByte, 6, false);
+            SetBit(ref optionByte, 5, false);
+            SetBit(ref optionByte, 4, false);
+            Int32 value = optionByte;
             value = value > 128 ? value - 128 : value;
 
             if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))
                 return false;
 
-            headerFlags = new WebSocketFrameHeaderFlags(byte1Flags, byte2Flags ,(WebSocketFrameOption)value); 
+            headerFlags = new WebSocketFrameHeaderFlags(buffer[0],buffer[1],(WebSocketFrameOption)value); 
             return true;
         }
 
-        private WebSocketFrameHeaderFlags(Boolean[] byte1Flags, Boolean[] byte2Flags, WebSocketFrameOption option)
+        private WebSocketFrameHeaderFlags(Byte byte1, Byte byte2, WebSocketFrameOption option)
         {
-            _byte1 = byte1Flags;
-            _byte2 = byte2Flags;
+            _byte1 = byte1;
+            _byte2 = byte2;
             Option = option;
         }
 
         public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             this.Option = option;
-            _byte1 = new Boolean[8];
-            _byte2 = new Boolean[8];
+            _byte1 = new Byte();
+            _byte2 = new Byte();
 
-            _byte1[7] = isComplete;
+            SetBit(ref _byte1, 7, isComplete);
 
             this.RSV1 = extensionFlags.Rsv1;
             this.RSV2 = extensionFlags.Rsv2;
@@ -125,8 +127,7 @@ namespace vtortola.WebSockets
 
         }
 
-        readonly Byte[] _byteHead = new Byte[2];
-        public Byte[] ToBytes(UInt64 length)
+        public void ToBytes(UInt64 length, Byte[] buffer)
         {
             Int32 headerLength;
             if (length <= 125)
@@ -138,15 +139,8 @@ namespace vtortola.WebSockets
             else
                 throw new WebSocketException("Cannot create a header with a length of " + length);
 
-            BitArray bitArray1 = new BitArray(_byte1);
-
-            bitArray1.CopyTo(_byteHead, 0);
-
-            BitArray bitArray2 = new BitArray(_byte2);
-            bitArray2.CopyTo(_byteHead, 1);
-            _byteHead[1] += (Byte)headerLength;
-
-            return _byteHead;
+            buffer[0] = _byte1;
+            buffer[1] = (Byte)(_byte2 + headerLength);
         }
     }
 }

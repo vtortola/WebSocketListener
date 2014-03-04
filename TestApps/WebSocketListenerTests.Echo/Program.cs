@@ -74,6 +74,8 @@ namespace WebSocketListenerTests.Echo
             try
             {
                 _connected.Increment();
+                Byte[] buffer = new Byte[2046];
+                Int32 readed;
                 while (ws.IsConnected && !token.IsCancellationRequested)
                 {
                     using (var messageReader = await ws.ReadMessageAsync(token).ConfigureAwait(false))
@@ -81,15 +83,20 @@ namespace WebSocketListenerTests.Echo
                         if (messageReader == null)
                             continue; // disconnection
 
-                        String msg = String.Empty;
-
                         switch (messageReader.MessageType)
                         {
                             case WebSocketMessageType.Text:
                                 
                                 _inMessages.Increment();
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
-                                    await messageReader.CopyToAsync(messageWriter, 8192).ConfigureAwait(false);
+                                {
+                                    readed = -1;
+                                    while(readed!=0)
+                                    {
+                                        readed = messageReader.Read(buffer, 0, buffer.Length);
+                                        messageWriter.Write(buffer, 0, readed);
+                                    }
+                                }
                                 _outMessages.Increment();
 
                                 break;

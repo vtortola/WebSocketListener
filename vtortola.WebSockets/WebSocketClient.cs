@@ -28,6 +28,7 @@ namespace vtortola.WebSockets
         public Boolean IsConnected { get { return _closed != 1 && _client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
         internal WebSocketFrameHeader Header { get; private set; }
+        internal readonly Byte[] WriteBufferTail;
                 
         public WebSocketClient(TcpClient client, Stream clientStream, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
@@ -42,6 +43,7 @@ namespace vtortola.WebSockets
             _pingInterval = TimeSpan.FromMilliseconds( Math.Min(5000, pingTimeOut.TotalMilliseconds / 4));
             _extensions = extensions;
             _clientStream = clientStream;
+            WriteBufferTail = new Byte[_client.SendBufferSize];
             PingAsync();
         }
                 
@@ -250,7 +252,7 @@ namespace vtortola.WebSockets
             {
                 _writeSemaphore.Wait(_client.SendTimeout);
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
-                _clientStream.Write(header.Raw, 0, header.Raw.Length);
+                _clientStream.Write(header.Raw, 0, header.HeaderLength);
                 if (count > 0)
                     _clientStream.Write(buffer, offset, count);
             }
@@ -274,7 +276,7 @@ namespace vtortola.WebSockets
                 await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation);
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
 
-                await _clientStream.WriteAsync(header.Raw, 0, header.Raw.Length);
+                await _clientStream.WriteAsync(header.Raw, 0, header.HeaderLength);
                 if(count>0)
                     await _clientStream.WriteAsync(buffer, offset, count);
             }

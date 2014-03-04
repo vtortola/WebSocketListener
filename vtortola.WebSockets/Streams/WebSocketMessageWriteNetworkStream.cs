@@ -21,7 +21,7 @@ namespace vtortola.WebSockets
         public WebSocketMessageWriteNetworkStream(WebSocketClient client, WebSocketMessageType messageType)
         {
             _internalUsedBufferLength = 0;
-            _internalBuffer = new Byte[client.SendBufferSize];
+            _internalBuffer = client.WriteBufferTail;
             _messageType = messageType;
             _client = client;
         }

@@ -13,7 +13,7 @@ namespace vtortola.WebSockets
         public UInt64 ContentLength { get; private set; }
         public Int32 HeaderLength { get; private set; }
         public WebSocketFrameHeaderFlags Flags { get; private set; }
-        public Byte[] Raw { get; set; }
+        public Byte[] Raw { get; internal set; }
         public UInt64 RemainingBytes { get; private set; }
 
         readonly Byte[] _key;
@@ -88,7 +88,8 @@ namespace vtortola.WebSockets
                     ContentLength = contentLength,
                     HeaderLength = headerLength,
                     Flags = flags,
-                    RemainingBytes = contentLength
+                    RemainingBytes = contentLength,
+                    Raw = frameStart
                 };
 
                 if (flags.MASK)
@@ -109,9 +110,8 @@ namespace vtortola.WebSockets
             var flags = new WebSocketFrameHeaderFlags(isComplete, headerSent ? WebSocketFrameOption.Continuation : option, extensionFlags);
 
             Int32 headerLength;
-            var raw = flags.ToBytes((UInt64)count);
-
-            List<Byte> arrayMaker = new List<Byte>(raw);
+            Byte[] headerBuffer = new Byte[14];
+            flags.ToBytes((UInt64)count,headerBuffer);
             
             if (count <= 125)
             {
@@ -119,13 +119,16 @@ namespace vtortola.WebSockets
             }
             else if (count < UInt16.MaxValue)
             {
-                Byte[] i16 = BitConverter.GetBytes((UInt16)count).Reverse().ToArray();
-                arrayMaker.AddRange(i16);
+                Byte[] i16 = BitConverter.GetBytes((UInt16)count);
+                i16.ReversePortion(0, i16.Length);
+                i16.CopyTo(headerBuffer, 2);
                 headerLength = 4;
             }
             else if ((UInt64)count < UInt64.MaxValue)
             {
-                arrayMaker.AddRange(BitConverter.GetBytes((UInt64)count).Reverse().ToArray());
+                var ui64 = BitConverter.GetBytes((UInt64)count);
+                ui64.ReversePortion(0, ui64.Length);
+                ui64.CopyTo(headerBuffer, 2);
                 headerLength = 10;
             }
             else
@@ -136,7 +139,7 @@ namespace vtortola.WebSockets
                 HeaderLength = headerLength,
                 ContentLength = (UInt64)count,
                 Flags = flags,
-                Raw = arrayMaker.ToArray(),
+                Raw = headerBuffer,
                 RemainingBytes = (UInt64)count
             };
         }
