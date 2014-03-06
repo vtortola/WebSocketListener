@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Deflate
 {
+    [Obsolete("It does not work fully, can only decompress", false)]
     public sealed class WebSocketDeflateExtension:IWebSocketMessageExtension
     {
         public string Name { get { return "permessage-deflate"; } }

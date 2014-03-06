@@ -10,19 +10,20 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
+    [Obsolete("It does not work",false)]
     public sealed class WebSocketSecureConnectionExtension : IWebSocketConnectionExtension
     {
-        readonly X509Certificate _certificate;
+        readonly X509Certificate2 _certificate;
 
-        public WebSocketSecureConnectionExtension(X509Certificate certificate)
+        public WebSocketSecureConnectionExtension(X509Certificate2 certificate)
         {
             _certificate = certificate;
         }
 
         public Stream ExtendConnection(Stream stream)
         {
-            var ssl = new SslStream(stream, true);
-            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Tls, true);
+            var ssl = new SslStream(stream, false);
+            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default, true);
             return ssl;
         }
 

@@ -93,7 +93,7 @@ namespace WebSocketListenerTests.Echo
                                     readed = -1;
                                     while(readed!=0)
                                     {
-                                        readed = messageReader.Read(buffer, 0, buffer.Length);
+                                        readed = await messageReader.ReadAsync(buffer, 0, buffer.Length);
                                         messageWriter.Write(buffer, 0, readed);
                                     }
                                 }

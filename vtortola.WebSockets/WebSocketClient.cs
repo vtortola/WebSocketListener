@@ -49,11 +49,12 @@ namespace vtortola.WebSockets
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            await AwaitHeaderAsync(token);
-            WebSocketMessageReadStream reader = new WebSocketMessageReadNetworkStream(this, Header);
+            if(Header==null)
+                await AwaitHeaderAsync(token);
 
             if (this.IsConnected && Header != null)
             {
+                WebSocketMessageReadStream reader = new WebSocketMessageReadNetworkStream(this, Header);
                 foreach (var extension in _extensions)
                     reader = extension.ExtendReader(reader);
                 return reader;
@@ -73,14 +74,85 @@ namespace vtortola.WebSockets
         }
 
         readonly Byte[] _headerBuffer = new Byte[14];
-        private async Task AwaitHeaderAsync(CancellationToken token)
+        private WebSocketFrameHeader ParseHeader(ref Int32 readed, CancellationToken token)
+        {
+            WebSocketFrameHeader header;
+            // Checking for small frame
+            if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
+            {   // Read for medium frame
+                if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
+                {
+                    Close();
+                    return null;
+                }
+
+                // check for medium frame
+                if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
+                {
+                    // read for large frame
+                    if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
+                    {
+                        Close();
+                        return null;
+                    }
+
+                    // check for large frame
+                    if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
+                        throw new WebSocketException("Cannot understand frame header");
+                }
+            }
+            return header;
+        }
+        internal void AwaitHeader()
         {
             try
             {
                 Int32 readed = 0;
                 while (this.IsConnected && Header == null)
                 {
-                    WebSocketFrameHeader header;
+                    do
+                    {
+                        // read small frame
+                        readed +=  _clientStream.Read(_headerBuffer, 0, 6); // 6 = 2 minimal header + 4 key
+                        if (readed == 0 )
+                        {
+                            Close();
+                            return;
+                        }
+                    }
+                    while (readed < 6);
+
+                    Header = ParseHeader(ref readed, CancellationToken.None);
+                    if (Header == null)
+                    {
+                        Close();
+                        return;
+                    }
+
+                    if (!Header.Flags.Option.IsData())
+                    {
+                        ProcessControlFrame(_clientStream);
+                        readed = 0;
+                        Header = null;
+                    }
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                Close();
+            }
+            catch (IOException)
+            {
+                Close();
+            }
+        }  
+        internal async Task AwaitHeaderAsync(CancellationToken token)
+        {
+            try
+            {
+                Int32 readed = 0;
+                while (this.IsConnected && Header == null)
+                {
                     do
                     { 
                         // read small frame
@@ -93,38 +165,12 @@ namespace vtortola.WebSockets
                     }
                     while (readed < 6);
 
-                    // Checking for small frame
-                    if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
-                    {   // Read for medium frame
-                        if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
-                        {
-                            Close();
-                            return;
-                        }
-
-                        // check for medium frame
-                        if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
-                        { 
-                            // read for large frame
-                            if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
-                            {
-                                Close();
-                                return;
-                            }
-
-                            // check for large frame
-                            if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
-                                throw new WebSocketException("Cannot understand frame header");
-                        }
-                    }
-
-                    if (token.IsCancellationRequested)
+                    Header = ParseHeader(ref readed, token);
+                    if(Header == null || token.IsCancellationRequested)
                     {
                         Close();
                         return;
                     }
-
-                    Header = header;
 
                     if (!Header.Flags.Option.IsData())
                     {
@@ -197,11 +243,9 @@ namespace vtortola.WebSockets
             switch (Header.Flags.Option)
             {
                 case WebSocketFrameOption.Continuation:
-                    break;
-
                 case WebSocketFrameOption.Text:
                 case WebSocketFrameOption.Binary:
-                    throw new ArgumentException("Text or Binary are not protocol frames");
+                    throw new ArgumentException("Text, Continuation or Binary are not protocol frames");
                     break;
 
                 case WebSocketFrameOption.ConnectionClose:
@@ -325,6 +369,7 @@ namespace vtortola.WebSockets
 
                 try
                 {
+                    _writeSemaphore.Dispose();
                     this.Close();
                     _client.Client.Dispose();
                 }

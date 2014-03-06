@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable")]
     public class WebSocketException : Exception
     {
         public WebSocketException(String message)

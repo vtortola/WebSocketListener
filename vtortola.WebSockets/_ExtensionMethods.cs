@@ -13,7 +13,7 @@ namespace vtortola.WebSockets
     {
         internal static Boolean IsData(this WebSocketFrameOption option)
         {
-            return option == WebSocketFrameOption.Binary || option == WebSocketFrameOption.Text;
+            return option == WebSocketFrameOption.Binary || option == WebSocketFrameOption.Text || option == WebSocketFrameOption.Continuation;
         }
     }
 

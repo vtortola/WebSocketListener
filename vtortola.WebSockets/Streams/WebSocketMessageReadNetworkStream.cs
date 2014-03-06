@@ -11,6 +11,7 @@ namespace vtortola.WebSockets
     {
         readonly WebSocketClient _client;
         readonly WebSocketFrameHeader _header;
+        Boolean _hasPendingFrames;
         public override WebSocketMessageType MessageType 
         { 
             get { return (WebSocketMessageType)_header.Flags.Option; } 
@@ -22,8 +23,16 @@ namespace vtortola.WebSockets
 
         public WebSocketMessageReadNetworkStream(WebSocketClient client, WebSocketFrameHeader header)
         {
+            if(client == null)
+                throw new ArgumentNullException("client");
+            if(header == null)
+                throw new ArgumentNullException("header");
+
             _client = client;
             _header = header;
+            _hasPendingFrames = !_header.Flags.FIN;
+            if (header.Flags.Option != WebSocketFrameOption.Binary && header.Flags.Option != WebSocketFrameOption.Text)
+                throw new WebSocketException("WebSocketMessageReadNetworkStream can only start with a Text or Binary frame, not " + header.Flags.Option.ToString());
         }
 
         private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
@@ -45,32 +54,71 @@ namespace vtortola.WebSockets
 
         public override Int32 Read(Byte[] buffer, Int32 offset, Int32 count)
         {
-            count = CheckBoundaries(buffer, offset, count);
+            Int32 readed = 0;
+            do
+            {
+                if (!_client.IsConnected)
+                    return 0;
 
-            if (count == 0 || !_client.IsConnected)
-                return 0;
+                var checkedcount = CheckBoundaries(buffer, offset, count);
 
-            Int32 readed = _client.ReadInternal(buffer, offset, count);
-
-            if (_client.Header.RemainingBytes == 0)
-                _client.CleanHeader();
+                if (checkedcount == 0 && !_hasPendingFrames)
+                    return 0;
+                else if (checkedcount == 0 && _hasPendingFrames)
+                    LoadNewHeader();
+                else
+                {
+                    readed = _client.ReadInternal(buffer, offset, checkedcount);
+                    if (_client.Header.RemainingBytes == 0)
+                        LoadNewHeader();
+                }
+            } while (readed == 0 && _client.Header.RemainingBytes != 0);
 
             return readed;
         }
 
         public override async Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
         {
-            count = CheckBoundaries(buffer, offset, count);
+            Int32 readed = 0;
+            do
+            {
+                if (!_client.IsConnected || cancellationToken.IsCancellationRequested)
+                    return 0;
 
-            if (count == 0 || !_client.IsConnected)
-                return 0;
+                var checkedcount = CheckBoundaries(buffer, offset, count);
 
-            Int32 readed = await _client.ReadInternalAsync(buffer, offset, count, cancellationToken);
-
-            if (_client.Header.RemainingBytes == 0)
-                _client.CleanHeader();
+                if(checkedcount == 0 && !_hasPendingFrames)
+                    return 0;
+                else if (checkedcount == 0 && _hasPendingFrames)
+                    await LoadNewHeaderAsync(cancellationToken);
+                else
+                {
+                    readed = await _client.ReadInternalAsync(buffer, offset, checkedcount, cancellationToken);
+                    if (_client.Header.RemainingBytes == 0)
+                        await LoadNewHeaderAsync(cancellationToken);
+                }
+            } while (readed ==0 && _client.Header.RemainingBytes != 0);
 
             return readed;
+        }
+
+        private void LoadNewHeader()
+        {
+            _client.CleanHeader();
+            if (_hasPendingFrames)
+            {
+                _client.AwaitHeader();
+                _hasPendingFrames = _client.Header != null && !_client.Header.Flags.FIN && _client.Header.Flags.Option == WebSocketFrameOption.Continuation;
+            }
+        }
+        private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
+        {
+            _client.CleanHeader();
+            if (_hasPendingFrames)
+            {
+                await _client.AwaitHeaderAsync(cancellationToken);
+                _hasPendingFrames = _client.Header != null && !_client.Header.Flags.FIN && _client.Header.Flags.Option == WebSocketFrameOption.Continuation;
+            }
         }
     }
 

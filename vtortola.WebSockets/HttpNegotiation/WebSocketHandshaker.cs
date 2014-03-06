@@ -72,6 +72,7 @@ namespace vtortola.WebSockets
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         private void WriteHttpResponse(Stream clientStream)
         {
             using (StreamWriter sw = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
