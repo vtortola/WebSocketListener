@@ -53,7 +53,7 @@ namespace vtortola.WebSockets
 
     internal static class NetworkStreamExtensions
     {
-        internal static Boolean ReadSynchronouslyUntilCount(this Stream stream, ref Int32 readed, Byte[] buffer, Int32 offset, Int32 count, Int32 until, CancellationToken token)
+        internal static Boolean ReadSynchronouslyUntilCount(this Stream stream, ref Int32 readed, Byte[] buffer, Int32 offset, Int32 until, CancellationToken token)
         {
             do
             {
@@ -61,7 +61,7 @@ namespace vtortola.WebSockets
                     return false;
 
                 Int32 r = 0;
-                r= stream.Read(buffer, readed, 2);
+                r= stream.Read(buffer, readed, until - readed);
                 if (r == 0)
                     return false;
                 readed += r;

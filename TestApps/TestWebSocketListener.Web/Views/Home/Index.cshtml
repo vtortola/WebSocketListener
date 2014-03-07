@@ -23,7 +23,7 @@
     var characters1 = document.getElementById('characters1');
     var characters2 = document.getElementById('characters2');
 
-    var ws = new WebSocket("ws://127.0.0.1:8001", "text");
+    var ws = new WebSocket("wss://localhost:8005", "text");
     ws.onopen = function (event) {
         button.disabled = false;
         text.disabled = false;

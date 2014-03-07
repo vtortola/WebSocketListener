@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    [Obsolete("It does not work",false)]
     public sealed class WebSocketSecureConnectionExtension : IWebSocketConnectionExtension
     {
         readonly X509Certificate2 _certificate;
@@ -23,13 +22,15 @@ namespace vtortola.WebSockets
         public Stream ExtendConnection(Stream stream)
         {
             var ssl = new SslStream(stream, false);
-            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default, true);
+            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default,true);
             return ssl;
         }
 
-        public int Order
+        public async Task<Stream> ExtendConnectionAsync(Stream stream)
         {
-            get { return 0; }
+            var ssl = new SslStream(stream, false);
+            await ssl.AuthenticateAsServerAsync(_certificate, false, SslProtocols.Default, true);
+            return ssl;
         }
     }
 }

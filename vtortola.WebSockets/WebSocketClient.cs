@@ -77,10 +77,20 @@ namespace vtortola.WebSockets
         private WebSocketFrameHeader ParseHeader(ref Int32 readed, CancellationToken token)
         {
             WebSocketFrameHeader header;
+
+            if(readed<6)
+            {
+                if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, token)) // 6 = 2 header + 4 key
+                {
+                    Close();
+                    return null;
+                }
+            }
+
             // Checking for small frame
             if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
             {   // Read for medium frame
-                if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 2, 8, token)) // 8 = 2 header + 2 size + 4 key
+                if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 8, token)) // 8 = 2 header + 2 size + 4 key
                 {
                     Close();
                     return null;
@@ -90,7 +100,7 @@ namespace vtortola.WebSockets
                 if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, out header))
                 {
                     // read for large frame
-                    if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 6, 14, token)) // 14 = 2 header + 8 size + 4 key
+                    if (!_clientStream.ReadSynchronouslyUntilCount(ref readed, _headerBuffer, readed, 14, token)) // 14 = 2 header + 8 size + 4 key
                     {
                         Close();
                         return null;
@@ -107,20 +117,15 @@ namespace vtortola.WebSockets
         {
             try
             {
-                Int32 readed = 0;
                 while (this.IsConnected && Header == null)
                 {
-                    do
+                    // read small frame
+                    Int32 readed =  _clientStream.Read(_headerBuffer, 0, 6); // 6 = 2 minimal header + 4 key
+                    if (readed == 0 )
                     {
-                        // read small frame
-                        readed +=  _clientStream.Read(_headerBuffer, 0, 6); // 6 = 2 minimal header + 4 key
-                        if (readed == 0 )
-                        {
-                            Close();
-                            return;
-                        }
+                        Close();
+                        return;
                     }
-                    while (readed < 6);
 
                     Header = ParseHeader(ref readed, CancellationToken.None);
                     if (Header == null)
@@ -150,20 +155,15 @@ namespace vtortola.WebSockets
         {
             try
             {
-                Int32 readed = 0;
                 while (this.IsConnected && Header == null)
                 {
-                    do
-                    { 
                         // read small frame
-                        readed += await _clientStream.ReadAsync(_headerBuffer, 0, 6, token); // 6 = 2 minimal header + 4 key
-                        if (readed == 0 || token.IsCancellationRequested)
-                        {
-                            Close();
-                            return;
-                        }
+                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer, 0, 6, token); // 6 = 2 minimal header + 4 key
+                    if (readed == 0 || token.IsCancellationRequested)
+                    {
+                        Close();
+                        return;
                     }
-                    while (readed < 6);
 
                     Header = ParseHeader(ref readed, token);
                     if(Header == null || token.IsCancellationRequested)

@@ -32,14 +32,14 @@ namespace WebSocketListenerTests.ReverseEcho
             X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
             store.Open(OpenFlags.ReadOnly);
             store.Certificates.Count.ToString();
-            var certificate = store.Certificates[2];
+            var certificate = store.Certificates[1];
             store.Close();
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8001);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
             //server.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
-            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
 
             Log("Reverse Echo Server started at " + endpoint.ToString());

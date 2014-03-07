@@ -36,7 +36,7 @@
    
     describe("Binary: ", function () {
         
-        var ws = new WebSocket("ws://127.0.0.1:8001/","text");
+        var ws = new WebSocket("wss://localhost:8005/","text");
         ws.binaryType = 'arraybuffer';
 
         it("Simple binary array test", function () {
@@ -61,7 +61,7 @@
 
             waitsFor(function () {
                 return result.length == 4;
-            }, "Error", 1000);
+            }, "Error", 2000);
 
             runs(function () {
                 expect(result[0]).toBe(0x01);
@@ -88,7 +88,7 @@
             waitsFor(function () {
                 //console.log(counter);
                 return counter == binary.length;
-            }, "Error", 1000);
+            }, "Error", 2000);
 
             runs(function () {
                 expect(binary.length).toBe(counter);

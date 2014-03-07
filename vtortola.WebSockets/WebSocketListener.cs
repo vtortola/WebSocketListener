@@ -71,6 +71,21 @@ namespace vtortola.WebSockets
 
             return null;
         }
+
+        private async Task<WebSocketClient> NegotiateAsync(TcpClient client, TimeSpan pingInterval)
+        {
+            WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
+
+            Stream stream = client.GetStream();
+            foreach (var conExt in ConnectionExtensions)
+                stream = await conExt.ExtendConnectionAsync(stream);
+
+            if (handShaker.NegotiatesWebsocket(stream))
+                return new WebSocketClient(client, stream, handShaker.Request, pingInterval, handShaker.NegotiatedExtensions);
+
+            return null;
+        }
+
         private void Dispose(Boolean disposing)
         {
             if(Interlocked.CompareExchange(ref _isDisposed,1,0)==0)
