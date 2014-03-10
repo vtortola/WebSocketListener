@@ -21,10 +21,6 @@ namespace vtortola.WebSockets
 
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
-        public int ReceiveBufferSize { get { return _client.ReceiveBufferSize; } set { _client.ReceiveBufferSize = value; } }
-        public int ReceiveTimeout { get { return _client.ReceiveTimeout; } set { _client.ReceiveTimeout = value; } }
-        public int SendBufferSize { get { return _client.SendBufferSize; } set { _client.SendBufferSize = value; } }
-        public int SendTimeout { get { return _client.SendTimeout; } set { _client.SendTimeout = value; } }
         public Boolean IsConnected { get { return _closed != 1 && _client.Client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
         internal WebSocketFrameHeader Header { get; private set; }
@@ -44,6 +40,7 @@ namespace vtortola.WebSockets
             _extensions = extensions;
             _clientStream = clientStream;
             WriteBufferTail = new Byte[_client.SendBufferSize];
+
             PingAsync();
         }
                 
@@ -294,7 +291,9 @@ namespace vtortola.WebSockets
         {
             try
             {
-                _writeSemaphore.Wait(_client.SendTimeout);
+                if (!_writeSemaphore.Wait(_client.SendTimeout))
+                    throw new WebSocketException("Write timeout");
+
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 _clientStream.Write(header.Raw, 0, header.HeaderLength);
                 if (count > 0)
@@ -317,7 +316,9 @@ namespace vtortola.WebSockets
         {
             try
             {
-                await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation);
+               if(!await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation))
+                   throw new WebSocketException("Write timeout");
+
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
 
                 await _clientStream.WriteAsync(header.Raw, 0, header.HeaderLength);

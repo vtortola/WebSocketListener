@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,9 +26,17 @@ namespace WebSocketListenerTests.Echo
             _log.Info("Starting Echo Server");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
+            X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            store.Open(OpenFlags.ReadOnly);
+            store.Certificates.Count.ToString();
+            var certificate = store.Certificates[1];
+            store.Close();
+
+
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8002);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
+            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());

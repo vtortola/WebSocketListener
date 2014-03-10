@@ -49,6 +49,7 @@ namespace vtortola.WebSockets
                     var client = await acceptTask;
                     if (client.Connected && !token.IsCancellationRequested)
                     {
+                        ConfigureTcpClient(client);
                         var ws = Negotiate(client, _pingInterval);
                         if (ws != null)
                             return ws;
@@ -56,6 +57,12 @@ namespace vtortola.WebSockets
                 }
             }
             return null;
+        }
+
+        private static void ConfigureTcpClient(TcpClient client)
+        {
+            client.SendTimeout = 5000;
+            client.ReceiveTimeout = 5000;
         }
 
         private WebSocketClient Negotiate(TcpClient client, TimeSpan pingInterval)
