@@ -6,6 +6,7 @@ WebSocketListener
 `WebSocketListener` is a C# implementation of an asynchronous **WebSocket server** using a `TcpListener`. It **does not use** the `System.Net.WebSockets` namespace, and it **does not need** *Internet Information Server 8*, it should work in any operating system running *Microsoft .NET v4.5*.
 
  * It can work with both **Text or Binary** messages.
+ * WSS support (WebSocket Secure through TLS).
  * It is **asynchronous**. 
  * It has the **Ping/Pong** functionality **built-in**.
  * It allows to **send and receive messages as streams**. WebSocket messages are represented as delimited stream-like objects, this allows integration with other .NET objects like e.g. `StreamReader` and `StreamWriter`. Two different WebSocket messages, yield two different streams.
