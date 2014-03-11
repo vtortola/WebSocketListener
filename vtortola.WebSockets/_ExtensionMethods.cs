@@ -31,6 +31,18 @@ namespace vtortola.WebSockets
                 array[i] = array[i + from];
         }
 
+        internal static void ShiftRight(this Byte[] array, Int32 to, Int32 count)
+        {
+            if (count + to > array.Length)
+                throw new ArgumentException("The array is to small");
+
+            if (count < 1)
+                return;
+
+            for (int i = (count-1)+to; i >= to; i--)
+                array[i] = array[i - to];
+        }
+
         internal static void ReversePortion(this Byte[] array, Int32 from, Int32 count)
         {
             if (count + from > array.Length)

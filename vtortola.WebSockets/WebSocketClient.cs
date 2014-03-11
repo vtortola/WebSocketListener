@@ -230,8 +230,7 @@ namespace vtortola.WebSockets
         }
         private void DecodeMaskedData(Byte[] buffer, Int32 bufferOffset, int readed)
         {
-            for (int i = 0; i < readed; i++)
-                buffer[i + bufferOffset] = Header.DecodeByte(buffer[i + bufferOffset]);
+            Header.DecodeBytes(buffer, bufferOffset, readed);
         }
 
         readonly Byte[] _controlFrameBuffer = new Byte[125];
@@ -260,8 +259,7 @@ namespace vtortola.WebSockets
                     while (Header.RemainingBytes > 0)
                     {
                         readed = clientStream.Read(_controlFrameBuffer, readed, contentLength - readed);
-                        for (int i = 0; i < readed; i++)
-                             _controlFrameBuffer[i] = Header.DecodeByte(_controlFrameBuffer[i]);
+                        Header.DecodeBytes(_controlFrameBuffer, 0, readed);
                     }
                     var ticks = BitConverter.ToInt64(_controlFrameBuffer, 0);
                     if (ticks >= DateTime.MinValue.Ticks && ticks <= DateTime.MaxValue.Ticks)
@@ -291,13 +289,24 @@ namespace vtortola.WebSockets
         {
             try
             {
-                if (!_writeSemaphore.Wait(_client.SendTimeout))
-                    throw new WebSocketException("Write timeout");
-
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
-                _clientStream.Write(header.Raw, 0, header.HeaderLength);
-                if (count > 0)
+
+                if (buffer.Length >= offset + count + header.HeaderLength)
+                {
+                    buffer.ShiftRight(header.HeaderLength + offset, count);
+                    Array.Copy(header.Raw, 0, buffer, offset, header.HeaderLength);
+
+                    if (!_writeSemaphore.Wait(_client.SendTimeout))
+                        throw new WebSocketException("Write timeout");
+                    _clientStream.Write(buffer, offset, count + header.HeaderLength);
+                }
+                else
+                {
+                    if (!_writeSemaphore.Wait(_client.SendTimeout))
+                        throw new WebSocketException("Write timeout");
+                    _clientStream.Write(header.Raw, 0, header.HeaderLength);
                     _clientStream.Write(buffer, offset, count);
+                }
             }
             catch (InvalidOperationException)
             {
@@ -306,6 +315,11 @@ namespace vtortola.WebSockets
             catch (IOException)
             {
                 Close();
+            }
+            catch(Exception)
+            {
+                Close();
+                throw;
             }
             finally
             {
@@ -316,14 +330,24 @@ namespace vtortola.WebSockets
         {
             try
             {
-               if(!await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation))
-                   throw new WebSocketException("Write timeout");
+               var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
 
-                var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
+                if (buffer.Length >= offset + count + header.HeaderLength)
+                {
+                    buffer.ShiftRight(header.HeaderLength + offset, count);
+                    Array.Copy(header.Raw, 0, buffer, offset, header.HeaderLength);
 
-                await _clientStream.WriteAsync(header.Raw, 0, header.HeaderLength);
-                if(count>0)
+                    if (!await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation))
+                        throw new WebSocketException("Write timeout");
+                    await _clientStream.WriteAsync(buffer, offset, count + header.HeaderLength, cancellation);
+                }
+                else
+                {
+                    if (!await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation))
+                        throw new WebSocketException("Write timeout");
+                    await _clientStream.WriteAsync(header.Raw, 0, header.HeaderLength);
                     await _clientStream.WriteAsync(buffer, offset, count);
+                }
             }
             catch (InvalidOperationException)
             {
@@ -332,6 +356,11 @@ namespace vtortola.WebSockets
             catch (IOException)
             {
                 Close();
+            }
+            catch (Exception)
+            {
+                Close();
+                throw;
             }
             finally
             {

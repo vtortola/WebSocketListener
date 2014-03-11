@@ -50,7 +50,7 @@ namespace vtortola.WebSockets
                     if (client.Connected && !token.IsCancellationRequested)
                     {
                         ConfigureTcpClient(client);
-                        var ws = Negotiate(client, _pingInterval);
+                        var ws = await NegotiateAsync(client, _pingInterval);
                         if (ws != null)
                             return ws;
                     }

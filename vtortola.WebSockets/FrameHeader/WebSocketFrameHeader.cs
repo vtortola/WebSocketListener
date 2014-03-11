@@ -24,13 +24,14 @@ namespace vtortola.WebSockets
         }
 
         UInt64 cursor = 0;
-        public Byte DecodeByte(Byte b)
+        public void DecodeBytes(Byte[] buffer, Int32 bufferOffset, Int32 readed)
         {
-            RemainingBytes--;
             if (Flags.MASK)
-                return (Byte)(b ^ _key[cursor++ % 4]);
-            else
-                return b;
+            {
+                for (int i = bufferOffset; i < bufferOffset + readed; i++)
+                    buffer[i] = (Byte)(buffer[i] ^ _key[cursor++ % 4]);
+            }
+            RemainingBytes-= (UInt64)readed;
         }
 
         public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 count, out WebSocketFrameHeader header)

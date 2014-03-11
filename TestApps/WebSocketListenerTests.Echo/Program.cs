@@ -22,6 +22,8 @@ namespace WebSocketListenerTests.Echo
             if (CreatePerformanceCounters())
                 return;
 
+            _connected.RawValue = 0;
+
             log4net.Config.XmlConfigurator.Configure();
             _log.Info("Starting Echo Server");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -34,9 +36,9 @@ namespace WebSocketListenerTests.Echo
 
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());
