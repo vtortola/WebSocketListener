@@ -22,14 +22,14 @@ namespace vtortola.WebSockets
         public Stream ExtendConnection(Stream stream)
         {
             var ssl = new SslStream(stream, false);
-            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default,true);
+            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default,false);
             return ssl;
         }
 
         public async Task<Stream> ExtendConnectionAsync(Stream stream)
         {
             var ssl = new SslStream(stream, false);
-            await ssl.AuthenticateAsServerAsync(_certificate, false, SslProtocols.Default, true);
+            await ssl.AuthenticateAsServerAsync(_certificate, false, SslProtocols.Default, false);
             return ssl;
         }
     }

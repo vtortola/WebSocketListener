@@ -36,9 +36,9 @@ namespace WebSocketListenerTests.Echo
 
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
             WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());
@@ -64,10 +64,17 @@ namespace WebSocketListenerTests.Echo
                 try
                 {
                     var ws = await server.AcceptWebSocketClientAsync(token);
-                    if (ws == null)
-                        continue; // disconnection
+                    if (ws.Error != null)
+                    {
+                        var ex = ws.Error.GetBaseException();
+                        _log.Error("AcceptWebSocketClients", ex);
+                        Log("Error Accepting clients: " + ex.Message);
+                        continue;
+                    }
+                    if (ws.Result == null)
+                        continue;
 
-                    HandleConnectionAsync(ws, token);
+                    HandleConnectionAsync(ws.Result, token);
                 }
                 catch (Exception aex)
                 {

@@ -4,95 +4,57 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketListener:IDisposable
+    public sealed class WebSocketListener: IDisposable
     {
         readonly TcpListener _listener;
-        readonly TimeSpan _pingInterval;
+        readonly WebSocketNegotiationQueue _negotiationQueue;
+        readonly CancellationTokenSource _cancel;
         Int32 _isDisposed;
 
         public Boolean IsStarted { get; private set; }
         public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
-        public WebSocketListener(IPEndPoint endpoint,TimeSpan pingInterval)
+        public WebSocketListener(IPEndPoint endpoint, TimeSpan pingInterval, Int32 connectingQueue, Int32 parallelNegotiations)
         {
+            _cancel = new CancellationTokenSource();
             _listener = new TcpListener(endpoint);
-            _pingInterval = pingInterval;
             MessageExtensions = new WebSocketMessageExtensionCollection(this);
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
+            _negotiationQueue = new WebSocketNegotiationQueue(MessageExtensions, ConnectionExtensions, pingInterval, connectingQueue, parallelNegotiations, _cancel.Token);
         }
 
+        public WebSocketListener(IPEndPoint endpoint, TimeSpan pingInterval)
+            : this(endpoint, pingInterval, 256, 16) { }
+
+        private async Task StartAccepting()
+        {
+            await Task.Yield();
+            while(_isDisposed ==0)
+            {
+                var client = await _listener.AcceptTcpClientAsync();
+                if (client != null)
+                    _negotiationQueue.Post(client);
+            }
+        }
         public void Start()
         {
             IsStarted = true;
-            _listener.Start();
+            _listener.Start(1024);
+            StartAccepting();
         }
-
         public void Stop()
         {
             IsStarted = false;
             _listener.Stop();
         }
-
-        public async Task<WebSocketClient> AcceptWebSocketClientAsync(CancellationToken token)
+        public Task<ProcessingResult<WebSocketClient>> AcceptWebSocketClientAsync(CancellationToken token)
         {
-            while(!token.IsCancellationRequested)
-            {
-                var acceptTask = _listener.AcceptTcpClientAsync();
-                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
-                await Task.WhenAny(acceptTask,timeoutTask);
-
-                if (acceptTask.IsCompleted)
-                {
-                    var client = await acceptTask;
-                    if (client.Connected && !token.IsCancellationRequested)
-                    {
-                        ConfigureTcpClient(client);
-                        var ws = await NegotiateAsync(client, _pingInterval);
-                        if (ws != null)
-                            return ws;
-                    }
-                }
-            }
-            return null;
+            return _negotiationQueue.ReceiveAsync(token);
         }
-
-        private static void ConfigureTcpClient(TcpClient client)
-        {
-            client.SendTimeout = 5000;
-            client.ReceiveTimeout = 5000;
-        }
-
-        private WebSocketClient Negotiate(TcpClient client, TimeSpan pingInterval)
-        {
-            WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
-
-            Stream stream = client.GetStream();
-            foreach (var conExt in ConnectionExtensions)
-                stream = conExt.ExtendConnection(stream);
-
-            if (handShaker.NegotiatesWebsocket(stream))
-                return new WebSocketClient(client, stream, handShaker.Request, pingInterval, handShaker.NegotiatedExtensions);
-
-            return null;
-        }
-
-        private async Task<WebSocketClient> NegotiateAsync(TcpClient client, TimeSpan pingInterval)
-        {
-            WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
-
-            Stream stream = client.GetStream();
-            foreach (var conExt in ConnectionExtensions)
-                stream = await conExt.ExtendConnectionAsync(stream);
-
-            if (handShaker.NegotiatesWebsocket(stream))
-                return new WebSocketClient(client, stream, handShaker.Request, pingInterval, handShaker.NegotiatedExtensions);
-
-            return null;
-        }
-
         private void Dispose(Boolean disposing)
         {
             if(Interlocked.CompareExchange(ref _isDisposed,1,0)==0)
@@ -100,15 +62,14 @@ namespace vtortola.WebSockets
                 if (disposing)
                     GC.SuppressFinalize(this);
                 this.Stop();
+                _cancel.Cancel();
                 _listener.Server.Dispose();
             }
         }
-
         public void Dispose()
         {
             Dispose(true);
         }
-
         ~WebSocketListener()
         {
             Dispose(false);

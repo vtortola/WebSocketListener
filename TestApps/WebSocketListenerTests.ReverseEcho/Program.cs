@@ -65,12 +65,17 @@ namespace WebSocketListenerTests.ReverseEcho
                 try
                 {
                     var ws = await server.AcceptWebSocketClientAsync(token);
-                    if (ws == null)
-                        continue; // disconnection
+                    if (ws.Error != null)
+                    {
+                        var ex = ws.Error.GetBaseException();
+                        _log.Error("AcceptWebSocketClients", ex);
+                        Log("Error Accepting clients: " + ex.Message);
+                        continue;
+                    }
+                    if (ws.Result == null)
+                        continue;
 
-                    //Log("Client Connected: " + ws.RemoteEndpoint.ToString());
-
-                    HandleConnectionAsync(ws, token);
+                    HandleConnectionAsync(ws.Result, token);
 
                 }
                 catch(Exception aex)
