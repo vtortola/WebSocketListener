@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -61,8 +62,8 @@
     <Compile Include="Streams\WebSocketMessageReadStream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
     <Compile Include="Tools\AsyncResultTask.cs" />
-    <Compile Include="Tools\ProcessingBufferBlock.cs" />
-    <Compile Include="WebSocketClient.cs" />
+    <Compile Include="Tools\AsynchronousNegotiator.cs" />
+    <Compile Include="WebSocket.cs" />
     <Compile Include="WebSocketException.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeader.cs" />
     <Compile Include="FrameHeader\WebSocketFrameOption.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="WebSocketListener.cs" />
     <Compile Include="Streams\WebSocketMessageWriteNetworkStream.cs" />
     <Compile Include="HttpNegotiation\WebSocketHandshaker.cs" />
+    <Compile Include="WebSocketListenerOptions.cs" />
     <Compile Include="_ExtensionMethods.cs" />
   </ItemGroup>
   <ItemGroup>

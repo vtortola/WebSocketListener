@@ -36,9 +36,9 @@ namespace WebSocketListenerTests.Echo
 
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
-            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
-            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
+            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { PingTimeout = TimeSpan.FromSeconds(60), ConnectingQueue = 128, ParallelNegotiations = 16 });
+            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());
@@ -64,17 +64,8 @@ namespace WebSocketListenerTests.Echo
                 try
                 {
                     var ws = await server.AcceptWebSocketClientAsync(token);
-                    if (ws.Error != null)
-                    {
-                        var ex = ws.Error.GetBaseException();
-                        _log.Error("AcceptWebSocketClients", ex);
-                        Log("Error Accepting clients: " + ex.Message);
-                        continue;
-                    }
-                    if (ws.Result == null)
-                        continue;
-
-                    HandleConnectionAsync(ws.Result, token);
+                    if(ws!=null)
+                        HandleConnectionAsync(ws, token);
                 }
                 catch (Exception aex)
                 {
@@ -86,7 +77,7 @@ namespace WebSocketListenerTests.Echo
             Log("Server Stop accepting clients");
         }
 
-        static async Task HandleConnectionAsync(WebSocketClient ws, CancellationToken token)
+        static async Task HandleConnectionAsync(WebSocket ws, CancellationToken token)
         {
             await Task.Yield();
             try
@@ -114,6 +105,7 @@ namespace WebSocketListenerTests.Echo
                                         readed = await messageReader.ReadAsync(buffer, 0, buffer.Length);
                                         messageWriter.Write(buffer, 0, readed);
                                     }
+                                    await messageReader.FlushAsync(token);
                                 }
                                 _outMessages.Increment();
 

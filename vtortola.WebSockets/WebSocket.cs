@@ -10,10 +10,11 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketClient : IDisposable
+    public sealed class WebSocket : IDisposable
     {
-        readonly TcpClient _client;
+        readonly Socket _client;
         readonly Stream _clientStream;
+        readonly WebSocketListenerOptions _options;
         Int32 _gracefullyClosed, _closed, _disposed;
         readonly TimeSpan _pingInterval, _pingTimeout;
         DateTime _lastPong;
@@ -21,22 +22,33 @@ namespace vtortola.WebSockets
 
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
-        public Boolean IsConnected { get { return _closed != 1 && _client.Client.Connected; } }
+        public Boolean IsConnected { get { return _closed != 1 && _client.Connected; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
         internal WebSocketFrameHeader Header { get; private set; }
         internal readonly Byte[] WriteBufferTail;
                 
-        public WebSocketClient(TcpClient client, Stream clientStream, WebSocketHttpRequest httpRequest, TimeSpan pingTimeOut, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocket(Socket client, Stream clientStream, WebSocketHttpRequest httpRequest, WebSocketListenerOptions options, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
             if (client == null)
                 throw new ArgumentNullException("client");
+
+            if (clientStream == null)
+                throw new ArgumentNullException("clientStream");
+
+            if (httpRequest == null)
+                throw new ArgumentNullException("httpRequest");
+
+            if (options == null)
+                throw new ArgumentNullException("options");
+
+            _options = options;
             _client = client;
-            RemoteEndpoint = (IPEndPoint)_client.Client.RemoteEndPoint;
-            LocalEndpoint = (IPEndPoint)_client.Client.LocalEndPoint;
+            RemoteEndpoint = (IPEndPoint)_client.RemoteEndPoint;
+            LocalEndpoint = (IPEndPoint)_client.LocalEndPoint;
             HttpRequest = httpRequest;
-            _pingTimeout = pingTimeOut;
+            _pingTimeout = options.PingTimeout;
             _lastPong = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds( Math.Min(5000, pingTimeOut.TotalMilliseconds / 4));
+            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 2));
             _extensions = extensions;
             _clientStream = clientStream;
             WriteBufferTail = new Byte[_client.SendBufferSize];
@@ -196,7 +208,7 @@ namespace vtortola.WebSockets
             {
                 var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken);
 
-                DecodeMaskedData(buffer, offset, readed);
+                Header.DecodeBytes(buffer, offset, readed);
 
                 return readed;
             }
@@ -215,7 +227,7 @@ namespace vtortola.WebSockets
             {
                 var readed = _clientStream.Read(buffer, offset, count);
 
-                DecodeMaskedData(buffer, offset, readed);
+                Header.DecodeBytes(buffer, offset, readed);
 
                 return readed;
             }
@@ -227,10 +239,6 @@ namespace vtortola.WebSockets
             {
                 return ReturnAndClose();
             }
-        }
-        private void DecodeMaskedData(Byte[] buffer, Int32 bufferOffset, int readed)
-        {
-            Header.DecodeBytes(buffer, bufferOffset, readed);
         }
 
         readonly Byte[] _controlFrameBuffer = new Byte[125];
@@ -296,13 +304,13 @@ namespace vtortola.WebSockets
                     buffer.ShiftRight(header.HeaderLength + offset, count);
                     Array.Copy(header.Raw, 0, buffer, offset, header.HeaderLength);
 
-                    if (!_writeSemaphore.Wait(_client.SendTimeout))
+                    if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                         throw new WebSocketException("Write timeout");
                     _clientStream.Write(buffer, offset, count + header.HeaderLength);
                 }
                 else
                 {
-                    if (!_writeSemaphore.Wait(_client.SendTimeout))
+                    if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                         throw new WebSocketException("Write timeout");
                     _clientStream.Write(header.Raw, 0, header.HeaderLength);
                     _clientStream.Write(buffer, offset, count);
@@ -337,13 +345,13 @@ namespace vtortola.WebSockets
                     buffer.ShiftRight(header.HeaderLength + offset, count);
                     Array.Copy(header.Raw, 0, buffer, offset, header.HeaderLength);
 
-                    if (!await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation))
+                    if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation))
                         throw new WebSocketException("Write timeout");
                     await _clientStream.WriteAsync(buffer, offset, count + header.HeaderLength, cancellation);
                 }
                 else
                 {
-                    if (!await _writeSemaphore.WaitAsync(_client.SendTimeout, cancellation))
+                    if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation))
                         throw new WebSocketException("Write timeout");
                     await _clientStream.WriteAsync(header.Raw, 0, header.HeaderLength);
                     await _clientStream.WriteAsync(buffer, offset, count);
@@ -401,7 +409,7 @@ namespace vtortola.WebSockets
                 {
                     _writeSemaphore.Dispose();
                     this.Close();
-                    _client.Client.Dispose();
+                    _client.Dispose();
                 }
                 catch { }
             }
@@ -412,7 +420,7 @@ namespace vtortola.WebSockets
             Dispose(true);   
         }
 
-        ~WebSocketClient()
+        ~WebSocket()
         {
             Dispose(false);
         }

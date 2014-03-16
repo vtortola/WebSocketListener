@@ -12,15 +12,15 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketHandshaker
+    internal class WebSocketHandshaker
     {
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
         private WebSocketMessageExtensionCollection RequestExtensions;
-        public WebSocketHttpRequest Request { get; private set; }
+        internal WebSocketHttpRequest Request { get; private set; }
         readonly List<WebSocketExtension> _responseExtensions;
         public List<IWebSocketMessageExtensionContext> NegotiatedExtensions { get; private set; }
-        public Boolean IsWebSocketRequest
+        internal Boolean IsWebSocketRequest
         {
             get
             {
@@ -31,7 +31,7 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
             }
         }
-        public WebSocketHandshaker(WebSocketMessageExtensionCollection extensions)
+        internal WebSocketHandshaker(WebSocketMessageExtensionCollection extensions)
         {
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
@@ -43,7 +43,7 @@ namespace vtortola.WebSockets
             NegotiatedExtensions = new List<IWebSocketMessageExtensionContext>();
         }
 
-        public Boolean NegotiatesWebsocket(Stream clientStream)
+        internal async Task<Boolean> HandshakeAsync(Stream clientStream)
         {
             ReadHttpRequest(clientStream);
 
@@ -52,7 +52,7 @@ namespace vtortola.WebSockets
             if (IsWebSocketRequest)
                 SelectExtensions();
 
-            WriteHttpResponse(clientStream);  
+            await WriteHttpResponse(clientStream);  
 
             return IsWebSocketRequest;
         }
@@ -73,19 +73,20 @@ namespace vtortola.WebSockets
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
-        private void WriteHttpResponse(Stream clientStream)
+        private async Task WriteHttpResponse(Stream clientStream)
         {
-            using (StreamWriter sw = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
                 if (!IsWebSocketRequest)
                 {
-                    SendNegotiationErrorResponse(sw);
-                    sw.Flush();
+                    SendNegotiationErrorResponse(writer);
+                    await writer.FlushAsync();
                     clientStream.Close();
                 }
                 else
                 {
-                    SendNegotiationResponse(sw);
+                    SendNegotiationResponse(writer);
+                    await writer.FlushAsync();
                 }
             }
         }
@@ -123,46 +124,46 @@ namespace vtortola.WebSockets
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             _headers.Add(key, value);
         }
-        private void SendNegotiationResponse(StreamWriter sw)
+        private void SendNegotiationResponse(StreamWriter writer)
         {
-            sw.Write("HTTP/1.1 101 Switching Protocols\r\n");
-            sw.Write("Upgrade: websocket\r\n");
-            sw.Write("Connection: Upgrade\r\n");
-            sw.Write("Sec-WebSocket-Accept: ");
-            sw.Write(GenerateHandshake());
+            writer.Write("HTTP/1.1 101 Switching Protocols\r\n");
+            writer.Write("Upgrade: websocket\r\n");
+            writer.Write("Connection: Upgrade\r\n");
+            writer.Write("Sec-WebSocket-Accept: ");
+            writer.Write(GenerateHandshake());
             
             if (_headers.ContainsKey("SEC-WEBSOCKET-PROTOCOL"))
             {
-                sw.Write("\r\n");
-                sw.Write("Sec-WebSocket-Protocol: ");
-                sw.Write(_headers["SEC-WEBSOCKET-PROTOCOL"]);
+                writer.Write("\r\n");
+                writer.Write("Sec-WebSocket-Protocol: ");
+                writer.Write(_headers["SEC-WEBSOCKET-PROTOCOL"]);
             }
 
             if (_responseExtensions.Any())
             {
                 Boolean firstExt=true, firstOpt=true;
-                sw.Write("\r\n");
-                sw.Write("Sec-WebSocket-Extensions: ");
+                writer.Write("\r\n");
+                writer.Write("Sec-WebSocket-Extensions: ");
                 foreach (var extension in _responseExtensions)
                 {
                     if(!firstExt)
-                        sw.Write(",");
+                        writer.Write(",");
 
-                    sw.Write(extension.Name);
+                    writer.Write(extension.Name);
                     var serverAcceptedOptions = extension.Options.Where(x => !x.ClientAvailableOption);
                     if(extension.Options.Any())
                     {
-                        sw.Write(";");
+                        writer.Write(";");
                         foreach (var extOption in serverAcceptedOptions)
                         {
                             if(!firstOpt)
-                                sw.Write(";");
+                                writer.Write(";");
 
-                            sw.Write(extOption.Name);
+                            writer.Write(extOption.Name);
                             if (extOption.Value != null)
                             {
-                                sw.Write("=");
-                                sw.Write(extOption.Value);
+                                writer.Write("=");
+                                writer.Write(extOption.Value);
                             }
                             firstOpt = false;
                         }
@@ -171,13 +172,13 @@ namespace vtortola.WebSockets
                 }
             }
 
-            sw.Write("\r\n");
-            sw.Write("\r\n");
+            writer.Write("\r\n");
+            writer.Write("\r\n");
         }
-        private void SendNegotiationErrorResponse(StreamWriter sw)
+        private void SendNegotiationErrorResponse(StreamWriter writer)
         {
-            sw.Write("HTTP/1.1 404 Bad Request\r\n");
-            sw.Write("\r\n");
+            writer.Write("HTTP/1.1 404 Bad Request\r\n");
+            writer.Write("\r\n");
         }
         private String GenerateHandshake()
         {

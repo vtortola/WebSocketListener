@@ -28,12 +28,12 @@ namespace vtortola.WebSockets
             set { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } 
         }
         
-        public override sealed void Flush()
+        public override void Flush()
         {
             
         }
 
-        public override sealed Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+        public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
         {
             return _completed;
         }

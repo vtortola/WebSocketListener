@@ -9,7 +9,7 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketMessageReadNetworkStream : WebSocketMessageReadStream
     {
-        readonly WebSocketClient _client;
+        readonly WebSocket _client;
         readonly WebSocketFrameHeader _header;
         Boolean _hasPendingFrames;
         public override WebSocketMessageType MessageType 
@@ -21,7 +21,7 @@ namespace vtortola.WebSockets
             get { return _header.Flags; }
         }
 
-        public WebSocketMessageReadNetworkStream(WebSocketClient client, WebSocketFrameHeader header)
+        public WebSocketMessageReadNetworkStream(WebSocket client, WebSocketFrameHeader header)
         {
             if(client == null)
                 throw new ArgumentNullException("client");

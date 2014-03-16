@@ -37,7 +37,7 @@ namespace WebSocketListenerTests.ReverseEcho
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
             var endpoint = new IPEndPoint(IPAddress.Any, 8005);
-            WebSocketListener server = new WebSocketListener(endpoint, TimeSpan.FromSeconds(60));
+            WebSocketListener server = new WebSocketListener(endpoint);
             //server.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
             server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
@@ -65,17 +65,8 @@ namespace WebSocketListenerTests.ReverseEcho
                 try
                 {
                     var ws = await server.AcceptWebSocketClientAsync(token);
-                    if (ws.Error != null)
-                    {
-                        var ex = ws.Error.GetBaseException();
-                        _log.Error("AcceptWebSocketClients", ex);
-                        Log("Error Accepting clients: " + ex.Message);
-                        continue;
-                    }
-                    if (ws.Result == null)
-                        continue;
-
-                    HandleConnectionAsync(ws.Result, token);
+                    if (ws != null)
+                        HandleConnectionAsync(ws, token);
 
                 }
                 catch(Exception aex)
@@ -88,7 +79,7 @@ namespace WebSocketListenerTests.ReverseEcho
             Log("Server Stop accepting clients");
         }
 
-        static async Task HandleConnectionAsync(WebSocketClient ws, CancellationToken token)
+        static async Task HandleConnectionAsync(WebSocket ws, CancellationToken token)
         {
             await Task.Yield();
             try

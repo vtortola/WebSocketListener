@@ -9,16 +9,16 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketMessageWriteNetworkStream : WebSocketMessageWriteStream
     {
-        readonly WebSocketClient _client;
+        readonly WebSocket _client;
 
         Boolean _headerSent = false;
-        Boolean _finished = false;
+        Int32 _finished = 0;
         readonly Byte[] _internalBuffer;
         Int32 _internalUsedBufferLength;
         
         readonly WebSocketMessageType _messageType;
 
-        public WebSocketMessageWriteNetworkStream(WebSocketClient client, WebSocketMessageType messageType)
+        public WebSocketMessageWriteNetworkStream(WebSocket client, WebSocketMessageType messageType)
         {
             _internalUsedBufferLength = 0;
             _internalBuffer = client.WriteBufferTail;
@@ -26,7 +26,7 @@ namespace vtortola.WebSockets
             _client = client;
         }
 
-        public WebSocketMessageWriteNetworkStream(WebSocketClient client, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
+        public WebSocketMessageWriteNetworkStream(WebSocket client, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
             :this(client,messageType)
         {
             ExtensionFlags.Rsv1 = extensionFlags.Rsv1;
@@ -115,11 +115,19 @@ namespace vtortola.WebSockets
             }
         }
 
+        public override async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
+            {
+                await _client.WriteInternalAsync(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags, cancellationToken);
+                base.Close();
+            }
+        }
+
         public override void Close()
         {
-            if (!_finished)
+            if (Interlocked.CompareExchange(ref _finished,1,0) ==0)
             {
-                _finished = true;
                 _client.WriteInternal(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags);
                 base.Close();
             }
