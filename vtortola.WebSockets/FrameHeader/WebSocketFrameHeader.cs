@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
             _key = new Byte[4];
         }
 
-        Int32 cursor = 0;
+        UInt64 cursor = 0;
         public void DecodeBytes(Byte[] buffer, Int32 bufferOffset, Int32 readed)
         {
             if (Flags.MASK)
