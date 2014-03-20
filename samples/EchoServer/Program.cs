@@ -196,15 +196,4 @@ namespace WebSocketListenerTests.Echo
         }
 
     }
-
-    public static class Ext
-    {
-        public static String ReverseString(this String s)
-        {
-            if (String.IsNullOrWhiteSpace(s))
-                return s;
-            return new String(s.Reverse().ToArray());
-        }
-    }
-
 }
