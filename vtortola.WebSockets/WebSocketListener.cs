@@ -2,16 +2,24 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
     public sealed class WebSocketListener: IDisposable
     {
+        sealed class WebSocketNegotiationResult
+        {
+            public WebSocket Result;
+            public ExceptionDispatchInfo Error;
+        }
+
         readonly TcpListener _listener;
-        readonly WebSocketNegotiationQueue _negotiationQueue;
+        readonly TransformBlock<Socket, WebSocketNegotiationResult> _negotiationQueue;
         readonly CancellationTokenSource _cancel;
         readonly WebSocketListenerOptions _options;
         Int32 _isDisposed;
@@ -32,7 +40,8 @@ namespace vtortola.WebSockets
             _listener = new TcpListener(endpoint);
             MessageExtensions = new WebSocketMessageExtensionCollection(this);
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
-            _negotiationQueue = new WebSocketNegotiationQueue(MessageExtensions, ConnectionExtensions, options, _cancel.Token);
+            Func<Socket, Task<WebSocketNegotiationResult>> negotiate = NegotiateWebSocket;
+            _negotiationQueue = new TransformBlock<Socket, WebSocketNegotiationResult>(negotiate, new ExecutionDataflowBlockOptions() { CancellationToken = _cancel.Token, MaxDegreeOfParallelism = options.ParallelNegotiations, BoundedCapacity = options.NegotiationQueueCapacity });
         }
 
         public WebSocketListener(IPEndPoint endpoint)
@@ -54,13 +63,45 @@ namespace vtortola.WebSockets
         public void Start()
         {
             IsStarted = true;
-            _listener.Start(_options.ConnectingQueue);
+            if(_options.TcpBacklog.HasValue)
+                _listener.Start(_options.TcpBacklog.Value);
+            else
+                _listener.Start();
+
             StartAccepting();
         }
         public void Stop()
         {
             IsStarted = false;
             _listener.Stop();
+        }
+        private void ConfigureSocket(Socket client)
+        {
+            client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
+            client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
+        }
+
+        private async Task<WebSocketNegotiationResult> NegotiateWebSocket(Socket client)
+        {
+            var result = new WebSocketNegotiationResult();
+            try
+            {
+                ConfigureSocket(client);
+                WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
+
+                Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
+                foreach (var conExt in ConnectionExtensions)
+                    stream = await conExt.ExtendConnectionAsync(stream).ConfigureAwait(false);
+
+                if (await handShaker.HandshakeAsync(stream))
+                    result.Result = new WebSocket(client, stream, handShaker.Request, _options, handShaker.NegotiatedExtensions);
+            }
+            catch (Exception ex)
+            {
+                result.Error = ExceptionDispatchInfo.Capture(ex);
+                result.Result = null;
+            }
+            return result;
         }
         public async Task<WebSocket> AcceptWebSocketClientAsync(CancellationToken token)
         {
@@ -82,7 +123,7 @@ namespace vtortola.WebSockets
                 this.Stop();
                 _listener.Server.Dispose();
                 _cancel.Cancel();
-                _negotiationQueue.Dispose();
+                _negotiationQueue.Complete();
                 _cancel.Dispose();
             }
         }

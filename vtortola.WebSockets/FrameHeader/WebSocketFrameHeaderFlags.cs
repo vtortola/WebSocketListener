@@ -7,28 +7,6 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketExtensionFlags
-    {
-        Boolean _rsv1, _rsv2, _rsv3;
-        public Boolean Rsv1 { get { return _rsv1; } set { _rsv1 = value && !_none; } }
-        public Boolean Rsv2 { get { return _rsv2; } set { _rsv2 = value && !_none; } }
-        public Boolean Rsv3 { get { return _rsv3; } set { _rsv3 = value && !_none; } }
-
-        readonly Boolean _none;
-        public WebSocketExtensionFlags()
-        {
-            _none = false;
-        }
-
-        private WebSocketExtensionFlags(Boolean none)
-        {
-            _none = true;
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
-        public static readonly WebSocketExtensionFlags None = new WebSocketExtensionFlags(true);
-    }
-
     public sealed class WebSocketFrameHeaderFlags
     {
         Byte _byte1, _byte2;
@@ -84,14 +62,12 @@ namespace vtortola.WebSockets
             headerFlags = new WebSocketFrameHeaderFlags(buffer[0],buffer[1],(WebSocketFrameOption)value); 
             return true;
         }
-
         private WebSocketFrameHeaderFlags(Byte byte1, Byte byte2, WebSocketFrameOption option)
         {
             _byte1 = byte1;
             _byte2 = byte2;
             Option = option;
         }
-
         public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             this.Option = option;
@@ -125,9 +101,7 @@ namespace vtortola.WebSockets
                     this.RSV1 = this.RSV2 = this.RSV3 = false;
                     break;
             }
-
         }
-
         public void ToBytes(UInt64 length, Byte[] buffer)
         {
             Int32 headerLength;

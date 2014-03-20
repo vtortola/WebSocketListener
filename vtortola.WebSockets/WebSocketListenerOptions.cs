@@ -9,7 +9,8 @@ namespace vtortola.WebSockets
     public sealed class WebSocketListenerOptions
     {
         public TimeSpan PingTimeout { get; set; }
-        public Int32 ConnectingQueue { get; set; }
+        public Int32 NegotiationQueueCapacity { get; set; }
+        public Int32? TcpBacklog { get; set; }
         public Int32 ParallelNegotiations { get; set; }
         public TimeSpan NegotiationTimeout { get; set; }
         public TimeSpan WebSocketSendTimeout { get; set; }
@@ -18,8 +19,8 @@ namespace vtortola.WebSockets
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
-            ConnectingQueue = 128;
-            ParallelNegotiations = 16;
+            NegotiationQueueCapacity = Environment.ProcessorCount * 10;
+            ParallelNegotiations = Environment.ProcessorCount * 4;
             NegotiationTimeout = TimeSpan.FromSeconds(5);
             WebSocketSendTimeout = TimeSpan.FromSeconds(5);
             WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
@@ -30,7 +31,7 @@ namespace vtortola.WebSockets
             return new WebSocketListenerOptions()
             {
                 PingTimeout = this.PingTimeout,
-                ConnectingQueue = this.ConnectingQueue,
+                NegotiationQueueCapacity = this.NegotiationQueueCapacity,
                 ParallelNegotiations = this.ParallelNegotiations,
                 NegotiationTimeout = this.NegotiationTimeout,
                 WebSocketSendTimeout = this.WebSocketSendTimeout,

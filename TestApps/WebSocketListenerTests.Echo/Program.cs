@@ -14,7 +14,7 @@ namespace WebSocketListenerTests.Echo
 {
     class Program
     {
-        static PerformanceCounter _inMessages, _inBytes, _outMessages, _outBytes, _connected;
+        static PerformanceCounter _pf_inMessages, _pf_outMessages, _pf_connected;
         static ILog _log = log4net.LogManager.GetLogger("Main");
 
         static void Main(string[] args)
@@ -22,23 +22,29 @@ namespace WebSocketListenerTests.Echo
             if (CreatePerformanceCounters())
                 return;
 
-            _connected.RawValue = 0;
+            // reseting peformance counter
+            _pf_connected.RawValue = 0;
 
+            // configuring logging
             log4net.Config.XmlConfigurator.Configure();
             _log.Info("Starting Echo Server");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
+            // opening TLS certificate
             X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
             store.Open(OpenFlags.ReadOnly);
             store.Certificates.Count.ToString();
             var certificate = store.Certificates[1];
             store.Close();
-
-
+            
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
-            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { PingTimeout = TimeSpan.FromSeconds(60), ConnectingQueue = 128, ParallelNegotiations = 16 });
-            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            
+            // local endpoint
+            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
+            
+            // starting the server
+            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { PingTimeout = TimeSpan.FromSeconds(5), NegotiationQueueCapacity = 128, ParallelNegotiations = 16 });
+            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());
@@ -82,7 +88,7 @@ namespace WebSocketListenerTests.Echo
             await Task.Yield();
             try
             {
-                _connected.Increment();
+                _pf_connected.Increment();
                 Byte[] buffer = new Byte[2046];
                 Int32 readed;
                 while (ws.IsConnected && !token.IsCancellationRequested)
@@ -96,7 +102,7 @@ namespace WebSocketListenerTests.Echo
                         {
                             case WebSocketMessageType.Text:
                                 
-                                _inMessages.Increment();
+                                _pf_inMessages.Increment();
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
                                 {
                                     readed = -1;
@@ -107,7 +113,7 @@ namespace WebSocketListenerTests.Echo
                                     }
                                     await messageReader.FlushAsync(token);
                                 }
-                                _outMessages.Increment();
+                                _pf_outMessages.Increment();
 
                                 break;
 
@@ -130,7 +136,7 @@ namespace WebSocketListenerTests.Echo
             }
             finally
             {
-                _connected.Decrement();
+                _pf_connected.Decrement();
             }
             //Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
 
@@ -141,7 +147,7 @@ namespace WebSocketListenerTests.Echo
             Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
         }
 
-        static String msgIn = "Messages In /sec", byteIn = "Bytes In /sec", msgOut = "Messages Out /sec", byteOut = "Bytes Out /sec", connected = "Connected";
+        static String pflabel_msgIn = "Messages In /sec", pflabel_msgOut = "Messages Out /sec", pflabel_connected = "Connected";
 
         private static bool CreatePerformanceCounters()
         {
@@ -154,31 +160,19 @@ namespace WebSocketListenerTests.Echo
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = msgIn
+                    CounterName = pflabel_msgIn
                 });
 
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = byteIn
-                });
-
-                ccdc.Add(new CounterCreationData
-                {
-                    CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = msgOut
-                });
-
-                ccdc.Add(new CounterCreationData
-                {
-                    CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = byteOut
+                    CounterName = pflabel_msgOut
                 });
 
                 ccdc.Add(new CounterCreationData
                 {
                     CounterType = PerformanceCounterType.NumberOfItems64,
-                    CounterName = connected
+                    CounterName = pflabel_connected
                 });
 
                 PerformanceCounterCategory.Create(categoryName, "", PerformanceCounterCategoryType.SingleInstance, ccdc);
@@ -192,12 +186,10 @@ namespace WebSocketListenerTests.Echo
                 //Console.WriteLine("Delete");
                 //return true;
 
-                _inMessages = new PerformanceCounter(categoryName, msgIn, false);
-                _inBytes = new PerformanceCounter(categoryName, byteIn, false);
-                _outMessages = new PerformanceCounter(categoryName, msgOut, false);
-                _outBytes = new PerformanceCounter(categoryName, byteOut, false);
-                _connected = new PerformanceCounter(categoryName, connected, false);
-                _connected.RawValue = 0;
+                _pf_inMessages = new PerformanceCounter(categoryName, pflabel_msgIn, false);
+                _pf_outMessages = new PerformanceCounter(categoryName, pflabel_msgOut, false);
+                _pf_connected = new PerformanceCounter(categoryName, pflabel_connected, false);
+                _pf_connected.RawValue = 0;
 
                 return false;
             }

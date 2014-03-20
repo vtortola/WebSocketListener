@@ -36,6 +36,9 @@ namespace vtortola.WebSockets
 
         public override void Write(Byte[] buffer, Int32 offset, Int32 count)
         {
+            if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
+                throw new WebSocketException("The write stream has been already flushed or disposed.");
+
             RemoveUTF8BOM(buffer, ref offset, ref count);
             if (count == 0)
                 return;
@@ -77,6 +80,9 @@ namespace vtortola.WebSockets
 
         public override async Task WriteAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
         {
+            if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
+                throw new WebSocketException("The write stream has been already flushed or disposed.");
+
             RemoveUTF8BOM(buffer, ref offset, ref count);
             if (count == 0)
                 return;
@@ -117,7 +123,7 @@ namespace vtortola.WebSockets
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
+            if (Interlocked.CompareExchange(ref _finished, 1, 1) == 0)
             {
                 await _client.WriteInternalAsync(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags, cancellationToken);
                 base.Close();

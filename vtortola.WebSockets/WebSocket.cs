@@ -12,6 +12,7 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocket : IDisposable
     {
+        readonly SemaphoreSlim _writeSemaphore;
         readonly Socket _client;
         readonly Stream _clientStream;
         readonly WebSocketListenerOptions _options;
@@ -41,6 +42,7 @@ namespace vtortola.WebSockets
             if (options == null)
                 throw new ArgumentNullException("options");
 
+            _writeSemaphore = new SemaphoreSlim(1);
             _options = options;
             _client = client;
             RemoteEndpoint = (IPEndPoint)_client.RemoteEndPoint;
@@ -48,7 +50,7 @@ namespace vtortola.WebSockets
             HttpRequest = httpRequest;
             _pingTimeout = options.PingTimeout;
             _lastPong = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 2));
+            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 3));
             _extensions = extensions;
             _clientStream = clientStream;
             WriteBufferTail = new Byte[_client.SendBufferSize];
@@ -249,8 +251,7 @@ namespace vtortola.WebSockets
                 case WebSocketFrameOption.Continuation:
                 case WebSocketFrameOption.Text:
                 case WebSocketFrameOption.Binary:
-                    throw new ArgumentException("Text, Continuation or Binary are not protocol frames");
-                    break;
+                    throw new WebSocketException("Text, Continuation or Binary are not protocol frames");
 
                 case WebSocketFrameOption.ConnectionClose:
                     this.Close();
@@ -269,9 +270,7 @@ namespace vtortola.WebSockets
                         readed = clientStream.Read(_controlFrameBuffer, readed, contentLength - readed);
                         Header.DecodeBytes(_controlFrameBuffer, 0, readed);
                     }
-                    var ticks = BitConverter.ToInt64(_controlFrameBuffer, 0);
-                    if (ticks >= DateTime.MinValue.Ticks && ticks <= DateTime.MaxValue.Ticks)
-                        _lastPong = new DateTime(ticks);
+                    _lastPong = DateTime.Now;
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + Header.Flags.Option.ToString() + "'");
             }
@@ -283,16 +282,18 @@ namespace vtortola.WebSockets
             {
                 await Task.Delay(_pingInterval);
 
-                var now = DateTime.Now;
+                try
+                {
+                    var now = DateTime.Now;
 
-                if (_lastPong.Add(_pingTimeout).Add(_pingInterval) < now)
-                    Close();
-                else
-                    this.WriteInternal(BitConverter.GetBytes(now.Ticks), 0, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+                    if (_lastPong.Add(_pingTimeout).Add(_pingInterval) < now)
+                        Close();
+                    else
+                        await this.WriteInternalAsync(BitConverter.GetBytes(now.Ticks), 0, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None);
+                }
+                catch{}
             }
         }
-
-        readonly SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1);
         internal void WriteInternal(Byte[] buffer, Int32 offset, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             try
@@ -324,10 +325,10 @@ namespace vtortola.WebSockets
             {
                 Close();
             }
-            catch(Exception)
+            catch(Exception ex)
             {
                 Close();
-                throw;
+                throw new WebSocketException("Cannot write on WebSocket", ex);
             }
             finally
             {
@@ -365,10 +366,10 @@ namespace vtortola.WebSockets
             {
                 Close();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Close();
-                throw;
+                throw new WebSocketException("Cannot write on WebSocket",ex);
             }
             finally
             {
