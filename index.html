@@ -3,8 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta property="og:image" content="http://www.layer7tech.com/blogs/wp-content/uploads/2012/08/HTML-WebSocket-v2.jpg"/>
-    <title>WebSocketListener: Asynchronous WebSocket server based on TcpListener</title>
+    <title>WebSocketListener by vtortola</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -39,21 +38,100 @@
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
-        <p>This is a very simple implementation of an asynchronous WebSocket server using a <code>TcpListener</code>, no need for IIS8, it should work in any operating system running Microsoft .NET 4.5. The <code>WebSocketListener</code> performs the HTTP negotiation and provides a <code>WebSocketClient</code> that allows to send an receive data as <code>String</code>. </p>
+        <h1>
+<a name="websocketlistener-" class="anchor" href="#websocketlistener-"><span class="octicon octicon-link"></span></a>WebSocketListener </h1>
 
-<div class="highlight highlight-cs"><pre><span class="kt">var</span> <span class="n">endpoint</span> <span class="p">=</span> <span class="k">new</span> <span class="n">IPEndPoint</span><span class="p">(</span><span class="n">IPAddress</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="s">"127.0.0.1"</span><span class="p">),</span> <span class="m">8001</span><span class="p">);</span>
-<span class="kt">var</span> <span class="n">server</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebSocketListener</span><span class="p">(</span><span class="n">endpoint</span><span class="p">);</span>
+<p><strong>WebSocketListener</strong> is a light weight <strong>WebSocket</strong> server side connector, implemented in C# using <em>sockets</em>, according to the <a href="http://tools.ietf.org/html/rfc6455">RFC 6455</a>. It <strong>does not use</strong> the Microsoft's <code>System.Net.WebSockets</code> namespace. It should work in any operating system running <em>Microsoft .NET v4.5</em>.</p>
 
-<span class="n">server</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
-<span class="kt">var</span> <span class="n">ws</span> <span class="p">=</span> <span class="k">await</span> <span class="n">server</span><span class="p">.</span><span class="n">AcceptWebSocketClientAsync</span><span class="p">();</span>
+<ul>
+<li>It can work with both <strong>Text or Binary</strong> messages.</li>
+<li>It supports <strong>wss://</strong> (WebSocket Secure through <strong>TLS</strong>).</li>
+<li>It is <strong>asynchronous</strong>. </li>
+<li>It has the <strong>Ping/Pong</strong> functionality <strong>built-in</strong>.</li>
+<li>It detects and disconnects <strong>half open connections</strong>.</li>
+<li>It allows to <strong>send and receive messages as streams</strong>. WebSocket messages are represented as delimited stream-like objects, that allows integration with other .NET objects like e.g. <code>StreamReader</code> and <code>StreamWriter</code>. Two different WebSocket messages, yield two different streams.</li>
+<li>Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.</li>
+<li>It <strong>handles partial frames transparently</strong>. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.</li>
+<li>It <strong>handles interleaved control frames transparently</strong>. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.</li>
+</ul><p>Take a look on the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests">performance tests</a> I have been doing.</p>
 
-<span class="k">await</span> <span class="n">ws</span><span class="p">.</span><span class="n">WriteAsync</span><span class="p">(</span><span class="s">"Hi!"</span><span class="p">);</span>
-<span class="kt">var</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="n">ws</span><span class="p">.</span><span class="n">ReadAsync</span><span class="p">();</span>
+<h3>
+<a name="quickstart" class="anchor" href="#quickstart"><span class="octicon octicon-link"></span></a>Quickstart</h3>
+
+<p>Setting up a server and start listening for clients is very similar than a <code>TcpListener</code>:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="kt">var</span> <span class="n">local</span> <span class="p">=</span> <span class="k">new</span> <span class="n">IPEndPoint</span><span class="p">(</span><span class="n">IPAddress</span><span class="p">.</span><span class="n">Any</span><span class="p">,</span> <span class="m">8006</span><span class="p">);</span>
+   <span class="kt">var</span> <span class="n">server</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebSocketListener</span><span class="p">(</span><span class="n">local</span><span class="p">);</span>
+   <span class="n">server</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
 </pre></div>
 
-<p><a href="//github.com/vtortola/WebSocketListener/wiki/Asynchronous-WebSocket-server-example">Asynchronous WebSocket server example</a></p>
+<p>Optionally, you can also:</p>
 
-<p><a href="//github.com/vtortola/WebSocketListener/wiki/Javascript-WebSocket-client-example">Javascript WebSocket client example</a></p>
+<ul>
+<li>
+<a href="https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)">enable TLS for secure WebSocket connections</a>.</li>
+<li>
+<a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options">customize queuing and ping behaviours</a>.</li>
+<li>
+<a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">add customized extensions</a>.</li>
+</ul><p>Once the server has started, clients can be awaited asynchronously. When a client connects, a <code>WebSocket</code> object will be returned:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="n">WebSocket</span> <span class="n">client</span> <span class="p">=</span> <span class="k">await</span> <span class="n">server</span><span class="p">.</span><span class="n">AcceptWebSocketAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</pre></div>
+
+<p>The client provides means to read and write messages. With the client, as in the underlying <code>NetworkStream</code>, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.</p>
+
+<p>With the client we can await a message as a readonly stream:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="n">WebSocketMessageReadStream</span> <span class="n">messageReadStream</span> <span class="p">=</span> <span class="k">await</span> <span class="n">client</span><span class="p">.</span><span class="n">ReadMessageAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</pre></div>
+
+<p>At first, the <code>WebSocketMessageReadStream</code> will contain information from the header, like type of message (Text or Binary) but not the message content, neither the message length, since a frame only contains the frame length rather than the total message length, therefore that information could be missleading.</p>
+
+<p>The message is a stream-like object, so is it possible to use regular .NET framework tools to work with them. The <code>WebSocketMessageReadStream.MessageType</code> property indicates what kind of content does the message contain, so it can be used to infer what type of handling does the message need.</p>
+
+<p>A text message can be read with a simple <code>StreamReader</code>.  It is worth remember that according to the WebSockets specs, it always uses UTF8 for text enconding:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="k">if</span><span class="p">(</span><span class="n">messageReadStream</span><span class="p">.</span><span class="n">MessageType</span> <span class="p">==</span> <span class="n">WebSocketMessageType</span><span class="p">.</span><span class="n">Text</span><span class="p">)</span>
+   <span class="p">{</span>
+      <span class="n">String</span> <span class="n">msgContent</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Empty</span><span class="p">.</span>
+      <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">sr</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StreamReader</span><span class="p">(</span><span class="n">messageReadStream</span><span class="p">,</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">UTF8</span><span class="p">))</span>
+           <span class="n">msgContent</span> <span class="p">=</span> <span class="k">await</span> <span class="n">sr</span><span class="p">.</span><span class="n">ReadToEndAsync</span><span class="p">();</span>
+   <span class="p">}</span>
+</pre></div>
+
+<p>Also, a binary message can be read using regular .NET techniques:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="k">if</span><span class="p">(</span><span class="n">messageReadStream</span><span class="p">.</span><span class="n">MessageType</span> <span class="p">==</span> <span class="n">WebSocketMessageType</span><span class="p">.</span><span class="n">Binary</span><span class="p">)</span>
+   <span class="p">{</span>
+      <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">ms</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">())</span>
+      <span class="p">{</span>
+          <span class="k">await</span> <span class="n">messageReader</span><span class="p">.</span><span class="n">CopyToAsync</span><span class="p">(</span><span class="n">ms</span><span class="p">);</span>
+      <span class="p">}</span>
+   <span class="p">}</span>
+</pre></div>
+
+<p>Writing messages is also easy. The <code>WebSocketMessageReadStream.CreateMessageWriter</code> method allows to create a write only stream to send the message:</p>
+
+<div class="highlight highlight-cs"><pre><span class="k">using</span> <span class="p">(</span><span class="n">WebSocketMessageWriteStream</span> <span class="n">messageWriterStream</span> <span class="p">=</span> <span class="n">client</span><span class="p">.</span><span class="n">CreateMessageWriter</span><span class="p">(</span><span class="n">WebSocketMessageType</span><span class="p">.</span><span class="n">Text</span><span class="p">))</span>
+</pre></div>
+
+<p>It is important to point out, that despite of the length of the message, the last part won't be sent till the stream is closed (call to <code>Stream.Close</code>) or flushed asynchronously. So disposing the message is the more practical way of ensuring that <code>Stream.Close</code> is called, but that would send the tail of the message synchronously, so calling <code>Stream.FlushAsync</code> will ensure that the last part is sent asynchronously. This allows the sending of arbitrary amounts of data which length is not known before hand.</p>
+
+<p>Once a message writer is created, regular .NET tools can be used to write in it:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">sw</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StreamWriter</span><span class="p">(</span><span class="n">messageWriterStream</span><span class="p">,</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">UTF8</span><span class="p">))</span>
+   <span class="p">{</span>
+      <span class="k">await</span> <span class="n">sw</span><span class="p">.</span><span class="n">WriteAsync</span><span class="p">(</span><span class="s">"Hello World!"</span><span class="p">);</span>
+      <span class="k">await</span> <span class="n">sw</span><span class="p">.</span><span class="n">FlushAsync</span><span class="p">();</span>
+   <span class="p">}</span>
+</pre></div>
+
+<p>Also binary messages:</p>
+
+<div class="highlight highlight-cs"><pre>   <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">messageWriter</span> <span class="p">=</span> <span class="n">ws</span><span class="p">.</span><span class="n">CreateMessageWriter</span><span class="p">(</span><span class="n">WebSocketMessageType</span><span class="p">.</span><span class="n">Binary</span><span class="p">))</span>
+      <span class="k">await</span> <span class="n">myFileStream</span><span class="p">.</span><span class="n">CopyToAsync</span><span class="p">(</span><span class="n">messageWriter</span><span class="p">);</span>
+</pre></div>
       </section>
 
     </div>
