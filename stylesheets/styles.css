@@ -532,7 +532,7 @@ body {
   padding: 0px 0 20px 0px;
   margin: 0px;
   font: 14px/1.5 "OpenSansRegular", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: #f0e7d5;
+  color: #fff;
   font-weight: normal;
   background: #252525;
   background-attachment: fixed !important;
@@ -541,7 +541,7 @@ body {
   background: -moz-linear-gradient(#2a2a29, #1c1c1c);
   background: -o-linear-gradient(#2a2a29, #1c1c1c);
   background: -ms-linear-gradient(#2a2a29, #1c1c1c);
-  background: linear-gradient(#111, #333);
+  background: linear-gradient(#111, #222);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -637,7 +637,7 @@ code {
 }
 
 pre {
-  padding: 8px 15px;
+  padding: 8px 5px;
   background: #191919;
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
