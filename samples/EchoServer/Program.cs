@@ -44,7 +44,9 @@ namespace WebSocketListenerTests.Echo
             
             // starting the server
             WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { PingTimeout = TimeSpan.FromSeconds(5), NegotiationQueueCapacity = 128, ParallelNegotiations = 16 });
+            // adding the WSS extension
             server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+
             server.Start();
 
             Log("Echo Server started at " + endpoint.ToString());
@@ -93,6 +95,7 @@ namespace WebSocketListenerTests.Echo
                 Int32 readed;
                 while (ws.IsConnected && !token.IsCancellationRequested)
                 {
+                    // await a message
                     using (var messageReader = await ws.ReadMessageAsync(token).ConfigureAwait(false))
                     {
                         if (messageReader == null)
@@ -108,17 +111,17 @@ namespace WebSocketListenerTests.Echo
                                     readed = -1;
                                     while(readed!=0)
                                     {
-                                        readed = await messageReader.ReadAsync(buffer, 0, buffer.Length);
+                                        readed = await messageReader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                                         messageWriter.Write(buffer, 0, readed);
                                     }
-                                    await messageReader.FlushAsync(token);
+                                    // avoiding synchronous flush on disposing
+                                    await messageReader.FlushAsync(token).ConfigureAwait(false);
                                 }
                                 _pf_outMessages.Increment();
 
                                 break;
 
                             case WebSocketMessageType.Binary:
-                                //Log("Array");
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
                                     await messageReader.CopyToAsync(messageWriter).ConfigureAwait(false);
                                 break;
