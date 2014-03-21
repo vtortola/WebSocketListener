@@ -13,10 +13,19 @@ WebSocketListener
  * It **handles partial frames transparently**. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.
  * It **handles interleaved control frames transparently**. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
-Take a look on the [performance tests](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests) I have been doing.
+Take a look on the [performance tests](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests).
 
 ### Quickstart
 
+#### Install
+
+[WebSocketListener is available through NuGet](http://www.nuget.org)
+
+```
+Install-Package vtortola.WebSockets
+```
+
+#### Set up
 Setting up a server and start listening for clients is very similar than a `TcpListener`:
 
 ```cs
@@ -31,6 +40,7 @@ Optionally, you can also:
  * [add customized extensions](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
 
 
+#### Accepting clients
 Once the server has started, clients can be awaited asynchronously. When a client connects, a `WebSocket` object will be returned:
 
 ```cs
@@ -39,15 +49,17 @@ Once the server has started, clients can be awaited asynchronously. When a clien
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
 
-With the client we can await a message as a readonly stream:
+#### Receiving messages
+
+With the client we can *await* a message as a readonly stream:
 
 ```cs
    WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
 ```
 
-At first, the `WebSocketMessageReadStream` will contain information from the header, like type of message (Text or Binary) but not the message content, neither the message length, since a frame only contains the frame length rather than the total message length, therefore that information could be missleading.
+Messages are a stream-like objects, so is it possible to use regular .NET framework tools to work with them. The `WebSocketMessageReadStream.MessageType` property indicates the kind of content the message contains, so it can be used to select a different handling approach.
 
-The message is a stream-like object, so is it possible to use regular .NET framework tools to work with them. The `WebSocketMessageReadStream.MessageType` property indicates what kind of content does the message contain, so it can be used to infer what type of handling does the message need.
+The returned `WebSocketMessageReadStream` object will contain information from the header, like type of message (Text or Binary) but not the message content, neither the message length, since a frame only contains the frame length rather than the total message length, therefore that information could be missleading.
 
 A text message can be read with a simple `StreamReader`.  It is worth remember that according to the WebSockets specs, it always uses UTF8 for text enconding:
 
@@ -72,7 +84,9 @@ Also, a binary message can be read using regular .NET techniques:
    }
 ```
 
-Writing messages is also easy. The `WebSocketMessageReadStream.CreateMessageWriter` method allows to create a write only stream to send the message:
+#### Sending messages
+
+Writing messages is also easy. The `WebSocketMessageReadStream.CreateMessageWriter` method allows to create a write only  message:
 
 ```cs
 using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
