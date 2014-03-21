@@ -92,7 +92,7 @@ namespace WebSocketListener.UnitTests
 
         WebSocketHandshaker GenerateSimpleHandshake()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(new WebSocketMessageExtensionCollection());
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(new WebSocketMessageExtensionCollection(), new WebSocketListenerOptions());
 
             using (var ms = new MemoryStream())
             {
@@ -103,7 +103,6 @@ namespace WebSocketListener.UnitTests
                     sw.WriteLine(@"Upgrade: websocket");
                     sw.WriteLine(@"Connection: Upgrade");
                     sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
-                    sw.WriteLine(@"Sec-WebSocket-Protocol: chat, superchat");
                     sw.WriteLine(@"Sec-WebSocket-Version: 13");
                     sw.WriteLine(@"Origin: http://example.com");
                 }

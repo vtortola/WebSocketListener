@@ -14,11 +14,12 @@ namespace vtortola.WebSockets
 {
     public class WebSocketHandshaker
     {
+        readonly List<WebSocketExtension> _responseExtensions;
+        readonly WebSocketListenerOptions _options;
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
-        private WebSocketMessageExtensionCollection RequestExtensions;
+        readonly WebSocketMessageExtensionCollection _requestExtensions;
         public WebSocketHttpRequest Request { get; private set; }
-        readonly List<WebSocketExtension> _responseExtensions;
         public List<IWebSocketMessageExtensionContext> NegotiatedExtensions { get; private set; }
         public Boolean IsWebSocketRequest
         {
@@ -32,18 +33,22 @@ namespace vtortola.WebSockets
             }
         }
 
-        public WebSocketHandshaker(WebSocketMessageExtensionCollection extensions)
+        public WebSocketHandshaker(WebSocketMessageExtensionCollection extensions, WebSocketListenerOptions options)
         {
             if (extensions == null)
                 throw new ArgumentNullException("extensions");
 
+            if (options == null)
+                throw new ArgumentNullException("options");
+            
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
             Request = new WebSocketHttpRequest();
             Request.Cookies = new CookieContainer();
             Request.Headers = new HttpHeadersCollection();
-            RequestExtensions = extensions;
+            _requestExtensions = extensions;
             _responseExtensions = new List<WebSocketExtension>();
+            _options = options;
             NegotiatedExtensions = new List<IWebSocketMessageExtensionContext>();
         }
 
@@ -67,7 +72,7 @@ namespace vtortola.WebSockets
             WebSocketExtension extensionResponse;
             foreach (var extRequest in Request.WebSocketExtensions)
             {
-                var extension = RequestExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
+                var extension = _requestExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
                 if (extension != null && extension.TryNegotiate(Request, out extensionResponse, out context))
                 {
                     NegotiatedExtensions.Add(context);
@@ -137,7 +142,7 @@ namespace vtortola.WebSockets
             {
                 writer.Write("\r\n");
                 writer.Write("Sec-WebSocket-Protocol: ");
-                writer.Write(_headers["SEC-WEBSOCKET-PROTOCOL"]);
+                writer.Write(Request.WebSocketProtocol);
             }
 
             if (_responseExtensions.Any())
@@ -190,6 +195,30 @@ namespace vtortola.WebSockets
             if(_headers.ContainsKey("Cookie"))
             {
                 Request.Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
+            }
+
+            if(_headers.ContainsKey("Sec-WebSocket-Protocol"))
+            {
+                var subprotocolRequest = _headers["Sec-WebSocket-Protocol"];
+
+                if (!_options.SubProtocols.Any())
+                    throw new WebSocketException("Client is requiring a sub protocol '" + subprotocolRequest + "' but there are not subprotocols defined");
+
+                String[] sp = subprotocolRequest.Split(',');
+                AssertArrayIsAtLeast(sp, 1, "Cannot understand the 'Sec-WebSocket-Protocol' header '" + subprotocolRequest + "'");
+
+                for (int i = 0; i < sp.Length; i++)
+                {
+                    var match = _options.SubProtocols.SingleOrDefault(s => s.Equals(sp[i].Trim(), StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                    {
+                        Request.WebSocketProtocol = match;
+                        break;
+                    }
+                }
+
+                if(String.IsNullOrWhiteSpace(Request.WebSocketProtocol))
+                    throw new WebSocketException("There is no subprotocol defined for '"+subprotocolRequest+"'");
             }
 
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();

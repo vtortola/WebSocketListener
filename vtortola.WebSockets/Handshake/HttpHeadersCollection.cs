@@ -13,7 +13,7 @@ namespace vtortola.WebSockets
     {
         public Uri Origin { get; private set; }
         public Uri Host { get; private set; }
-        public String WebSocketProtocol { get { return this["Sec-WebSocket-Protocol"]; } }
+        
         public String this[HttpRequestHeader header]
         {
             get { return this[header.ToString()]; }

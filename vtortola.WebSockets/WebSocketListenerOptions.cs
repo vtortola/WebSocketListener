@@ -16,7 +16,9 @@ namespace vtortola.WebSockets
         public TimeSpan WebSocketSendTimeout { get; set; }
         public TimeSpan WebSocketReceiveTimeout { get; set; }
         public Int32 SendBufferSize { get; set; }
+        public String[] SubProtocols { get; set; }
 
+        static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
@@ -26,6 +28,7 @@ namespace vtortola.WebSockets
             WebSocketSendTimeout = TimeSpan.FromSeconds(5);
             WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
             SendBufferSize = 8192;
+            SubProtocols = _noSubProtocols;
         }
 
         public WebSocketListenerOptions Clone()
@@ -38,7 +41,8 @@ namespace vtortola.WebSockets
                 NegotiationTimeout = this.NegotiationTimeout,
                 WebSocketSendTimeout = this.WebSocketSendTimeout,
                 WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
-                SendBufferSize = this.SendBufferSize
+                SendBufferSize = this.SendBufferSize,
+                SubProtocols = this.SubProtocols??_noSubProtocols
             };
         }
 

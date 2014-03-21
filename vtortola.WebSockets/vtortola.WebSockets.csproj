@@ -55,9 +55,9 @@
     <Compile Include="Extensions\WebSocketMessageExtensionCollection.cs" />
     <Compile Include="FrameHeader\WebSocketExtensionFlags.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeaderFlags.cs" />
-    <Compile Include="HttpNegotiation\HttpHeadersCollection.cs" />
-    <Compile Include="HttpNegotiation\WebSocketException.cs" />
-    <Compile Include="HttpNegotiation\WebSocketHttpRequest.cs" />
+    <Compile Include="Handshake\HttpHeadersCollection.cs" />
+    <Compile Include="Handshake\WebSocketException.cs" />
+    <Compile Include="Handshake\WebSocketHttpRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\WebSocketMessageReadStream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
@@ -71,7 +71,7 @@
     <Compile Include="Streams\WebSocketMessageStream.cs" />
     <Compile Include="WebSocketListener.cs" />
     <Compile Include="Streams\WebSocketMessageWriteNetworkStream.cs" />
-    <Compile Include="HttpNegotiation\WebSocketHandshaker.cs" />
+    <Compile Include="Handshake\WebSocketHandshaker.cs" />
     <Compile Include="WebSocketListenerOptions.cs" />
     <Compile Include="_ExtensionMethods.cs" />
   </ItemGroup>

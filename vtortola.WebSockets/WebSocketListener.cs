@@ -88,7 +88,7 @@ namespace vtortola.WebSockets
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
                 ConfigureSocket(client);
-                WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
+                WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions, _options);
 
                 Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
                 foreach (var conExt in ConnectionExtensions)
