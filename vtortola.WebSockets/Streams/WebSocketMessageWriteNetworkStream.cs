@@ -123,7 +123,7 @@ namespace vtortola.WebSockets
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            if (Interlocked.CompareExchange(ref _finished, 1, 1) == 0)
+            if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
                 await _client.WriteInternalAsync(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags, cancellationToken);
                 base.Close();
@@ -132,7 +132,7 @@ namespace vtortola.WebSockets
 
         public override void Close()
         {
-            if (Interlocked.CompareExchange(ref _finished,1,0) ==0)
+            if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
                 _client.WriteInternal(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags);
                 base.Close();
