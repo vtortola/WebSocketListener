@@ -13,7 +13,6 @@ namespace vtortola.WebSockets
     public sealed class WebSocket : IDisposable
     {
         readonly SemaphoreSlim _writeSemaphore;
-        readonly Socket _client;
         readonly Stream _clientStream;
         readonly WebSocketListenerOptions _options;
         Int32 _gracefullyClosed, _closed, _disposed;
@@ -23,16 +22,13 @@ namespace vtortola.WebSockets
 
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
-        public Boolean IsConnected { get { return _closed != 1 && _client.Connected; } }
+        public Boolean IsConnected { get { return _closed != 1; } }
         public WebSocketHttpRequest HttpRequest { get; private set; }
         internal WebSocketFrameHeader Header { get; private set; }
         internal readonly Byte[] WriteBufferTail;
                 
-        public WebSocket(Socket client, Stream clientStream, WebSocketHttpRequest httpRequest, WebSocketListenerOptions options, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocket(Stream clientStream, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketListenerOptions options, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
-            if (client == null)
-                throw new ArgumentNullException("client");
-
             if (clientStream == null)
                 throw new ArgumentNullException("clientStream");
 
@@ -44,16 +40,15 @@ namespace vtortola.WebSockets
 
             _writeSemaphore = new SemaphoreSlim(1);
             _options = options;
-            _client = client;
-            RemoteEndpoint = (IPEndPoint)_client.RemoteEndPoint;
-            LocalEndpoint = (IPEndPoint)_client.LocalEndPoint;
+            RemoteEndpoint = remote;
+            LocalEndpoint = local;
             HttpRequest = httpRequest;
             _pingTimeout = options.PingTimeout;
             _lastPong = DateTime.Now.Add(_pingTimeout);
             _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 3));
             _extensions = extensions;
             _clientStream = clientStream;
-            WriteBufferTail = new Byte[_client.SendBufferSize];
+            WriteBufferTail = new Byte[_options.SendBufferSize];
 
             PingAsync();
         }
@@ -395,7 +390,6 @@ namespace vtortola.WebSockets
                     WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
 
                 _clientStream.Close();
-                _client.Close();
             }
             catch { }
         }
@@ -411,7 +405,7 @@ namespace vtortola.WebSockets
                 {
                     _writeSemaphore.Dispose();
                     this.Close();
-                    _client.Dispose();
+                    _clientStream.Dispose();
                 }
                 catch { }
             }

@@ -11,15 +11,20 @@ namespace vtortola.WebSockets
         readonly List<IWebSocketMessageExtension> _extensions;
         readonly WebSocketListener _listener;
 
-        public WebSocketMessageExtensionCollection(WebSocketListener webSocketListener)
+        public WebSocketMessageExtensionCollection()
         {
-            _listener = webSocketListener;
             _extensions = new List<IWebSocketMessageExtension>();
         }
 
-        public void RegisterExtension(IWebSocketMessageExtension extension)
+        public WebSocketMessageExtensionCollection(WebSocketListener webSocketListener)
+            :this()
         {
-            if (_listener.IsStarted)
+            _listener = webSocketListener;
+        }
+
+        public void RegisterExtension(IWebSocketMessageExtension extension)
+        {  
+            if (_listener != null && _listener.IsStarted)
                 throw new WebSocketException("Extensions cannot be added after the service is started");
 
             _extensions.Add(extension);

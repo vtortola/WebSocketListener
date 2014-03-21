@@ -12,15 +12,15 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    internal class WebSocketHandshaker
+    public class WebSocketHandshaker
     {
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
         private WebSocketMessageExtensionCollection RequestExtensions;
-        internal WebSocketHttpRequest Request { get; private set; }
+        public WebSocketHttpRequest Request { get; private set; }
         readonly List<WebSocketExtension> _responseExtensions;
         public List<IWebSocketMessageExtensionContext> NegotiatedExtensions { get; private set; }
-        internal Boolean IsWebSocketRequest
+        public Boolean IsWebSocketRequest
         {
             get
             {
@@ -31,8 +31,12 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
             }
         }
-        internal WebSocketHandshaker(WebSocketMessageExtensionCollection extensions)
+
+        public WebSocketHandshaker(WebSocketMessageExtensionCollection extensions)
         {
+            if (extensions == null)
+                throw new ArgumentNullException("extensions");
+
             _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase);
             _sha1 = SHA1.Create();
             Request = new WebSocketHttpRequest();
@@ -43,7 +47,7 @@ namespace vtortola.WebSockets
             NegotiatedExtensions = new List<IWebSocketMessageExtensionContext>();
         }
 
-        internal async Task<Boolean> HandshakeAsync(Stream clientStream)
+        public async Task<Boolean> HandshakeAsync(Stream clientStream)
         {
             ReadHttpRequest(clientStream);
 
@@ -98,11 +102,8 @@ namespace vtortola.WebSockets
 
                 ParseGET(line);
 
-                while (!String.IsNullOrWhiteSpace(line))
-                {
-                    line = sr.ReadLine();
+                while (!String.IsNullOrWhiteSpace(line = sr.ReadLine()))
                     ParseHeader(line);
-                }
             }
         }
         private void ParseGET(String line)

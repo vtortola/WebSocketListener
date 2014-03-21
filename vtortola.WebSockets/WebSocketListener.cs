@@ -107,7 +107,7 @@ namespace vtortola.WebSockets
                         throw new WebSocketException("Negotiation timeout");
 
                 if (await handshakeTask)
-                    result.Result = new WebSocket(client, stream, handShaker.Request, _options, handShaker.NegotiatedExtensions);
+                    result.Result = new WebSocket(stream, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handShaker.Request, _options, handShaker.NegotiatedExtensions);
             }
             catch (Exception ex)
             {
