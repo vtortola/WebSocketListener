@@ -73,6 +73,8 @@ A text message can be read with a simple `StreamReader`.  It is worth remember t
    }
 ```
 
+```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time.
+
 Also, a binary message can be read using regular .NET techniques:
 
 ```cs
