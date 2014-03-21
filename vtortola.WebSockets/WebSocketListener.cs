@@ -86,14 +86,27 @@ namespace vtortola.WebSockets
             var result = new WebSocketNegotiationResult();
             try
             {
+                var timeoutTask = Task.Delay(_options.NegotiationTimeout);
                 ConfigureSocket(client);
                 WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions);
 
                 Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
                 foreach (var conExt in ConnectionExtensions)
-                    stream = await conExt.ExtendConnectionAsync(stream).ConfigureAwait(false);
+                {
+                    var extTask = conExt.ExtendConnectionAsync(stream);
+                    await Task.WhenAny(timeoutTask, extTask).ConfigureAwait(false);
+                    if (timeoutTask.IsCompleted)
+                        throw new WebSocketException("Negotiation timeout (Extension: "+conExt.GetType().Name+")");
 
-                if (await handShaker.HandshakeAsync(stream))
+                    stream = await extTask;
+                }
+
+                var handshakeTask = handShaker.HandshakeAsync(stream);
+                await Task.WhenAny(timeoutTask, handshakeTask).ConfigureAwait(false);
+                    if (timeoutTask.IsCompleted)
+                        throw new WebSocketException("Negotiation timeout");
+
+                if (await handshakeTask)
                     result.Result = new WebSocket(client, stream, handShaker.Request, _options, handShaker.NegotiatedExtensions);
             }
             catch (Exception ex)
