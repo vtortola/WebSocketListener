@@ -50,10 +50,10 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="WebSocketTests.cs" />
-    <Compile Include="WebSocketFrameHeaderFlagsTests.cs" />
+    <Compile Include="With_WebSocket.cs" />
+    <Compile Include="With_WebSocketFrameHeaderFlags.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WebSocketHandshakerTests.cs" />
+    <Compile Include="With_WebSocketHandshaker.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">

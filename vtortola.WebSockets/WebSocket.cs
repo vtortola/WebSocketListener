@@ -43,14 +43,18 @@ namespace vtortola.WebSockets
             RemoteEndpoint = remote;
             LocalEndpoint = local;
             HttpRequest = httpRequest;
-            _pingTimeout = options.PingTimeout;
-            _lastPong = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 3));
             _extensions = extensions;
             _clientStream = clientStream;
             WriteBufferTail = new Byte[_options.SendBufferSize];
 
-            PingAsync();
+            if (options.PingTimeout != Timeout.InfiniteTimeSpan)
+            {
+                _pingTimeout = options.PingTimeout;
+                _lastPong = DateTime.Now.Add(_pingTimeout);
+                _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 2));
+
+                PingAsync();
+            }
         }
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
