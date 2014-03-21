@@ -36,7 +36,7 @@ Setting up a server and start listening for clients is very similar than a `TcpL
 
 Optionally, you can also:
  * [enable TLS for secure WebSocket connections](https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
- * [customize queuing and ping behaviours](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
+ * [customize subprotocols, queuing and ping behaviours](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
  * [add customized extensions](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
 
 
