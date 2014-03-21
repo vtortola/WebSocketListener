@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("vtortola.WebSockets.Deflate")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("http://vtortola.github.io/WebSocketListener")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("vtortola")]
 [assembly: AssemblyProduct("vtortola.WebSockets.Deflate")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2014")]
+[assembly: AssemblyCopyright("MIT")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
