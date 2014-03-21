@@ -275,6 +275,7 @@ namespace vtortola.WebSockets
                 default: throw new WebSocketException("Unexpected header option '" + Header.Flags.Option.ToString() + "'");
             }
         }
+        readonly Byte[] _pingBuffer = new Byte[2];
         private async Task PingAsync()
         {
             await Task.Yield();
@@ -289,7 +290,7 @@ namespace vtortola.WebSockets
                     if (_lastPong.Add(_pingTimeout).Add(_pingInterval) < now)
                         Close();
                     else
-                        await this.WriteInternalAsync(BitConverter.GetBytes(now.Ticks), 0, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None);
+                        await this.WriteInternalAsync(_pingBuffer, 0, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None);
                 }
                 catch{}
             }
