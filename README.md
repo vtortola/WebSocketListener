@@ -50,7 +50,6 @@ Once the server has started, clients can be awaited asynchronously. When a clien
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
 
 #### Receiving messages
-
 With the client we can *await* a message as a readonly stream:
 
 ```cs
@@ -85,7 +84,6 @@ Also, a binary message can be read using regular .NET techniques:
 ```
 
 #### Sending messages
-
 Writing messages is also easy. The `WebSocketMessageReadStream.CreateMessageWriter` method allows to create a write only  message:
 
 ```cs
