@@ -108,3 +108,6 @@ Also binary messages:
    using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
       await myFileStream.CopyToAsync(messageWriter);
 ```
+
+#### Example
+Check a [simplified example](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example) or download the [EchoServer from the samples](https://github.com/vtortola/WebSocketListener/tree/master/samples/EchoServer).
