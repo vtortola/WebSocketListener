@@ -71,7 +71,7 @@ namespace WebSocketListenerTests.Echo
             {
                 try
                 {
-                    var ws = await server.AcceptWebSocketClientAsync(token);
+                    var ws = await server.AcceptWebSocketAsync(token);
                     if(ws!=null)
                         HandleConnectionAsync(ws, token);
                 }

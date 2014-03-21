@@ -9,8 +9,6 @@ namespace vtortola.WebSockets
     public interface IWebSocketMessageExtension
     {
         String Name { get;}
-        Boolean IsRequired { get; }
-        Int32 Order { get; }
         Boolean TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketMessageExtensionContext context);
     }
 
