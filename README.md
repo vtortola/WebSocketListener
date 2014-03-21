@@ -4,7 +4,7 @@ WebSocketListener
 **WebSocketListener** is a light weight **WebSocket** server side connector, implemented in C# using *sockets*, according to the [RFC 6455](http://tools.ietf.org/html/rfc6455). It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.
 
  * It can work with both **Text or Binary** messages.
- * It supports **wss://** (WebSocket Secure through **TLS**).
+ * It supports `wss://` (WebSocket Secure through **TLS**).
  * It is **asynchronous**. 
  * It has the **Ping/Pong** functionality **built-in**.
  * It detects and disconnects **half open connections**.
