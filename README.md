@@ -3,7 +3,7 @@ WebSocketListener
 
 **WebSocketListener** is a light weight **WebSocket** server side connector, implemented in C# using *sockets*, according to the [RFC 6455](http://tools.ietf.org/html/rfc6455). It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.
 
-**WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` does brings TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber patern or reliable messaging beyond TCP.
+**WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` provides TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber patern or reliable messaging beyond TCP.
 
  * It can work with both **Text or Binary** messages.
  * It supports `wss://` (WebSocket Secure through **TLS**).
