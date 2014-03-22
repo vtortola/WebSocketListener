@@ -28,7 +28,7 @@ Install-Package vtortola.WebSockets
 ```
 
 #### Set up
-Setting up a server and start listening for clients is very similar than a `TcpListener`:
+Setting up a server and start listening for clients is very similar to a `TcpListener`:
 
 ```cs
    var local = new IPEndPoint(IPAddress.Any, 8006);
