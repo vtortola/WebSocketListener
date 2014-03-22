@@ -3,6 +3,8 @@ WebSocketListener
 
 **WebSocketListener** is a light weight **WebSocket** server side connector, implemented in C# using *sockets*, according to the [RFC 6455](http://tools.ietf.org/html/rfc6455). It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.
 
+**WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` does brings TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber patern or reliable messaging beyond TCP.
+
  * It can work with both **Text or Binary** messages.
  * It supports `wss://` (WebSocket Secure through **TLS**).
  * It is **asynchronous**. 
@@ -49,7 +51,7 @@ Once the server has started, clients can be awaited asynchronously. When a clien
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
 
-`AcceptWebSocketAsync` should be in a loop to continuously accept new clients, also wraped in a `try/catch` since errors in the negotiation process will be thrown here.
+`AcceptWebSocketAsync` should be in a loop to continuously accept new clients, also wraped in a `try/catch` since errors in the negotiation process will be thrown here. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example).
 
 #### Receiving messages
 With the client we can *await* a message as a readonly stream:
@@ -73,7 +75,7 @@ A text message can be read with a simple `StreamReader`.  It is worth remember t
    }
 ```
 
-```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time.
+```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example).
 
 Also, a binary message can be read using regular .NET techniques:
 
