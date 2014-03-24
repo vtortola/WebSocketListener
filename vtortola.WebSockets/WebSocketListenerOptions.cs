@@ -22,7 +22,7 @@ namespace vtortola.WebSockets
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
-            NegotiationQueueCapacity = Environment.ProcessorCount * 2;
+            NegotiationQueueCapacity = Environment.ProcessorCount * 10;
             ParallelNegotiations = Environment.ProcessorCount * 2;
             NegotiationTimeout = TimeSpan.FromSeconds(5);
             WebSocketSendTimeout = TimeSpan.FromSeconds(5);
