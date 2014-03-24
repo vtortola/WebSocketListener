@@ -31,9 +31,9 @@ PM> Install-Package vtortola.WebSocketListener
 Setting up a server and start listening for clients is very similar to a `TcpListener`:
 
 ```cs
-   var local = new IPEndPoint(IPAddress.Any, 8006);
-   var server = new WebSocketListener(local);
-   server.Start();
+var local = new IPEndPoint(IPAddress.Any, 8006);
+var server = new WebSocketListener(local);
+server.Start();
 ```
 
 Optionally, you can also:
@@ -46,7 +46,7 @@ Optionally, you can also:
 Once the server has started, clients can be awaited asynchronously. When a client connects, a `WebSocket` object will be returned:
 
 ```cs
-   WebSocket client = await server.AcceptWebSocketAsync(cancellationToken);
+WebSocket client = await server.AcceptWebSocketAsync(cancellationToken);
 ```
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
@@ -57,7 +57,7 @@ The client provides means to read and write messages. With the client, as in the
 With the client we can *await* a message as a readonly stream:
 
 ```cs
-   WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
+WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
 ```
 
 Messages are a stream-like objects, so is it possible to use regular .NET framework tools to work with them. The `WebSocketMessageReadStream.MessageType` property indicates the kind of content the message contains, so it can be used to select a different handling approach.
@@ -67,12 +67,12 @@ The returned `WebSocketMessageReadStream` object will contain information from t
 A text message can be read with a simple `StreamReader`.  It is worth remember that according to the WebSockets specs, it always uses UTF8 for text enconding:
 
 ```cs
-   if(messageReadStream.MessageType == WebSocketMessageType.Text)
-   {
-      String msgContent = String.Empty.
-      using (var sr = new StreamReader(messageReadStream, Encoding.UTF8))
-           msgContent = await sr.ReadToEndAsync();
-   }
+if(messageReadStream.MessageType == WebSocketMessageType.Text)
+{
+   String msgContent = String.Empty.
+   using (var sr = new StreamReader(messageReadStream, Encoding.UTF8))
+        msgContent = await sr.ReadToEndAsync();
+}
 ```
 
 ```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example).
@@ -80,13 +80,13 @@ A text message can be read with a simple `StreamReader`.  It is worth remember t
 Also, a binary message can be read using regular .NET techniques:
 
 ```cs
-   if(messageReadStream.MessageType == WebSocketMessageType.Binary)
+if(messageReadStream.MessageType == WebSocketMessageType.Binary)
+{
+   using (var ms = new MemoryStream())
    {
-      using (var ms = new MemoryStream())
-      {
-          await messageReader.CopyToAsync(ms);
-      }
+       await messageReader.CopyToAsync(ms);
    }
+}
 ```
 
 #### Sending messages
@@ -101,18 +101,18 @@ It is important to point out, that despite of the length of the message, the las
 Once a message writer is created, regular .NET tools can be used to write in it:
 
 ```cs
-   using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
-   {
-      await sw.WriteAsync("Hello World!");
-      await sw.FlushAsync();
-   }
+using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
+{
+   await sw.WriteAsync("Hello World!");
+   await sw.FlushAsync();
+}
 ```    
 
 Also binary messages:
 
 ```cs
-   using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
-      await myFileStream.CopyToAsync(messageWriter);
+using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
+   await myFileStream.CopyToAsync(messageWriter);
 ```
 
 #### Example
