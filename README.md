@@ -21,10 +21,10 @@ Take a look on the [performance and load  tests](https://github.com/vtortola/Web
 
 #### Install
 
-[WebSocketListener is available through NuGet](http://www.nuget.org) (TODO)
+[WebSocketListener is available through NuGet](https://www.nuget.org/packages/vtortola.WebSocketListener/)
 
 ```
-Install-Package vtortola.WebSockets
+PM> Install-Package vtortola.WebSocketListener
 ```
 
 #### Set up
