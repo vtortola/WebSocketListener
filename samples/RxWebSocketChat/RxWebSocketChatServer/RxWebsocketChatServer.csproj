@@ -64,6 +64,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChatJoinMessageHandler.cs" />
+    <Compile Include="ChatMessageHandler.cs" />
+    <Compile Include="ChatRoomManager.cs" />
+    <Compile Include="ChatSession.cs" />
+    <Compile Include="ChatSessionsObserver.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WsExtensions.cs" />

@@ -16,6 +16,7 @@
     border-bottom:2px solid #000;
     border-top-left-radius:5px;
     border-bottom-left-radius:5px;
+    border-right:0px;
     background-color:#555;
     margin:20px 0px;
     overflow-y:scroll;
@@ -24,6 +25,7 @@
     display:inline-block;
     width:400px;
     max-width:400px;
+    box-shadow:0 0 20px #fff;
 }
 
 .chat-participants{
@@ -33,11 +35,15 @@
     border-bottom:2px solid #000;
     border-top-right-radius:5px;
     border-bottom-right-radius:5px;
-    margin:20px 0px;
+    border-left:0px;
+    margin:20px 0px 20px -4px;
     overflow-x:hidden;
     padding:5px;
     display:inline-block;
     width:100px;
+    box-shadow:0 0 20px #fff;
+    background-color:#000;
+    color: yellow;
 }
 
 .chat-msg.me{
@@ -48,6 +54,13 @@ input{
     border:1px solid #000;
     border-radius:4px;
     padding:4px;
+    box-shadow:0 0 10px yellow;
+}
+
+input:disabled {
+    box-shadow:none;
+    background:#555;
+    color:#aeaeae;
 }
 
 label{
@@ -59,6 +72,14 @@ button{
     padding:5px;
     min-width:100px;
     border-radius:5px;
+    box-shadow:0 0 10px green;
+}
+
+button:disabled{
+    padding:5px;
+    min-width:100px;
+    border-radius:5px;
+    box-shadow:0 0 10px red;
 }
 
 input.error{

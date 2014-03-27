@@ -85,6 +85,7 @@
     ws.onclose = function () {
         joinRoom.disabled = true;
         send.disabled = true;
+        message.disabled = true;
     };
 
     return me;

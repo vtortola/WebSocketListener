@@ -17,9 +17,6 @@ using System.Reactive.Subjects;
 
 namespace ChatServer
 {
-    using ChatRoom = List<ChatSession>;    
-    using ChatRoomManager = ConcurrentDictionary<String, List<ChatSession>>;
-
     class Program
     {
         static void Main(String[] args)
@@ -32,7 +29,7 @@ namespace ChatServer
 
             Log("Rx Chat Server started at " + endpoint.ToString());
 
-            var chatSessionObserver = new ChatSessionObserver(new ChatRoomManager());
+            var chatSessionObserver = new ChatSessionsObserver(new ChatRoomManager());
 
             Observable.FromAsync(server.AcceptWebSocketAsync)
                       .Select(ws => new ChatSession(ws) 
@@ -57,78 +54,4 @@ namespace ChatServer
             Console.WriteLine(s);
         }
     }
-
-    public class ChatSession
-    {
-        public IObservable<dynamic> In { get; set; }
-        public IObserver<dynamic> Out { get; set; }
-        public String Nick { get; set; }
-
-        readonly WebSocket _ws;
-
-        public ChatSession(WebSocket ws)
-        {
-            _ws = ws;
-        }
-    }
-
-    public class ChatSessionObserver : IObserver<ChatSession>
-    {
-        readonly ChatRoomManager _chatRoomManager;
-
-        public ChatSessionObserver(ChatRoomManager chatRoomManager)
-        {
-            _chatRoomManager = chatRoomManager;
-        }
-
-        public void OnCompleted()
-        {
-            Console.WriteLine("Completed");
-        }
-
-        public void OnError(Exception error)
-        {
-            Console.WriteLine("chatParticipantObserver: " + error.Message);
-        }
-
-        public void OnNext(ChatSession c)
-        {
-            var published = c.In.Publish().RefCount();
-
-            published.Where(msgIn => msgIn.cls != null && msgIn.cls == "join" && msgIn.room != null)
-                     .Subscribe(msgIn =>
-                     {
-                         String roomName = msgIn.room;
-                         var room = _chatRoomManager.GetOrAdd(roomName, new ChatRoom());
-                         room.Add(c);
-                         c.Nick = msgIn.nick;
-                         Console.WriteLine(msgIn);
-                         msgIn.participants = new JArray(room.Where(cc => cc.Nick != c.Nick).Select(x => x.Nick).ToArray());
-                         c.Out.OnNext(msgIn);
-                         var anounce = new { cls = "msg", message = c.Nick + " joined the room.", room = roomName, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") };
-                         foreach (var client in _chatRoomManager[roomName])
-                         {
-                             if (client.Nick != c.Nick)
-                                 client.Out.OnNext(new { cls = "joint", room = roomName, nick = c.Nick });
-                             client.Out.OnNext(anounce);
-                         }
-                     });
-
-            published.Where(msgIn => msgIn.cls != null && msgIn.cls == "msg" && msgIn.message != null && msgIn.room != null)
-                     .Subscribe(msgIn =>
-                     {
-                         String roomName = msgIn.room;
-                         ChatRoom chatRoom;
-                         if (_chatRoomManager.TryGetValue(roomName, out chatRoom))
-                         {
-                             msgIn.nick = c.Nick;
-                             msgIn.timestamp = DateTime.Now.ToString("hh:mm:ss");
-                             Console.WriteLine(msgIn);
-                             foreach (var client in _chatRoomManager[roomName])
-                                 client.Out.OnNext(msgIn);
-                         }
-                     });
-        }
-    }
-
 }
