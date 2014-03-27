@@ -13,91 +13,38 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
+using System.Reactive.Subjects;
 
 namespace ChatServer
 {
+    using ChatRoom = List<ChatSession>;    
+    using ChatRoomManager = ConcurrentDictionary<String, List<ChatSession>>;
+
     class Program
     {
-        static void Main(string[] args)
+        static void Main(String[] args)
         {
             CancellationTokenSource cancellation = new CancellationTokenSource();
 
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
-            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { SubProtocols = new[]{"chat"} });
+            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { SubProtocols = new[] {"chat"} });
             server.Start();
 
             Log("Rx Chat Server started at " + endpoint.ToString());
 
-            var accept = Observable.FromAsync(server.AcceptWebSocketAsync)
-                                   .Select(ws =>
-                                   {
-                                       var inStream = Observable.FromAsync<WebSocketMessageReadStream>(ws.ReadMessageAsync)
-                                                                .DoWhile(()=>ws.IsConnected)
-                                                                .Where(reader=> reader != null)
-                                                                .Select(reader =>
-                                                                {
-                                                                    using (var sr = new StreamReader(reader, Encoding.UTF8, false, 8192, true))
-                                                                        return (dynamic)JObject.Load(new JsonTextReader(sr));
-                                                                });
+            var chatSessionObserver = new ChatSessionObserver(new ChatRoomManager());
 
-                                       JsonSerializer json = new JsonSerializer();
-                                 
-                                       var outStream = Observer.Create<dynamic>(value =>
-                                           {
-                                               using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text))
-                                               using (var sw = new StreamWriter(writer, Encoding.UTF8))
-                                                   json.Serialize(sw, value);
-                                           });
-                                      
-                                       return new ChatParticipant() { In= inStream, Out= outStream};
-                                   });
-
-            var connections = Observable.While(() => !cancellation.IsCancellationRequested, accept);
-
-            var rooms = new ConcurrentDictionary<String,List<ChatParticipant>>();
-
-            Action<ChatParticipant, dynamic> roomSubscriptor = (c,i) =>
-                {
-                    if (i.cls != null && i.cls == "join" && i.room != null)
-                    {
-                        String key = i.room;
-                        var room = rooms.GetOrAdd(key, new List<ChatParticipant>());
-                        room.Add(c);
-                        c.Nick = i.nick;
-                        Console.WriteLine("Room: " + key + " joined by " + c.Nick);
-                        i.participants = new JArray(room.Where(cc => cc.Nick != c.Nick).Select(x => x.Nick).ToArray());
-                        c.Out.OnNext(i);
-                        var anounce = new { cls = "msg", message = c.Nick + " joined the room.", room = key, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") };
-                        foreach (var client in rooms[key])
-                        {
-                            if(client.Nick != c.Nick)
-                                client.Out.OnNext(new { cls="joint", room = key, nick = c.Nick });
-                            client.Out.OnNext(anounce);
-                        }
-                    }
-                };
-
-            Action<ChatParticipant,dynamic> messageSubscriptor = (c,i) =>
-                {
-                    if (i.cls != null && i.cls == "msg" && i.message != null && i.room != null)
-                    {
-                        String key = i.room;
-                        i.nick = c.Nick;
-                        i.timestamp = DateTime.Now.ToString("hh:mm:ss");
-                        Console.WriteLine("Message to Room: " + key);
-                        foreach (var client in rooms[key])
-                            client.Out.OnNext(i);
-                    }
-                };
-
-            connections.Do(c => 
-            {
-                c.In.Do(i=>roomSubscriptor(c,i))
-                    .Do(i=> messageSubscriptor(c,i))
-                    .Do(i => Console.WriteLine(i??"null"))
-                    .Subscribe();
-
-            }).Subscribe();
+            Observable.FromAsync(server.AcceptWebSocketAsync)
+                      .Select(ws => new ChatSession(ws) 
+                              { 
+                                  In = Observable.FromAsync<dynamic>(ws.ReadDynamicAsync)
+                                                 .DoWhile(() => ws.IsConnected)
+                                                 .Where(msg => msg != null), 
+                    
+                                  Out = Observer.Create<dynamic>(ws.WriteDynamic) 
+                              })
+                      .DoWhile(() => server.IsStarted && !cancellation.IsCancellationRequested)
+                      .Subscribe(chatSessionObserver);
          
             Console.ReadKey(true);
             Log("Server stoping");
@@ -111,11 +58,77 @@ namespace ChatServer
         }
     }
 
-    public class ChatParticipant
+    public class ChatSession
     {
         public IObservable<dynamic> In { get; set; }
         public IObserver<dynamic> Out { get; set; }
         public String Nick { get; set; }
+
+        readonly WebSocket _ws;
+
+        public ChatSession(WebSocket ws)
+        {
+            _ws = ws;
+        }
+    }
+
+    public class ChatSessionObserver : IObserver<ChatSession>
+    {
+        readonly ChatRoomManager _chatRoomManager;
+
+        public ChatSessionObserver(ChatRoomManager chatRoomManager)
+        {
+            _chatRoomManager = chatRoomManager;
+        }
+
+        public void OnCompleted()
+        {
+            Console.WriteLine("Completed");
+        }
+
+        public void OnError(Exception error)
+        {
+            Console.WriteLine("chatParticipantObserver: " + error.Message);
+        }
+
+        public void OnNext(ChatSession c)
+        {
+            var published = c.In.Publish().RefCount();
+
+            published.Where(msgIn => msgIn.cls != null && msgIn.cls == "join" && msgIn.room != null)
+                     .Subscribe(msgIn =>
+                     {
+                         String roomName = msgIn.room;
+                         var room = _chatRoomManager.GetOrAdd(roomName, new ChatRoom());
+                         room.Add(c);
+                         c.Nick = msgIn.nick;
+                         Console.WriteLine(msgIn);
+                         msgIn.participants = new JArray(room.Where(cc => cc.Nick != c.Nick).Select(x => x.Nick).ToArray());
+                         c.Out.OnNext(msgIn);
+                         var anounce = new { cls = "msg", message = c.Nick + " joined the room.", room = roomName, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") };
+                         foreach (var client in _chatRoomManager[roomName])
+                         {
+                             if (client.Nick != c.Nick)
+                                 client.Out.OnNext(new { cls = "joint", room = roomName, nick = c.Nick });
+                             client.Out.OnNext(anounce);
+                         }
+                     });
+
+            published.Where(msgIn => msgIn.cls != null && msgIn.cls == "msg" && msgIn.message != null && msgIn.room != null)
+                     .Subscribe(msgIn =>
+                     {
+                         String roomName = msgIn.room;
+                         ChatRoom chatRoom;
+                         if (_chatRoomManager.TryGetValue(roomName, out chatRoom))
+                         {
+                             msgIn.nick = c.Nick;
+                             msgIn.timestamp = DateTime.Now.ToString("hh:mm:ss");
+                             Console.WriteLine(msgIn);
+                             foreach (var client in _chatRoomManager[roomName])
+                                 client.Out.OnNext(msgIn);
+                         }
+                     });
+        }
     }
 
 }
