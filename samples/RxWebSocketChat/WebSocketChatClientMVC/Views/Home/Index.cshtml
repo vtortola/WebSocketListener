@@ -1,0 +1,29 @@
+﻿
+<div class="chat" data-websocket="ws://localhost:8001">
+    <h2>WebSocket Rx Chat</h2>
+    <p>Join a chat room.</p>
+    <div class="join-controls">
+        <label>Nick</label><input type="text" class="nick-input" disabled placeholder="Enter your nick" />
+        <label>Chat Room</label><input type="text" class="chat-room-input" disabled placeholder="Enter a chat room"/>
+        <button class="join-room" disabled>Join</button>
+    </div>
+    <div class="chat-room">
+        <div class="chat-log">
+        </div>
+        <div class="chat-participants">
+        </div>
+            <div>
+                <label>Message</label>
+                <input type="text" class="message" placeholder="Enter a chat message" />
+                <button class="send">Send</button>
+            </div>
+        </div>
+</div>
+
+@section scripts {
+<script src="~/Content/Scripts/chat.js"></script>
+}
+
+@section styles{
+<link href="~/Content/Styles/chat.css" rel="stylesheet" />
+}
