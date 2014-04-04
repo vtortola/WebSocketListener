@@ -52,23 +52,33 @@ namespace vtortola.WebSockets
 
         private async Task StartAccepting()
         {
-            await Task.Yield();
-            while(_isDisposed ==0)
+            while(IsStarted)
             {
-                var client = await _listener.AcceptSocketAsync();
+                var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
                 if (client != null)
-                    _negotiationQueue.Post(client);
+                    if (!_negotiationQueue.Post(client))
+                        FinishSocket(client);
             }
         }
+
+        private void FinishSocket(Socket client)
+        {
+            try { client.Dispose(); }
+            catch { }
+        }
+
         public void Start()
         {
-            IsStarted = true;
-            if(_options.TcpBacklog.HasValue)
-                _listener.Start(_options.TcpBacklog.Value);
-            else
-                _listener.Start();
+            if (_isDisposed == 0)
+            {
+                IsStarted = true;
+                if (_options.TcpBacklog.HasValue)
+                    _listener.Start(_options.TcpBacklog.Value);
+                else
+                    _listener.Start();
 
-            StartAccepting();
+                Task.Run((Func<Task>)StartAccepting);
+            }
         }
         public void Stop()
         {
@@ -111,6 +121,7 @@ namespace vtortola.WebSockets
             }
             catch (Exception ex)
             {
+                FinishSocket(client);
                 result.Error = ExceptionDispatchInfo.Capture(ex);
                 result.Result = null;
             }
