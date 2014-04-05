@@ -51,7 +51,7 @@ WebSocket client = await server.AcceptWebSocketAsync(cancellationToken);
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
 
-`AcceptWebSocketAsync` should be in a loop to continuously accept new clients, also wraped in a `try/catch` since errors in the negotiation process will be thrown here. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example).
+`AcceptWebSocketAsync` should be in a loop to continuously accept new clients, also wraped in a `try/catch` since errors in the negotiation process will be thrown here. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example).
 
 #### Receiving messages
 With the client we can *await* a message as a readonly stream:
@@ -75,7 +75,7 @@ if(messageReadStream.MessageType == WebSocketMessageType.Text)
 }
 ```
 
-```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example).
+```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example).
 
 Also, a binary message can be read using regular .NET techniques:
 
@@ -116,7 +116,7 @@ using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
 ```
 
 #### Example
-Check a [simplified example](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example) or download the [EchoServer from the samples](https://github.com/vtortola/WebSocketListener/tree/master/samples/EchoServer).
+Take a look on the [WebSocketListener samples](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples).
 
 ###The MIT License (MIT)
 
