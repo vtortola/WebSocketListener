@@ -13,6 +13,10 @@
     text-shadow: 2px 2px 2px blue, -2px -2px 4px pink;
 }
 
+.chat-room{
+    position:relative;
+}
+
 .chat{
     width:700px;
     margin:auto auto;
@@ -61,6 +65,21 @@
 
 .message{
     width:400px;
+}
+
+.audio-switch{
+    display:block;
+    width:27px;
+    height:27px;
+    background-image:url('../Images/icons.png');
+    cursor:pointer;
+    position: absolute;
+    left: -35px;
+    top: 25px;
+}
+
+.audio-switch.disabled {
+    background-position-x:27px;
 }
 
 input{

@@ -1,6 +1,6 @@
-﻿var chat = function (control, url) {
+﻿var chat = function (control, websocket, notificationSound) {
     var me = {};
-    var ws = new WebSocket(url, "chat");
+    var ws = new WebSocket(websocket, "chat");
     var nickInput = control.getElementsByClassName('nick-input')[0];
     var chatRoomInput = control.getElementsByClassName('chat-room-input')[0];
     var joinRoom = control.getElementsByClassName('join-room')[0];
@@ -8,11 +8,14 @@
     var message = control.getElementsByClassName('message')[0];
     var send = control.getElementsByClassName('send')[0];
     var chatParticipants = control.getElementsByClassName('chat-participants')[0];
+    var audioSwitch = control.getElementsByClassName('audio-switch')[0];
+    audioSwitch.isAudioEnabled = true;
 
     message.disabled = true;
     send.disabled = true;
     joinRoom.disabled = true;
-
+    var playNotification = function () { };
+    
     joinRoom.addEventListener('click', function () {
 
         if (nickInput.value && chatRoomInput.value) {
@@ -37,6 +40,17 @@
         sendMessage();
     });
 
+    audioSwitch.addEventListener('click', function () {
+        if (audioSwitch.isAudioEnabled) {
+            audioSwitch.className='audio-switch disabled';
+            audioSwitch.isAudioEnabled = false;
+        }
+        else {
+            audioSwitch.className = 'audio-switch';
+            audioSwitch.isAudioEnabled = true;
+        }
+    });
+
     message.addEventListener('keypress', function (e) {
         var code = (e.keyCode ? e.keyCode : e.which);
         if (code == 13)
@@ -52,7 +66,12 @@
 
     var addChatMessage = function (nick, message, timestamp) {
         var node = document.createElement('div');
-        node.className = 'chat-msg' +(nick == me.nick?' me':'');
+        node.className = 'chat-msg';
+        if(nick == me.nick)
+            node.className += ' me';
+        else if (nick != 'Server')
+            playNotification();
+
         node.textContent = timestamp + ': [' + nick + ']->   ' + message;
         chatLog.appendChild(node);
         chatLog.scrollTop = chatLog.scrollHeight;
@@ -72,14 +91,7 @@
         }
     };
 
-    ws.onopen = function () {
-        joinRoom.disabled = false;
-        nickInput.disabled = false;
-        chatRoomInput.disabled = false;
-    };
-
-    ws.onmessage = function (msg) {
-        var json = JSON.parse(msg.data);
+    var handleJsonEvent = function (json) {
         switch (json.cls) {
             case 'join':
                 joinRoom.disabled = true;
@@ -101,7 +113,44 @@
                 break;
             case 'leave':
                 removeParticipant(json.nick);
-                break; 
+                break;
+        }
+    };
+
+    var loadNotificationSound = function () {
+        var request = new XMLHttpRequest();
+        request.open('GET', notificationSound, true);
+        request.responseType = 'arraybuffer';
+        request.onload = function () {
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            var context = new AudioContext();
+            context.decodeAudioData(request.response, function (buffer) {
+
+                playNotification = function () {
+                    if (audioSwitch.isAudioEnabled) {
+                        var source = context.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(context.destination);
+                        source.start(0);
+                    }
+                };
+            });
+        }
+        request.send();
+    };
+
+    ws.onopen = function () {
+        joinRoom.disabled = false;
+        nickInput.disabled = false;
+        chatRoomInput.disabled = false;
+    };
+
+    ws.onmessage = function (msg) {
+        if (typeof msg.data == 'string') {
+            handleJsonEvent(JSON.parse(msg.data));
+        }
+        else if (typeof msg.data == 'blob') {
+            
         }
     };
 
@@ -111,6 +160,8 @@
         message.disabled = true;
     };
 
+    loadNotificationSound();
+
     return me;
 }
 
@@ -119,5 +170,5 @@ chats = [];
 var elements = document.getElementsByClassName('chat');
 for (var i = 0; i < elements.length; i++) {
     var node = elements[i];
-    chats.push(chat(node, node.dataset.websocket));
+    chats.push(chat(node, node.dataset.chatWebsocket, node.dataset.chatWebsocketNotification));
 }
