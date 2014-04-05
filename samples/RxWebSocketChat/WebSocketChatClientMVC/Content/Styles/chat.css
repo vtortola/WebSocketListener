@@ -2,10 +2,19 @@
     background-color:#222;
     color:white;
     font-family:'Segoe UI';
+    background-image:url('../Images/Map1280x800.jpg');
+    background-size:cover;
+}
+
+.title{
+    font-family:Arial;
+    letter-spacing:4px;
+    font-size:2em;
+    text-shadow: 2px 2px 2px blue, -2px -2px 4px pink;
 }
 
 .chat{
-    width:600px;
+    width:700px;
     margin:auto auto;
 }
 
@@ -17,14 +26,14 @@
     border-top-left-radius:5px;
     border-bottom-left-radius:5px;
     border-right:0px;
-    background-color:#555;
+    background-color:rgba(0, 0, 0, 0.55);
     margin:20px 0px;
     overflow-y:scroll;
     overflow-x:hidden;
     padding:5px;
     display:inline-block;
-    width:400px;
-    max-width:400px;
+    width:500px;
+    max-width:500px;
     box-shadow:0 0 20px #fff;
 }
 
@@ -42,7 +51,7 @@
     display:inline-block;
     width:100px;
     box-shadow:0 0 20px #fff;
-    background-color:#000;
+    background-color:rgba(0, 0, 0, 0.55);
     color: yellow;
 }
 
@@ -50,11 +59,15 @@
     color:#0f0;
 }
 
+.message{
+    width:400px;
+}
+
 input{
     border:1px solid #000;
     border-radius:4px;
     padding:4px;
-    box-shadow:0 0 10px yellow;
+    box-shadow:0 0 10px #fff;
 }
 
 input:disabled {

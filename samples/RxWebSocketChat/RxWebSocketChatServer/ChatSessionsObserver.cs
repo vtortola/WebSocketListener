@@ -25,7 +25,7 @@ namespace ChatServer
         public void OnNext(ChatSession c)
         {
             var published = c.In.Publish().RefCount();
-
+            
             published.Where(msgIn => msgIn.cls != null && msgIn.cls == "join" && msgIn.room != null)
                      .Subscribe(new ChatJoinMessageHandler(_chatRoomManager, c));
 

@@ -32,8 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\..\Visual Studio 2013\Projects\WebSocketListener\packages\Newtonsoft.Json.6.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\Newtonsoft.Json.6.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -58,9 +59,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="vtortola.WebSockets, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="vtortola.WebSockets, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Visual Studio 2013\Projects\WebSocketListener\packages\vtortola.WebSocketListener.1.0.0\lib\net45\vtortola.WebSockets.dll</HintPath>
+      <HintPath>..\..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.1.0.2\lib\net45\vtortola.WebSockets.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

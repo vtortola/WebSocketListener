@@ -20,14 +20,37 @@ namespace ChatServer
 
         public void OnCompleted()
         {
+            ClientLeaves();
             Console.WriteLine("ChatJoinMessage: Completed");
             _chatRoomManager.RemoveFromRoom(_session);
         }
 
         public void OnError(Exception error)
         {
-            Console.WriteLine("ChatJoinMessage: " + error.Message);
-            _chatRoomManager.RemoveFromRoom(_session);
+            try
+            {
+                ClientLeaves();
+                Console.WriteLine("ChatJoinMessage: " + error.Message);
+            }
+            finally
+            {
+                _chatRoomManager.RemoveFromRoom(_session);
+            }
+        }
+
+        private void ClientLeaves()
+        {
+            if (!String.IsNullOrWhiteSpace(_session.Room))
+            {
+                Broadcast(new { cls = "msg", message = _session.Nick + " leaves the room.", room = _session.Room, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") });
+                Broadcast(new { cls = "leave", room = _session.Room, nick = _session.Nick }, _session);
+            }
+        }
+
+        private void Broadcast(Object anounce, params ChatSession[] excluded)
+        {
+            foreach (var client in _chatRoomManager[_session.Room].Except(excluded))
+                client.Out.OnNext(anounce);
         }
 
         public void OnNext(Object omsgIn)
@@ -40,13 +63,8 @@ namespace ChatServer
             _session.Room = roomName;
             msgIn.participants = new JArray(room.Where(cc => cc.Nick != _session.Nick).Select(x => x.Nick).ToArray());
             _session.Out.OnNext(msgIn);
-            var anounce = new { cls = "msg", message = _session.Nick + " joined the room.", room = roomName, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") };
-            foreach (var client in _chatRoomManager[roomName])
-            {
-                if (client.Nick != _session.Nick)
-                    client.Out.OnNext(new { cls = "joint", room = roomName, nick = _session.Nick });
-                client.Out.OnNext(anounce);
-            }
+            Broadcast(new { cls = "msg", message = _session.Nick + " joined the room.", room = roomName, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") });
+            Broadcast(new { cls = "joint", room = roomName, nick = _session.Nick }, _session);
         }
     }
 }

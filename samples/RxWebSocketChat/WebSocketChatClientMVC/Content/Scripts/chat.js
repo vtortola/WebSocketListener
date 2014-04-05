@@ -21,11 +21,11 @@
             ws.send(JSON.stringify({ cls: "join", room: chatRoomInput.value, nick: nickInput.value }));
         }
         else {
-            if (!nickInput.value) {
+            if (!nickInput.value || nickInput.value.length < 4) {
                 if(nickInput.className.indexOf('error') == -1)
                     nickInput.className += ' error';
             }
-            if (!chatRoomInput.value) {
+            if (!chatRoomInput.value || nickInput.value.length < 4) {
                 if (chatRoomInput.className.indexOf('error') == -1)
                     chatRoomInput.className += ' error';
             }
@@ -47,9 +47,16 @@
 
     var addParticipant = function (nick) {
         var node = document.createElement('div');
-        node.className = 'participant';
+        node.className = 'participant ' + nick;
         node.textContent = nick;
         chatParticipants.appendChild(node);
+    };
+
+    var removeParticipant = function (nick) {
+        var goner = chatParticipants.getElementsByClassName('participant ' + nick);
+        if (goner && goner.length) {
+            chatParticipants.removeChild(goner[0]);
+        }
     };
 
     ws.onopen = function () {
@@ -79,6 +86,9 @@
             case 'joint':
                 addParticipant(json.nick);
                 break;
+            case 'leave':
+                removeParticipant(json.nick);
+                break; 
         }
     };
 
