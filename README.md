@@ -116,7 +116,7 @@ using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
 ```
 
 #### Example
-Check a [simplified example](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example) or download the [EchoServer from the samples](https://github.com/vtortola/WebSocketListener/tree/master/samples/EchoServer).
+Take a look on the [WebSocketListner samples](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples).
 
 ###The MIT License (MIT)
 
