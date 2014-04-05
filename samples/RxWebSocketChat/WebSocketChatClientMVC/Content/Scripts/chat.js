@@ -34,8 +34,21 @@
     });
 
     send.addEventListener('click', function () {
-        ws.send(JSON.stringify({ message: message.value, cls: "msg", room: chatRoomInput.value }));
+        sendMessage();
     });
+
+    message.addEventListener('keypress', function (e) {
+        var code = (e.keyCode ? e.keyCode : e.which);
+        if (code == 13)
+            sendMessage();
+    });
+
+    var sendMessage = function () {
+        if (message.value) {
+            ws.send(JSON.stringify({ message: message.value, cls: "msg", room: chatRoomInput.value }));
+            message.value = '';
+        }
+    };
 
     var addChatMessage = function (nick, message, timestamp) {
         var node = document.createElement('div');
