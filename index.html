@@ -95,7 +95,7 @@
 
 <p>The client provides means to read and write messages. With the client, as in the underlying <code>NetworkStream</code>, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.</p>
 
-<p><code>AcceptWebSocketAsync</code> should be in a loop to continuously accept new clients, also wraped in a <code>try/catch</code> since errors in the negotiation process will be thrown here. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example">simple host tutorial</a>.</p>
+<p><code>AcceptWebSocketAsync</code> should be in a loop to continuously accept new clients, also wraped in a <code>try/catch</code> since errors in the negotiation process will be thrown here. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
 
 <h4>
 <a name="receiving-messages" class="anchor" href="#receiving-messages"><span class="octicon octicon-link"></span></a>Receiving messages</h4>
@@ -119,7 +119,7 @@
 <span class="p">}</span>
 </pre></div>
 
-<p><code>ReadMessageAsync</code> should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example">simple host tutorial</a>.</p>
+<p><code>ReadMessageAsync</code> should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
 
 <p>Also, a binary message can be read using regular .NET techniques:</p>
 
@@ -160,7 +160,7 @@
 <h4>
 <a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h4>
 
-<p>Check a <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Example">simplified example</a> or download the <a href="https://github.com/vtortola/WebSocketListener/tree/master/samples/EchoServer">EchoServer from the samples</a>.</p>
+<p>Take a look on the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples">WebSocketListener samples</a>.</p>
       </section>
 
     </div>
