@@ -22,15 +22,15 @@ namespace ChatServer
             Console.WriteLine("ChatSessionsObserver: " + error.Message);
         }
 
-        public void OnNext(ChatSession c)
+        public void OnNext(ChatSession chat)
         {
-            var published = c.In.Publish().RefCount();
+            var published = chat.In.Publish().RefCount();
             
             published.Where(msgIn => msgIn.cls != null && msgIn.cls == "join" && msgIn.room != null)
-                     .Subscribe(new ChatJoinMessageHandler(_chatRoomManager, c));
+                     .Subscribe(new ChatJoinMessageHandler(_chatRoomManager, chat));
 
             published.Where(msgIn => msgIn.cls != null && msgIn.cls == "msg" && msgIn.message != null && msgIn.room != null)
-                     .Subscribe(new ChatMessageHandler(_chatRoomManager, c));
+                     .Subscribe(new ChatMessageHandler(_chatRoomManager, chat));
         }
     }
 }
