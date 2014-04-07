@@ -12,7 +12,7 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It supports per-message deflate compression. [More info] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
  * It is **extensible**. [More info](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
  * It is **asynchronous**. 
- * It has the **Ping/Pong** functionality **built-in**.
+ * It has the [**Ping/Pong** functionality](http://tools.ietf.org/html/rfc6455#section-5.5.2) **built-in**.
  * It detects and disconnects **half open connections**.
  * It allows to **send and receive messages as streams**. WebSocket messages are represented as delimited stream-like objects, that allows integration with other .NET objects like e.g. `StreamReader` and `StreamWriter`. Two different WebSocket messages, yield two different streams.
  * Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.
