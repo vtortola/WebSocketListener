@@ -10,6 +10,7 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It can work with both **Text or Binary** messages.
  * It supports `wss://`(secure). [More info] (https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
  * It supports per-message deflate compression. [More info] (https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
+ * It is **extensible**.
  * It is **asynchronous**. 
  * It has the **Ping/Pong** functionality **built-in**.
  * It detects and disconnects **half open connections**.
