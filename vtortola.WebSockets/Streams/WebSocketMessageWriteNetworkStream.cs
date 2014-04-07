@@ -34,15 +34,8 @@ namespace vtortola.WebSockets
             ExtensionFlags.Rsv3 = extensionFlags.Rsv3;
         }
 
-        public override void Write(Byte[] buffer, Int32 offset, Int32 count)
+        private void CacheOrWrite(Byte[] buffer, ref Int32 offset, ref Int32 count)
         {
-            if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
-                throw new WebSocketException("The write stream has been already flushed or disposed.");
-
-            RemoveUTF8BOM(buffer, ref offset, ref count);
-            if (count == 0)
-                return;
-
             if (_internalUsedBufferLength != 0)
             {
                 if (_internalUsedBufferLength < _internalBuffer.Length)
@@ -60,8 +53,19 @@ namespace vtortola.WebSockets
                     _internalUsedBufferLength = 0;
                     _headerSent = true;
                 }
-
             }
+        }
+
+        public override void Write(Byte[] buffer, Int32 offset, Int32 count)
+        {
+            if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
+                throw new WebSocketException("The write stream has been already flushed or disposed.");
+
+            RemoveUTF8BOM(buffer, ref offset, ref count);
+            if (count == 0)
+                return;
+
+            CacheOrWrite(buffer, ref offset, ref count);
 
             if (count == 0)
                 return;
@@ -126,7 +130,6 @@ namespace vtortola.WebSockets
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
                 await _client.WriteInternalAsync(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags, cancellationToken);
-                base.Close();
             }
         }
 
@@ -137,6 +140,11 @@ namespace vtortola.WebSockets
                 _client.WriteInternal(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags);
                 base.Close();
             }
+        }
+
+        public override void AddTail(byte[] buffer, int offset, int count)
+        {
+            CacheOrWrite(buffer, ref offset, ref count);
         }
     }
 }

@@ -11,19 +11,14 @@ namespace vtortola.WebSockets.Deflate
         public WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message)
         {
             if (message.Flags.RSV1)
-            {
                 return new WebSocketDeflateReadStream(message);
-            }
             else
-            {
                 return message;
-            }
         }
         public WebSocketMessageWriteStream ExtendWriter(WebSocketMessageWriteStream message)
         {
-            //message.ExtensionFlags.Rsv1 = true;
-            //return new WebSocketDeflateWriteStream(message);
-            return message;
+            message.ExtensionFlags.Rsv1 = true;
+            return new WebSocketDeflateWriteStream(message);
         }
     }
 }
