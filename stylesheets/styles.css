@@ -532,7 +532,7 @@ body {
   padding: 0px 0 20px 0px;
   margin: 0px;
   font: 14px/1.5 "OpenSansRegular", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: #f0e7d5;
+  color: #fff;
   font-weight: normal;
   background: #252525;
   background-attachment: fixed !important;
@@ -541,7 +541,7 @@ body {
   background: -moz-linear-gradient(#2a2a29, #1c1c1c);
   background: -o-linear-gradient(#2a2a29, #1c1c1c);
   background: -ms-linear-gradient(#2a2a29, #1c1c1c);
-  background: linear-gradient(#2a2a29, #1c1c1c);
+  background: linear-gradient(#111, #222);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -605,7 +605,7 @@ strong {
 }
 
 .wrapper {
-  max-width: 650px;
+  max-width: 900px;
   margin: 0 auto;
   position: relative;
   padding: 0 20px;
@@ -637,7 +637,7 @@ code {
 }
 
 pre {
-  padding: 8px 15px;
+  padding: 8px 5px;
   background: #191919;
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
@@ -645,13 +645,12 @@ pre {
   -ms-border-radius: 2px;
   -khtml-border-radius: 2px;
   border-radius: 2px;
-  border: 1px solid #121212;
+  border: 1px solid #fff;
   -moz-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
   -webkit-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
   -o-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-  overflow: auto;
-  overflow-y: hidden;
+  overflow: hidden;
 }
 pre code {
   color: #efefef;
@@ -709,7 +708,7 @@ dt {
   box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
 }
 #header nav {
-  max-width: 650px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 0 10px;
   background: blue;
@@ -781,7 +780,7 @@ dt {
 }
 
 section {
-  max-width: 650px;
+  max-width: 900px;
   padding: 30px 0px 50px 0px;
   margin: 20px 0;
   margin-top: 70px;
