@@ -1,12 +1,15 @@
 WebSocketListener 
 =================
 
-**WebSocketListener** is a lightweight **WebSocket** server side connector, implemented in C# using *sockets*, according to the [RFC 6455](http://tools.ietf.org/html/rfc6455). It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.
+The **WebSocketListener** class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener that follows the official [RFC 6455](http://tools.ietf.org/html/rfc6455) specification with an API very similar to the `System.Net.TcpListener` class.
 
-**WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` provides TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber patern or reliable messaging beyond TCP.
+It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.
+
+**WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` provides TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber pattern or reliable messaging beyond TCP.
 
  * It can work with both **Text or Binary** messages.
- * It supports `wss://` (WebSocket Secure through **TLS**).
+ * It supports `wss://`(secure). [More info] (https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
+ * It supports per-message deflate compression. [More info] (https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
  * It is **asynchronous**. 
  * It has the **Ping/Pong** functionality **built-in**.
  * It detects and disconnects **half open connections**.
@@ -38,6 +41,7 @@ server.Start();
 
 Optionally, you can also:
  * [enable TLS for secure WebSocket connections](https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
+ * [enable deflate compression for messages] (https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
  * [customize subprotocols, queuing and ping behaviours](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
  * [add customized extensions](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
 
