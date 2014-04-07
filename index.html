@@ -47,8 +47,9 @@
 
 <ul>
 <li>It can work with both <strong>Text or Binary</strong> messages.</li>
-<li>It supports <code>wss://</code>(secure). <a href="https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)">More info</a>.</li>
-<li>It supports per-message deflate compression. <a href="https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension">More info</a>.</li>
+<li>It supports <code>wss://</code>(secure). <a href="//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)">More info</a>.</li>
+<li>It supports per-message deflate compression. <a href="//github.com/vtortola/WebSocketListener/wiki/Deflate-extension">More info</a>.</li>
+<li>It is <strong>extensible</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">More info</a>.</li> </li>
 <li>It is <strong>asynchronous</strong>. </li>
 <li>It has the <strong>Ping/Pong</strong> functionality <strong>built-in</strong>.</li>
 <li>It detects and disconnects <strong>half open connections</strong>.</li>
@@ -56,7 +57,7 @@
 <li>Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.</li>
 <li>It <strong>handles partial frames transparently</strong>. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.</li>
 <li>It <strong>handles interleaved control frames transparently</strong>. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.</li>
-</ul><p>Take a look on the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests">performance and load  tests</a> on a simple 'echo' server.</p>
+</ul><p>Take a look on the <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests">performance and load  tests</a> on a simple 'echo' server.</p>
 
 <h3>
 <a name="quickstart" class="anchor" href="#quickstart"><span class="octicon octicon-link"></span></a>Quickstart</h3>
@@ -83,13 +84,13 @@
 
 <ul>
 <li>
-<a href="https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)">enable TLS for secure WebSocket connections</a>.</li>
+<a href="//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)">enable TLS for secure WebSocket connections</a>.</li>
 <li>
-<a href="https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension">enable deflate compression for messages</a>.</li>
+<a href="//github.com/vtortola/WebSocketListener/wiki/Deflate-extension">enable deflate compression for messages</a>.</li>
 <li>
-<a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options">customize subprotocols, queuing and ping behaviours</a>.</li>
+<a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options">customize subprotocols, queuing and ping behaviours</a>.</li>
 <li>
-<a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">add customized extensions</a>.</li>
+<a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">add customized extensions</a>.</li>
 </ul><h4>
 <a name="accepting-clients" class="anchor" href="#accepting-clients"><span class="octicon octicon-link"></span></a>Accepting clients</h4>
 
@@ -100,7 +101,7 @@
 
 <p>The client provides means to read and write messages. With the client, as in the underlying <code>NetworkStream</code>, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.</p>
 
-<p><code>AcceptWebSocketAsync</code> should be in a loop to continuously accept new clients, also wraped in a <code>try/catch</code> since errors in the negotiation process will be thrown here. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
+<p><code>AcceptWebSocketAsync</code> should be in a loop to continuously accept new clients, also wraped in a <code>try/catch</code> since errors in the negotiation process will be thrown here. Take a look to the <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
 
 <h4>
 <a name="receiving-messages" class="anchor" href="#receiving-messages"><span class="octicon octicon-link"></span></a>Receiving messages</h4>
@@ -124,7 +125,7 @@
 <span class="p">}</span>
 </pre></div>
 
-<p><code>ReadMessageAsync</code> should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
+<p><code>ReadMessageAsync</code> should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
 
 <p>Also, a binary message can be read using regular .NET techniques:</p>
 
@@ -165,7 +166,7 @@
 <h4>
 <a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h4>
 
-<p>Take a look on the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples">WebSocketListener samples</a>.</p>
+<p>Take a look on the <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples">WebSocketListener samples</a>.</p>
 
 <h3>
 <a name="the-mit-license-mit" class="anchor" href="#the-mit-license-mit"><span class="octicon octicon-link"></span></a>The MIT License (MIT)</h3>
