@@ -8,9 +8,9 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
 **WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` provides TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber pattern or reliable messaging beyond TCP.
 
  * It can work with both **Text or Binary** messages.
- * It supports `wss://`(secure). [More info] (https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
- * It supports per-message deflate compression. [More info] (https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
- * It is **extensible**.
+ * It supports `wss://`(secure). [More info] (//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
+ * It supports per-message deflate compression. [More info] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
+ * It is **extensible**. [More info](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
  * It is **asynchronous**. 
  * It has the **Ping/Pong** functionality **built-in**.
  * It detects and disconnects **half open connections**.
@@ -19,7 +19,7 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It **handles partial frames transparently**. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.
  * It **handles interleaved control frames transparently**. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
-Take a look on the [performance and load  tests](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests) on a simple 'echo' server.
+Take a look on the [performance and load  tests](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests) on a simple 'echo' server.
 
 ### Quickstart
 
@@ -41,10 +41,10 @@ server.Start();
 ```
 
 Optionally, you can also:
- * [enable TLS for secure WebSocket connections](https://github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
- * [enable deflate compression for messages] (https://github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
- * [customize subprotocols, queuing and ping behaviours](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
- * [add customized extensions](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
+ * [enable TLS for secure WebSocket connections](//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
+ * [enable deflate compression for messages] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
+ * [customize subprotocols, queuing and ping behaviours](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
+ * [add customized extensions](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
 
 
 #### Accepting clients
@@ -80,7 +80,7 @@ if(messageReadStream.MessageType == WebSocketMessageType.Text)
 }
 ```
 
-```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example).
+```ReadMessageAsync``` should go in a loop, to read messages continuously. Writes and read can be performed at the same time. Take a look to the [simple host tutorial](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example).
 
 Also, a binary message can be read using regular .NET techniques:
 
@@ -121,7 +121,7 @@ using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
 ```
 
 #### Example
-Take a look on the [WebSocketListener samples](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples).
+Take a look on the [WebSocketListener samples](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Samples).
 
 ###The MIT License (MIT)
 
