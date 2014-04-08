@@ -73,6 +73,7 @@
     <Compile Include="Streams\WebSocketMessageWriteNetworkStream.cs" />
     <Compile Include="Handshake\WebSocketHandshaker.cs" />
     <Compile Include="WebSocketListenerOptions.cs" />
+    <Compile Include="WebSocketStringExtensions.cs" />
     <Compile Include="_ExtensionMethods.cs" />
   </ItemGroup>
   <ItemGroup />

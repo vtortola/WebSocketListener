@@ -13,6 +13,7 @@ namespace vtortola.WebSockets.Deflate
         readonly static Byte[] _BFINAL = new Byte[] { 0 };
         readonly WebSocketMessageWriteStream _inner;
         readonly DeflateStream _deflate;
+        Int32 _isClosed;
 
         public WebSocketDeflateWriteStream(WebSocketMessageWriteStream inner)
         {
@@ -36,21 +37,19 @@ namespace vtortola.WebSockets.Deflate
 
         public override void Close()
         {
+            if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
+                return;
+
             _deflate.Close();
-            _inner.AddTail(_BFINAL, 0, 1);
+            _inner.Write(_BFINAL, 0, 1);
             _inner.Close();
         }
-
-        protected override void Dispose(bool disposing)
+        
+        protected override void Dispose(Boolean disposing)
         {
             _deflate.Dispose();
             _inner.Dispose();
             base.Dispose(disposing);
-        }
-
-        public override void AddTail(byte[] buffer, int offset, int count)
-        {
-            _inner.AddTail(buffer, offset, count);
         }
     }
 }

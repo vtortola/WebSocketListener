@@ -73,6 +73,22 @@ namespace vtortola.WebSockets
             return null;
         }
 
+        public WebSocketMessageReadStream ReadMessage()
+        {
+            if (Header == null)
+                AwaitHeader();
+
+            if (this.IsConnected && Header != null)
+            {
+                WebSocketMessageReadStream reader = new WebSocketMessageReadNetworkStream(this, Header);
+                foreach (var extension in _extensions)
+                    reader = extension.ExtendReader(reader);
+                return reader;
+            }
+
+            return null;
+        }
+
         public WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteNetworkStream(this, messageType);

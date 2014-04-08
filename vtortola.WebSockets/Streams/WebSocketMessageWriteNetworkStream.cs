@@ -141,10 +141,5 @@ namespace vtortola.WebSockets
                 base.Close();
             }
         }
-
-        public override void AddTail(byte[] buffer, int offset, int count)
-        {
-            CacheOrWrite(buffer, ref offset, ref count);
-        }
     }
 }

@@ -63,10 +63,5 @@ namespace vtortola.WebSockets
                 offset += 3;
             }
         }
-
-        // The deflate extension requires adding an additional byte at the end
-        public virtual void AddTail(Byte[] buffer, Int32 offset, Int32 count)
-        {
-        }
     }
 }
