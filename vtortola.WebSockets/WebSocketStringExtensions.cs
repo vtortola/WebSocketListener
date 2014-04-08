@@ -42,7 +42,10 @@ namespace vtortola.WebSockets
         {
             using (var msg = ws.CreateMessageWriter(WebSocketMessageType.Text))
             using (var writer = new StreamWriter(msg, Encoding.UTF8))
+            {
                 await writer.WriteAsync(data);
+                await writer.FlushAsync();
+            }
         }
     }
 }
