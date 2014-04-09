@@ -226,7 +226,7 @@ namespace vtortola.WebSockets
             {
                 var header = _headers["Sec-WebSocket-Extensions"];
                 var extensions = header.Split(',');
-                AssertArrayIsAtLeast(extensions, 2, "Cannot parse extension [" + header +"]");
+                AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension [" + header +"]");
                 foreach (var extension in extensions)
                 {
                     List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
