@@ -53,7 +53,7 @@ namespace vtortola.WebSockets
                 _lastPong = DateTime.Now.Add(_pingTimeout);
                 _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 2));
 
-                PingAsync();
+                Task.Run((Func<Task>)PingAsync);
             }
         }
                 
@@ -293,7 +293,6 @@ namespace vtortola.WebSockets
         readonly Byte[] _pingBuffer = new Byte[2];
         private async Task PingAsync()
         {
-            await Task.Yield();
             while (this.IsConnected)
             {
                 await Task.Delay(_pingInterval);
