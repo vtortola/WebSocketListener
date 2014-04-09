@@ -10,6 +10,7 @@ namespace vtortola.WebSockets
 {
     public static class WebSocketStringExtensions
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         public static String ReadString(this WebSocket ws)
         {
             using (var msg = ws.ReadMessage())
@@ -21,6 +22,7 @@ namespace vtortola.WebSockets
                     return reader.ReadToEnd();
             }
         }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         public static void WriteString(this WebSocket ws, String data)
         {
             using (var msg = ws.CreateMessageWriter(WebSocketMessageType.Text))
