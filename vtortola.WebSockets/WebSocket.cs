@@ -100,7 +100,7 @@ namespace vtortola.WebSockets
         }
 
         readonly Byte[] _headerBuffer = new Byte[14];
-        private WebSocketFrameHeader ParseHeader(ref Int32 readed, CancellationToken token)
+        private WebSocketFrameHeader ParseHeader(ref Int32 readed)
         {
             WebSocketFrameHeader header;
             if(!TryReadHeaderUntil(ref readed, 6))
@@ -144,7 +144,7 @@ namespace vtortola.WebSockets
             {
                 while (this.IsConnected && Header == null)
                 {
-                    // read small frame
+                    // try read minimal frame
                     Int32 readed =  _clientStream.Read(_headerBuffer, 0, 6);
                     if (readed == 0 )
                     {
@@ -152,7 +152,7 @@ namespace vtortola.WebSockets
                         return;
                     }
 
-                    Header = ParseHeader(ref readed, CancellationToken.None);
+                    Header = ParseHeader(ref readed);
                     if (Header == null)
                     {
                         Close();
@@ -176,22 +176,22 @@ namespace vtortola.WebSockets
                 Close();
             }
         }  
-        internal async Task AwaitHeaderAsync(CancellationToken token)
+        internal async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
             try
             {
                 while (this.IsConnected && Header == null)
                 {
-                        // read small frame
-                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer, 0, 6, token);
-                    if (readed == 0 || token.IsCancellationRequested)
+                    // try read minimal frame
+                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer, 0, 6, cancellation);
+                    if (readed == 0 || cancellation.IsCancellationRequested)
                     {
                         Close();
                         return;
                     }
 
-                    Header = ParseHeader(ref readed, token);
-                    if(Header == null || token.IsCancellationRequested)
+                    Header = ParseHeader(ref readed);
+                    if(Header == null || cancellation.IsCancellationRequested)
                     {
                         Close();
                         return;
