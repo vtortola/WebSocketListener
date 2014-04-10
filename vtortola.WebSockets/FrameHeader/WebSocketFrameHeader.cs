@@ -39,23 +39,34 @@ namespace vtortola.WebSockets
             RemainingBytes-= (UInt64)readed;
         }
 
-        public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 count, out WebSocketFrameHeader header)
+        public static Int32 GetHeaderLength(Byte[] frameStart, Int32 offset)
+        {
+            if (frameStart == null || frameStart.Length < offset + 2)
+                throw new WebSocketException("The first two bytes of a header are required to understand the header length");
+
+            Int32 value = frameStart[offset + 1];
+            Boolean isMasked = value >= 128;
+            Int32 contentLength = isMasked ? value - 128 : value;
+
+            if (contentLength <= 125)
+                return isMasked ? 6 : 2;
+            else if (contentLength == 126)
+                return (isMasked ? 6 : 2) + 2;
+            else if (contentLength == 127)
+                return (isMasked ? 6 : 2) + 8;
+            else
+                throw new WebSocketException("Cannot understand a length field of " + contentLength);
+        }
+
+        public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 count, Int32 headerLength, out WebSocketFrameHeader header)
         {
             header = null;
 
-            if (frameStart == null || frameStart.Length < 6 || count < 6 || frameStart.Length - (offset + count) < 0)
+            if (frameStart == null || frameStart.Length < 2 || count < 2 || frameStart.Length - (offset + count) < 0)
                 return false;
 
-            // First Byte
-            Int32 value = frameStart[offset];
-            value = value >= 128 ? value - 128 : value; // completed or not
-
-            // Second Byte
-            value = frameStart[offset+1];
-            Boolean isMasked = value >= 128;
-
-            UInt64 contentLength = (UInt64)(isMasked?value - 128:value);
-            Int32 headerLength = isMasked?6:2; // if masked the key is 4 bytes
+            Int32 value = frameStart[offset+1];
+            UInt64 contentLength = (UInt64)(value>128?value - 128:value);
 
             if (contentLength <= 125)
             {
@@ -63,31 +74,25 @@ namespace vtortola.WebSockets
             }
             else if (contentLength == 126)
             {
-                if (frameStart.Length < (headerLength + 2) || count < (headerLength + 2))
+                if (frameStart.Length < headerLength  || count < headerLength)
                     return false;
 
                 frameStart.ReversePortion(offset + 2, 2);
                 contentLength = BitConverter.ToUInt16(frameStart, 2);
-                frameStart.ReversePortion(offset + 2, 2);
-
-                headerLength += 2;
             }
             else if (contentLength == 127)
             {
-                if (frameStart.Length < (headerLength + 8) || count < (headerLength + 8))
+                if (frameStart.Length < headerLength || count < headerLength)
                     return false;
 
                 frameStart.ReversePortion(offset + 2, 8);
                 contentLength = (UInt64)BitConverter.ToUInt64(frameStart, 2);
-                frameStart.ReversePortion(offset + 2, 8);
-
-                headerLength += 8;
             }
             else
                 return false;
 
             WebSocketFrameHeaderFlags flags;
-            if (WebSocketFrameHeaderFlags.TryParse(frameStart,offset,out flags))
+            if (WebSocketFrameHeaderFlags.TryParse(frameStart, offset, out flags))
             {
                 header = new WebSocketFrameHeader()
                 {
