@@ -103,25 +103,41 @@ namespace vtortola.WebSockets
         private WebSocketFrameHeader ParseHeader(ref Int32 readed, CancellationToken token)
         {
             WebSocketFrameHeader header;
-            Int32 headerlength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer, 0);
-            Int32 r = 0;
-            do
+            if(!TryReadHeaderUntil(ref readed, 6))
             {
-                r = _clientStream.Read(_headerBuffer, readed, headerlength - readed);
-                if (r==0)
-                {
-                    Close();
-                    return null;
-                }
-                readed += r;
+                Close();
+                return null;
             }
-            while (readed < headerlength);
+            
+            Int32 headerlength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer, 0);
 
-            if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, readed, headerlength, out header))
+            if (!TryReadHeaderUntil(ref readed, headerlength))
+            {
+                Close();
+                return null;
+            }
+
+            if (!WebSocketFrameHeader.TryParse(_headerBuffer, 0, headerlength, out header))
                 throw new WebSocketException("Cannot understand frame header");
             else
                 return header;
         }
+
+        private Boolean TryReadHeaderUntil(ref Int32 readed, Int32 until)
+        {
+            Int32 r = 0;
+            while (readed < until)
+            {
+                r = _clientStream.Read(_headerBuffer, readed, until - readed);
+                if (r == 0)
+                    return false;
+
+                readed += r;
+            }
+
+            return true;
+        }
+
         internal void AwaitHeader()
         {
             try
@@ -129,7 +145,7 @@ namespace vtortola.WebSockets
                 while (this.IsConnected && Header == null)
                 {
                     // read small frame
-                    Int32 readed =  _clientStream.Read(_headerBuffer, 0, 2);
+                    Int32 readed =  _clientStream.Read(_headerBuffer, 0, 6);
                     if (readed == 0 )
                     {
                         Close();
@@ -167,7 +183,7 @@ namespace vtortola.WebSockets
                 while (this.IsConnected && Header == null)
                 {
                         // read small frame
-                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer, 0, 2, token);
+                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer, 0, 6, token);
                     if (readed == 0 || token.IsCancellationRequested)
                     {
                         Close();

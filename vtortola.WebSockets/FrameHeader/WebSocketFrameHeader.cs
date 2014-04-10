@@ -58,15 +58,15 @@ namespace vtortola.WebSockets
                 throw new WebSocketException("Cannot understand a length field of " + contentLength);
         }
 
-        public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 count, Int32 headerLength, out WebSocketFrameHeader header)
+        public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 headerLength, out WebSocketFrameHeader header)
         {
             header = null;
 
-            if (frameStart == null || frameStart.Length < 2 || count < 2 || frameStart.Length - (offset + count) < 0)
+            if (frameStart == null || frameStart.Length < 6 || frameStart.Length < (offset + headerLength))
                 return false;
 
             Int32 value = frameStart[offset+1];
-            UInt64 contentLength = (UInt64)(value>128?value - 128:value);
+            UInt64 contentLength = (UInt64)(value>=128?value - 128:value);
 
             if (contentLength <= 125)
             {
@@ -74,7 +74,7 @@ namespace vtortola.WebSockets
             }
             else if (contentLength == 126)
             {
-                if (frameStart.Length < headerLength  || count < headerLength)
+                if (frameStart.Length < headerLength)
                     return false;
 
                 frameStart.ReversePortion(offset + 2, 2);
@@ -82,7 +82,7 @@ namespace vtortola.WebSockets
             }
             else if (contentLength == 127)
             {
-                if (frameStart.Length < headerLength || count < headerLength)
+                if (frameStart.Length < headerLength)
                     return false;
 
                 frameStart.ReversePortion(offset + 2, 8);
