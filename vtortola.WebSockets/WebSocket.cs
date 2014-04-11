@@ -19,6 +19,8 @@ namespace vtortola.WebSockets
         readonly TimeSpan _pingInterval, _pingTimeout;
         DateTime _lastPong;
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
+        Int32 _ongoingMessageWrite;
+        Int32 _ongoingMessageAwaiting;
 
         public IPEndPoint RemoteEndpoint { get; private set; }
         public IPEndPoint LocalEndpoint { get; private set; }
@@ -59,11 +61,20 @@ namespace vtortola.WebSockets
                 
         public async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
+            if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting, 1, 0) == 1)
+                throw new WebSocketException("There is an ongoing message await from somewhere else. Only a single write is allowed at the time.");
+
+            if (Header != null && Header.OngoingMessageRead)
+                throw new WebSocketException("There is an ongoing message that is being readed from somewhere else");
+
             if(Header==null)
                 await AwaitHeaderAsync(token);
 
+            _ongoingMessageAwaiting = 0;
+
             if (this.IsConnected && Header != null)
             {
+                Header.OngoingMessageRead = true;
                 WebSocketMessageReadStream reader = new WebSocketMessageReadNetworkStream(this, Header);
                 foreach (var extension in _extensions)
                     reader = extension.ExtendReader(reader);
@@ -75,11 +86,20 @@ namespace vtortola.WebSockets
 
         public WebSocketMessageReadStream ReadMessage()
         {
+            if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting, 1, 0) == 1)
+                throw new WebSocketException("There is an ongoing message await from somewhere else. Only a single write is allowed at the time.");
+
+            if (Header != null && Header.OngoingMessageRead)
+                throw new WebSocketException("There is an ongoing message that is being readed from somewhere else. Ony a single read is allowed at the time.");
+
             if (Header == null)
                 AwaitHeader();
 
+            _ongoingMessageAwaiting = 0;
+
             if (this.IsConnected && Header != null)
             {
+                Header.OngoingMessageRead = true;
                 WebSocketMessageReadStream reader = new WebSocketMessageReadNetworkStream(this, Header);
                 foreach (var extension in _extensions)
                     reader = extension.ExtendReader(reader);
@@ -91,12 +111,20 @@ namespace vtortola.WebSockets
 
         public WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
+            if(Interlocked.CompareExchange(ref _ongoingMessageWrite, 1, 0) == 1)
+                throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
+            
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteNetworkStream(this, messageType);
 
             foreach (var extension in _extensions)
                 writer = extension.ExtendWriter(writer);
 
             return writer;
+        }
+
+        internal void WritingEnd()
+        {
+            _ongoingMessageWrite = 0;
         }
 
         readonly Byte[] _headerBuffer = new Byte[14];

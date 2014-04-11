@@ -130,6 +130,7 @@ namespace vtortola.WebSockets
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
                 await _client.WriteInternalAsync(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags, cancellationToken);
+                _client.WritingEnd();
             }
         }
 
@@ -139,6 +140,7 @@ namespace vtortola.WebSockets
             {
                 _client.WriteInternal(_internalBuffer, 0, _internalUsedBufferLength, true, _headerSent, (WebSocketFrameOption)_messageType, ExtensionFlags);
                 base.Close();
+                _client.WritingEnd();
             }
         }
     }

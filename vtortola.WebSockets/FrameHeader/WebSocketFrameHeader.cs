@@ -16,6 +16,13 @@ namespace vtortola.WebSockets
         public Byte[] Raw { get; internal set; }
         public UInt64 RemainingBytes { get; private set; }
 
+        Boolean _ongoingMessage;
+        internal Boolean OngoingMessageRead 
+        {
+            get { return _ongoingMessage || this.Flags.Option == WebSocketFrameOption.Continuation; }
+            set { _ongoingMessage = value; } 
+        }
+
         readonly Byte[] _key;
 
         private WebSocketFrameHeader()

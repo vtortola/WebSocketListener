@@ -79,6 +79,67 @@ namespace WebSocketListener.UnitTests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(WebSocketException))]
+        public void With_WebSocket_FailsWithDoubleMessageAwait()
+        {
+            var handshake = GenerateSimpleHandshake();
+            using (var ms = new BufferedStream(new MemoryStream()))
+            using (WebSocket ws = new WebSocket(ms, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, handshake.NegotiatedExtensions))
+            {
+                ms.Write(new Byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Write(new Byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+
+                ws.ReadMessage();
+                ws.ReadMessage();
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(WebSocketException))]
+        public void With_WebSocket_FailsWithDoubleMessageRead()
+        {
+            var handshake = GenerateSimpleHandshake();
+            using (var ms = new MemoryStream())
+            using (WebSocket ws = new WebSocket(ms, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, handshake.NegotiatedExtensions))
+            {
+                ms.Write(new Byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Write(new Byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var reader = ws.ReadMessage();
+                reader = ws.ReadMessage();
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(WebSocketException))]
+        public void With_WebSocket_FailsWithDoubleMessageWrite()
+        {
+            var handshake = GenerateSimpleHandshake();
+            using (var ms = new MemoryStream())
+            using (WebSocket ws = new WebSocket(ms, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, handshake.NegotiatedExtensions))
+            {
+                var writer = ws.CreateMessageWriter(WebSocketMessageType.Text);
+                writer = ws.CreateMessageWriter(WebSocketMessageType.Text);
+            }
+        }
+
+        [TestMethod]
+        public void With_WebSocket_CanWriteTwoSequentialMessages()
+        {
+            var handshake = GenerateSimpleHandshake();
+            using (var ms = new MemoryStream())
+            using (WebSocket ws = new WebSocket(ms, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, handshake.NegotiatedExtensions))
+            {
+                using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text));
+                using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text));
+            }
+        }
+
+        [TestMethod]
         public void With_WebSocket_CanDetectHalfOpenConnection()
         {
             var handshake = GenerateSimpleHandshake();

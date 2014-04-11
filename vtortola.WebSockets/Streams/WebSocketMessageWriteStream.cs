@@ -43,12 +43,6 @@ namespace vtortola.WebSockets
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            Close();
-            base.Dispose(disposing);
-        }
-
         protected virtual void RemoveUTF8BOM(Byte[] buffer, ref Int32 offset, ref Int32 count)
         {
             // http://www.rgagnon.com/javadetails/java-handle-utf8-file-with-bom.html

@@ -87,10 +87,5 @@ namespace vtortola.WebSockets
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            
-        }
     }
 }
