@@ -303,10 +303,8 @@ namespace vtortola.WebSockets
                     this.Close(WebSocketCloseReasons.NormalClose);
                     break;
 
-                case WebSocketFrameOption.Ping:
-                    break;
-
-                case WebSocketFrameOption.Pong:
+                case WebSocketFrameOption.Ping: // read the buffer and echo
+                case WebSocketFrameOption.Pong: // read the buffer, remember timestamp
                     Int32 contentLength =  _controlFrameBuffer.Length;
                     if (Header.ContentLength < 125)
                         contentLength = (Int32)Header.ContentLength;
@@ -316,7 +314,12 @@ namespace vtortola.WebSockets
                         readed = clientStream.Read(_controlFrameBuffer, readed, contentLength - readed);
                         Header.DecodeBytes(_controlFrameBuffer, 0, readed);
                     }
-                    _lastPong = DateTime.Now;
+
+                    if(Header.Flags.Option == WebSocketFrameOption.Pong)
+                        _lastPong = DateTime.Now;
+                    else // pong frames echo what was 'pinged'
+                        this.WriteInternal(_controlFrameBuffer, 0, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
+                    
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + Header.Flags.Option.ToString() + "'");
             }
