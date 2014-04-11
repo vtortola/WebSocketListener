@@ -63,6 +63,7 @@
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
     <Compile Include="Tools\AsyncResultTask.cs" />
     <Compile Include="WebSocket.cs" />
+    <Compile Include="WebSocketCloseReasons.cs" />
     <Compile Include="WebSocketException.cs" />
     <Compile Include="FrameHeader\WebSocketFrameHeader.cs" />
     <Compile Include="FrameHeader\WebSocketFrameOption.cs" />

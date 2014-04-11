@@ -133,7 +133,7 @@ namespace vtortola.WebSockets
             WebSocketFrameHeader header;
             if(!TryReadHeaderUntil(ref readed, 6))
             {
-                Close();
+                Close(WebSocketCloseReasons.ProtocolError);
                 return null;
             }
             
@@ -141,7 +141,7 @@ namespace vtortola.WebSockets
 
             if (!TryReadHeaderUntil(ref readed, headerlength))
             {
-                Close();
+                Close(WebSocketCloseReasons.ProtocolError);
                 return null;
             }
 
@@ -176,14 +176,14 @@ namespace vtortola.WebSockets
                     Int32 readed =  _clientStream.Read(_headerBuffer, 0, 6);
                     if (readed == 0 )
                     {
-                        Close();
+                        Close(WebSocketCloseReasons.ProtocolError);
                         return;
                     }
 
                     Header = ParseHeader(ref readed);
                     if (Header == null)
                     {
-                        Close();
+                        Close(WebSocketCloseReasons.ProtocolError);
                         return;
                     }
 
@@ -197,11 +197,11 @@ namespace vtortola.WebSockets
             }
             catch (InvalidOperationException)
             {
-                Close();
+                Close(WebSocketCloseReasons.ProtocolError);
             }
             catch (IOException)
             {
-                Close();
+                Close(WebSocketCloseReasons.ProtocolError);
             }
         }  
         internal async Task AwaitHeaderAsync(CancellationToken cancellation)
@@ -214,14 +214,14 @@ namespace vtortola.WebSockets
                     Int32 readed = await _clientStream.ReadAsync(_headerBuffer, 0, 6, cancellation);
                     if (readed == 0 || cancellation.IsCancellationRequested)
                     {
-                        Close();
+                        Close(WebSocketCloseReasons.ProtocolError);
                         return;
                     }
 
                     Header = ParseHeader(ref readed);
                     if(Header == null || cancellation.IsCancellationRequested)
                     {
-                        Close();
+                        Close(WebSocketCloseReasons.ProtocolError);
                         return;
                     }
 
@@ -235,11 +235,11 @@ namespace vtortola.WebSockets
             }
             catch (InvalidOperationException)
             {
-                Close();
+                Close(WebSocketCloseReasons.ProtocolError);
             }
             catch(IOException)
             {
-                Close();
+                Close(WebSocketCloseReasons.ProtocolError);
             }
         }        
         internal void CleanHeader()
@@ -258,11 +258,13 @@ namespace vtortola.WebSockets
             }
             catch (InvalidOperationException)
             {
-                return ReturnAndClose();
+                this.Close(WebSocketCloseReasons.UnexpectedCondition);
+                return 0;
             }
             catch (IOException)
             {
-                return ReturnAndClose();
+                this.Close(WebSocketCloseReasons.UnexpectedCondition);
+                return 0;
             }
         }     
         internal Int32 ReadInternal(Byte[] buffer, Int32 offset, Int32 count)
@@ -277,11 +279,13 @@ namespace vtortola.WebSockets
             }
             catch (InvalidOperationException)
             {
-                return ReturnAndClose();
+                this.Close(WebSocketCloseReasons.UnexpectedCondition);
+                return 0;
             }
             catch (IOException)
             {
-                return ReturnAndClose();
+                this.Close(WebSocketCloseReasons.UnexpectedCondition);
+                return 0;
             }
         }
 
@@ -296,7 +300,7 @@ namespace vtortola.WebSockets
                     throw new WebSocketException("Text, Continuation or Binary are not protocol frames");
 
                 case WebSocketFrameOption.ConnectionClose:
-                    this.Close();
+                    this.Close(WebSocketCloseReasons.NormalClose);
                     break;
 
                 case WebSocketFrameOption.Ping:
@@ -329,7 +333,7 @@ namespace vtortola.WebSockets
                     var now = DateTime.Now;
 
                     if (_lastPong.Add(_pingTimeout).Add(_pingInterval) < now)
-                        Close();
+                        Close(WebSocketCloseReasons.NormalClose);
                     else
                         await this.WriteInternalAsync(_pingBuffer, 0, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None);
                 }
@@ -361,15 +365,15 @@ namespace vtortola.WebSockets
             }
             catch (InvalidOperationException)
             {
-                Close();
+                Close(WebSocketCloseReasons.UnexpectedCondition);
             }
             catch (IOException)
             {
-                Close();
+                Close(WebSocketCloseReasons.UnexpectedCondition);
             }
             catch(Exception ex)
             {
-                Close();
+                Close(WebSocketCloseReasons.UnexpectedCondition);
                 throw new WebSocketException("Cannot write on WebSocket", ex);
             }
             finally
@@ -402,15 +406,15 @@ namespace vtortola.WebSockets
             }
             catch (InvalidOperationException)
             {
-                Close();
+                Close(WebSocketCloseReasons.UnexpectedCondition);
             }
             catch (IOException)
             {
-                Close();
+                Close(WebSocketCloseReasons.UnexpectedCondition);
             }
             catch (Exception ex)
             {
-                Close();
+                Close(WebSocketCloseReasons.UnexpectedCondition);
                 throw new WebSocketException("Cannot write on WebSocket",ex);
             }
             finally
@@ -418,14 +422,8 @@ namespace vtortola.WebSockets
                 _writeSemaphore.Release();
             }
         }
-        private Int32 ReturnAndClose()
-        {
-            this.Close();
-            return 0;
-        }
 
-        static readonly Byte[] _emptyFrame = new Byte[0];
-        public void Close()
+        public void Close(WebSocketCloseReasons reason)
         {
             try
             {
@@ -433,7 +431,7 @@ namespace vtortola.WebSockets
                     return;
 
                 if (Interlocked.CompareExchange(ref _gracefullyClosed, 1,0) == 0)
-                    WriteInternal(_emptyFrame, 0, 0, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
+                    WriteInternal(reason.GetBytes(), 0, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
 
                 _clientStream.Close();
             }
@@ -450,7 +448,7 @@ namespace vtortola.WebSockets
                 try
                 {
                     _writeSemaphore.Dispose();
-                    this.Close();
+                    this.Close(WebSocketCloseReasons.NormalClose);
                     _clientStream.Dispose();
                 }
                 catch { }
