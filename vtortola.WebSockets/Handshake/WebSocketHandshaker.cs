@@ -18,7 +18,8 @@ namespace vtortola.WebSockets
         readonly WebSocketListenerOptions _options;
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
-        readonly WebSocketMessageExtensionCollection _requestExtensions;
+        readonly WebSocketFactoryCollection _factories;
+        WebSocketFactory _factory;
         public WebSocketHttpRequest Request { get; private set; }
         public List<IWebSocketMessageExtensionContext> NegotiatedExtensions { get; private set; }
         public Boolean IsWebSocketRequest
@@ -29,14 +30,14 @@ namespace vtortola.WebSockets
                        _headers.ContainsKey("Upgrade") && "websocket".Equals(_headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase ) &&
                        _headers.ContainsKey("Connection") &&
                        _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
-                       _headers.ContainsKey("Sec-WebSocket-Version") && _headers["Sec-WebSocket-Version"] == "13";
+                       _headers.ContainsKey("Sec-WebSocket-Version");
             }
         }
 
-        public WebSocketHandshaker(WebSocketMessageExtensionCollection extensions, WebSocketListenerOptions options)
+        public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
         {
-            if (extensions == null)
-                throw new ArgumentNullException("extensions");
+            if (factories == null)
+                throw new ArgumentNullException("factories");
 
             if (options == null)
                 throw new ArgumentNullException("options");
@@ -46,33 +47,36 @@ namespace vtortola.WebSockets
             Request = new WebSocketHttpRequest();
             Request.Cookies = new CookieContainer();
             Request.Headers = new HttpHeadersCollection();
-            _requestExtensions = extensions;
+            _factories = factories;
             _responseExtensions = new List<WebSocketExtension>();
             _options = options;
             NegotiatedExtensions = new List<IWebSocketMessageExtensionContext>();
         }
 
-        public async Task<Boolean> HandshakeAsync(Stream clientStream)
+        public async Task<WebSocketFactory> HandshakeAsync(Stream clientStream)
         {
             ReadHttpRequest(clientStream);
 
             ConsolidateObjectModel();
 
             if (IsWebSocketRequest)
-                SelectExtensions();
+                SelectExtensions(_factory);
 
-            await WriteHttpResponse(clientStream);  
+            await WriteHttpResponse(clientStream);
 
-            return IsWebSocketRequest;
+            if (IsWebSocketRequest)
+                return _factory;
+            else
+                return null;
         }
 
-        private void SelectExtensions()
+        private void SelectExtensions(WebSocketFactory factory)
         {
             IWebSocketMessageExtensionContext context;
             WebSocketExtension extensionResponse;
             foreach (var extRequest in Request.WebSocketExtensions)
             {
-                var extension = _requestExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
+                var extension = factory.MessageExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
                 if (extension != null && extension.TryNegotiate(Request, out extensionResponse, out context))
                 {
                     NegotiatedExtensions.Add(context);
@@ -197,6 +201,8 @@ namespace vtortola.WebSockets
                 Request.Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
             }
 
+            Request.Version = UInt16.Parse(_headers["Sec-WebSocket-Version"]);
+
             if(_headers.ContainsKey("Sec-WebSocket-Protocol"))
             {
                 var subprotocolRequest = _headers["Sec-WebSocket-Protocol"];
@@ -248,6 +254,8 @@ namespace vtortola.WebSockets
             Request.Headers = new HttpHeadersCollection();
             foreach (var kv in _headers)
                 Request.Headers.Add(kv.Key, kv.Value);
+
+            _factory = _factories.GetWebSocketFactory(Request);
         }
         private void AssertArrayIsAtLeast(String[] array, Int32 length, String error)
         {

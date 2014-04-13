@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets
+namespace vtortola.WebSockets.Rfc6455
 {
     public sealed class WebSocketFrameHeader
     {
@@ -15,13 +15,6 @@ namespace vtortola.WebSockets
         public WebSocketFrameHeaderFlags Flags { get; private set; }
         public Byte[] Raw { get; internal set; }
         public UInt64 RemainingBytes { get; private set; }
-
-        Boolean _ongoingMessage;
-        internal Boolean OngoingMessageRead 
-        {
-            get { return _ongoingMessage || this.Flags.Option == WebSocketFrameOption.Continuation; }
-            set { _ongoingMessage = value; } 
-        }
 
         readonly Byte[] _key;
 

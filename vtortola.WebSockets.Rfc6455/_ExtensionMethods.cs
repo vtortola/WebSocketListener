@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets
+namespace vtortola.WebSockets.Rfc6455
 {
     internal static class WebSocketFrameOptionExtensions
     {

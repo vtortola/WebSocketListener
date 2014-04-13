@@ -10,7 +10,7 @@ namespace vtortola.WebSockets.Deflate
     {
         public WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message)
         {
-            if (message.Flags.RSV1)
+            if (message.Flags.Rsv1)
                 return new WebSocketDeflateReadStream(message);
             else
                 return message;

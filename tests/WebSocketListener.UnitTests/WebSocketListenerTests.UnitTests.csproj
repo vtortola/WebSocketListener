@@ -59,6 +59,10 @@
     <Compile Include="With_WebSocketHandshaker.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj">
+      <Project>{72114f0d-ec56-43d5-8c13-43fb013c0c1d}</Project>
+      <Name>vtortola.WebSockets.Rfc6455</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
       <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
       <Name>vtortola.WebSockets</Name>

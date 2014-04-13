@@ -6,16 +6,24 @@ using System.IO;
 using System.Text;
 using Moq;
 using System.Collections.Generic;
+using vtortola.WebSockets.Rfc6455;
 
 namespace WebSocketListenerTests.UnitTests
 {
     [TestClass]
     public class With_WebSocketHandshaker
     {
+        WebSocketFactoryCollection _factories;
+        public With_WebSocketHandshaker()
+        {
+            _factories = new WebSocketFactoryCollection();
+            _factories.RegisterImplementation(new WebSocketFactoryRfc6455());
+        }
+
         [TestMethod]
         public void WebSocketHandshaker_CanDoSimpleHandshake()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(new WebSocketMessageExtensionCollection(), new WebSocketListenerOptions());
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions());
 
             using (var ms = new MemoryStream())
             {
@@ -34,7 +42,7 @@ namespace WebSocketListenerTests.UnitTests
                 var position = ms.Position;
                 ms.Seek(0, SeekOrigin.Begin);
 
-                Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                 Assert.IsTrue(handshaker.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), handshaker.Request.Headers.Origin);
                 Assert.AreEqual("server.example.com", handshaker.Request.Headers[HttpRequestHeader.Host]);
@@ -65,7 +73,7 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_CanNegotiateASubProtocol()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(new WebSocketMessageExtensionCollection(), new WebSocketListenerOptions() { SubProtocols=new[]{"superchat"} });
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
             {
@@ -85,7 +93,7 @@ namespace WebSocketListenerTests.UnitTests
                 var position = ms.Position;
                 ms.Seek(0, SeekOrigin.Begin);
 
-                Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                 Assert.IsTrue(handshaker.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), handshaker.Request.Headers.Origin);
                 Assert.AreEqual("superchat", handshaker.Request.WebSocketProtocol);
@@ -112,8 +120,7 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_CanNegotiateAndIgnoreAnExtension()
         {
-            var extensions = new WebSocketMessageExtensionCollection();
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(extensions, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
             {
@@ -134,7 +141,7 @@ namespace WebSocketListenerTests.UnitTests
                 var position = ms.Position;
                 ms.Seek(0, SeekOrigin.Begin);
 
-                Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                 Assert.IsTrue(handshaker.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), handshaker.Request.Headers.Origin);
                 Assert.AreEqual("superchat", handshaker.Request.WebSocketProtocol);
@@ -167,10 +174,12 @@ namespace WebSocketListenerTests.UnitTests
 
             extension.Setup(x => x.TryNegotiate(It.IsAny<WebSocketHttpRequest>(), out ext, out ctx))
                      .Returns(true);
-                    
-            var extensions = new WebSocketMessageExtensionCollection();
-            extensions.RegisterExtension(extension.Object);
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(extensions, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
+
+            var factory = new WebSocketFactoryRfc6455();
+            factory.MessageExtensions.RegisterExtension(extension.Object);
+            var factories = new WebSocketFactoryCollection();
+            factories.RegisterImplementation(factory);
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
             
             using (var ms = new MemoryStream())
             {
@@ -191,7 +200,7 @@ namespace WebSocketListenerTests.UnitTests
                 var position = ms.Position;
                 ms.Seek(0, SeekOrigin.Begin);
 
-                Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                 Assert.IsTrue(handshaker.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), handshaker.Request.Headers.Origin);
                 Assert.AreEqual("superchat", handshaker.Request.WebSocketProtocol);
@@ -226,9 +235,11 @@ namespace WebSocketListenerTests.UnitTests
             extension.Setup(x => x.TryNegotiate(It.IsAny<WebSocketHttpRequest>(), out ext, out ctx))
                      .Returns(true);
 
-            var extensions = new WebSocketMessageExtensionCollection();
-            extensions.RegisterExtension(extension.Object);
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(extensions, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
+            var factory = new WebSocketFactoryRfc6455();
+            factory.MessageExtensions.RegisterExtension(extension.Object);
+            var factories = new WebSocketFactoryCollection();
+            factories.RegisterImplementation(factory);
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
             {
@@ -249,7 +260,7 @@ namespace WebSocketListenerTests.UnitTests
                 var position = ms.Position;
                 ms.Seek(0, SeekOrigin.Begin);
 
-                Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                 Assert.IsTrue(handshaker.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), handshaker.Request.Headers.Origin);
                 Assert.AreEqual("superchat", handshaker.Request.WebSocketProtocol);
@@ -277,7 +288,7 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_FailWhenSubProtocolRequestedButNotOffered()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(new WebSocketMessageExtensionCollection(), new WebSocketListenerOptions());
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions());
 
             using (var ms = new MemoryStream())
             {
@@ -299,7 +310,7 @@ namespace WebSocketListenerTests.UnitTests
 
                 try
                 {
-                    Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                    Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                     Assert.Fail();
                 }
                 catch (AggregateException aex)
@@ -313,7 +324,7 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_FailWhenSubProtocolRequestedButNoMatch()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(new WebSocketMessageExtensionCollection(), new WebSocketListenerOptions() { SubProtocols = new[] { "superchat2", "text" } });
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat2", "text" } });
 
             using (var ms = new MemoryStream())
             {
@@ -335,7 +346,7 @@ namespace WebSocketListenerTests.UnitTests
 
                 try
                 {
-                    Assert.IsTrue(handshaker.HandshakeAsync(ms).Result);
+                    Assert.IsNotNull(handshaker.HandshakeAsync(ms).Result);
                     Assert.Fail();
                 }
                 catch (AggregateException aex)

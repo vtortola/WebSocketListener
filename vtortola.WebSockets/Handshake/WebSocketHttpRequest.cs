@@ -15,6 +15,7 @@ namespace vtortola.WebSockets
         public CookieContainer Cookies { get; internal set; }
         public String WebSocketProtocol { get; internal set; }
         public HttpHeadersCollection Headers { get; internal set; }
+        public UInt16 Version { get; internal set; }
         public IReadOnlyList<WebSocketExtension> WebSocketExtensions { get; private set; }
         internal void SetExtensions(List<WebSocketExtension> extensions)
         {

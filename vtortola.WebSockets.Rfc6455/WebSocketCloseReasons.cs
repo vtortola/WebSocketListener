@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets
+namespace vtortola.WebSockets.Rfc6455
 {
     public enum WebSocketCloseReasons : ushort
     {

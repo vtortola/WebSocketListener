@@ -19,7 +19,7 @@ namespace vtortola.WebSockets.Deflate
             _deflate = new DeflateStream(_inner, CompressionMode.Decompress, true);
         }
         public override WebSocketMessageType MessageType { get { return _inner.MessageType; } }
-        public override WebSocketFrameHeaderFlags Flags { get { return _inner.Flags; } }
+        public override WebSocketExtensionFlags Flags { get { return _inner.Flags; } }
         public override int Read(byte[] buffer, int offset, int count)
         {
             return _deflate.Read(buffer, offset, count);

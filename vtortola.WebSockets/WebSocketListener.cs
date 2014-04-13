@@ -25,8 +25,8 @@ namespace vtortola.WebSockets
         Int32 _isDisposed;
 
         public Boolean IsStarted { get; private set; }
-        public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
+        public WebSocketFactoryCollection Implementations { get; private set; }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             if (options == null)
@@ -38,8 +38,9 @@ namespace vtortola.WebSockets
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
             _listener = new TcpListener(endpoint);
-            MessageExtensions = new WebSocketMessageExtensionCollection(this);
+            
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
+            Implementations = new WebSocketFactoryCollection(this);
             Func<Socket, Task<WebSocketNegotiationResult>> negotiate = NegotiateWebSocket;
             _negotiationQueue = new TransformBlock<Socket, WebSocketNegotiationResult>(negotiate, new ExecutionDataflowBlockOptions() { CancellationToken = _cancel.Token, MaxDegreeOfParallelism = options.ParallelNegotiations, BoundedCapacity = options.NegotiationQueueCapacity });
         }
@@ -98,7 +99,7 @@ namespace vtortola.WebSockets
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
                 ConfigureSocket(client);
-                WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions, _options);
+                WebSocketHandshaker handShaker = new WebSocketHandshaker(Implementations, _options);
 
                 Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
                 foreach (var conExt in ConnectionExtensions)
@@ -113,11 +114,13 @@ namespace vtortola.WebSockets
 
                 var handshakeTask = handShaker.HandshakeAsync(stream);
                 await Task.WhenAny(timeoutTask, handshakeTask).ConfigureAwait(false);
-                    if (timeoutTask.IsCompleted)
-                        throw new WebSocketException("Negotiation timeout");
+                if (timeoutTask.IsCompleted)
+                    throw new WebSocketException("Negotiation timeout");
 
-                if (await handshakeTask)
-                    result.Result = new WebSocket(stream, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handShaker.Request, _options, handShaker.NegotiatedExtensions);
+                var factory = await handshakeTask;
+
+                if (factory != null)
+                    result.Result = factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handShaker.Request, handShaker.NegotiatedExtensions);
             }
             catch (Exception ex)
             {
