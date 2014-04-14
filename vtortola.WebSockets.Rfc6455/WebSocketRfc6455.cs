@@ -11,7 +11,7 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455:WebSocket
     {
-        internal WebSocketConnectionRfc6455 Handler { get; private set; }
+        internal WebSocketConnectionRfc6455 Connection { get; private set; }
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
         Int32 _disposed;
 
@@ -20,7 +20,7 @@ namespace vtortola.WebSockets.Rfc6455
         public override WebSocketHttpRequest HttpRequest { get { return _httpRequest; } }
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
-        public override Boolean IsConnected { get { return Handler.IsConnected; } }
+        public override Boolean IsConnected { get { return Connection.IsConnected; } }
 
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
@@ -46,14 +46,14 @@ namespace vtortola.WebSockets.Rfc6455
             _localEndpoint = local;
             _httpRequest = httpRequest;
 
-            Handler = new WebSocketConnectionRfc6455(clientStream, options);
+            Connection = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            await Handler.AwaitHeaderAsync(token);
+            await Connection.AwaitHeaderAsync(token);
 
-            if (Handler.IsConnected)
+            if (Connection.IsConnected)
             {
                 WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
                 foreach (var extension in _extensions)
@@ -65,9 +65,9 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override WebSocketMessageReadStream ReadMessage()
         {
-            Handler.AwaitHeader();
+            Connection.AwaitHeader();
 
-            if (Handler.IsConnected && Handler.CurrentHeader != null)
+            if (Connection.IsConnected && Connection.CurrentHeader != null)
             {
                 WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
                 foreach (var extension in _extensions)
@@ -79,7 +79,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
-            Handler.BeginWritting();
+            Connection.BeginWritting();
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);
 
             foreach (var extension in _extensions)
@@ -89,7 +89,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override void Close()
         {
-            Handler.Close(WebSocketCloseReasons.NormalClose);
+            Connection.Close(WebSocketCloseReasons.NormalClose);
         }
         public void Dispose(Boolean disposing)
         {
@@ -97,7 +97,7 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 if (disposing)
                     GC.SuppressFinalize(this);
-                Handler.Dispose();
+                Connection.Dispose();
             }
         }
         public override void Dispose()

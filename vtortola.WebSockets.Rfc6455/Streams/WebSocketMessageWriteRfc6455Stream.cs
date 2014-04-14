@@ -21,7 +21,7 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new ArgumentNullException("webSocket");
 
             _internalUsedBufferLength = 0;
-            _internalBuffer = webSocket.Handler.DataSegment;
+            _internalBuffer = webSocket.Connection.DataSegment;
             _messageType = messageType;
             _webSocket = webSocket;
         }
@@ -47,7 +47,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (_internalUsedBufferLength == _internalBuffer.Count)
                 {
-                    _webSocket.Handler.WriteInternal(_internalBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags);
+                    _webSocket.Connection.WriteInternal(_internalBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags);
                     _internalUsedBufferLength = 0;
                     _headerSent = true;
                 }
@@ -75,7 +75,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (count != 0)
             {
                 var aux = new ArraySegment<Byte>(buffer, offset, count);
-                _webSocket.Handler.WriteInternal(aux, count, false, _headerSent, _messageType, ExtensionFlags);
+                _webSocket.Connection.WriteInternal(aux, count, false, _headerSent, _messageType, ExtensionFlags);
                 _headerSent = true;
             }
         }
@@ -101,7 +101,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if(_internalUsedBufferLength == _internalBuffer.Count)
                 {
-                    await _webSocket.Handler.WriteInternalAsync(_internalBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+                    await _webSocket.Connection.WriteInternalAsync(_internalBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
                     _internalUsedBufferLength = 0;
                     _headerSent = true;
                 }
@@ -118,7 +118,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (count != 0)
             {
                 var aux = new ArraySegment<Byte>(buffer, offset, count);
-                await _webSocket.Handler.WriteInternalAsync(aux, count, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+                await _webSocket.Connection.WriteInternalAsync(aux, count, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
                 _headerSent = true;
             }
         }
@@ -126,16 +126,16 @@ namespace vtortola.WebSockets.Rfc6455
         {
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
-                await _webSocket.Handler.WriteInternalAsync(_internalBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags, cancellationToken);
-                _webSocket.Handler.EndWritting();
+                await _webSocket.Connection.WriteInternalAsync(_internalBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+                _webSocket.Connection.EndWritting();
             }
         }
         public override void Close()
         {
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
-                _webSocket.Handler.WriteInternal(_internalBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags);
-                _webSocket.Handler.EndWritting();
+                _webSocket.Connection.WriteInternal(_internalBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags);
+                _webSocket.Connection.EndWritting();
             }
         }
     }
