@@ -279,7 +279,7 @@ namespace vtortola.WebSockets.Rfc6455
                 if (buffer.Count >= count + header.HeaderLength)
                 {
                     buffer.ShiftRight( header.HeaderLength, count);
-                    Array.Copy(header.Raw, 0, buffer.Array, buffer.Offset, header.HeaderLength);
+                    header.ToArraySegment(buffer);
 
                     if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                         throw new WebSocketException("Write timeout");
@@ -289,7 +289,10 @@ namespace vtortola.WebSockets.Rfc6455
                 {
                     if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                         throw new WebSocketException("Write timeout");
-                    _clientStream.Write(header.Raw, 0, header.HeaderLength);
+
+                    var aux = new ArraySegment<Byte>(new Byte[header.HeaderLength], 0, header.HeaderLength);
+                    header.ToArraySegment(aux);
+                    _clientStream.Write(aux.Array, 0, header.HeaderLength);
                     _clientStream.Write(buffer.Array, buffer.Offset, count);
                 }
             }
@@ -324,7 +327,7 @@ namespace vtortola.WebSockets.Rfc6455
                 if (buffer.Count >= count + header.HeaderLength)
                 {
                     buffer.ShiftRight(header.HeaderLength, count);
-                    Array.Copy(header.Raw, 0, buffer.Array, buffer.Offset, header.HeaderLength);
+                    header.ToArraySegment(buffer);
 
                     if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation))
                         throw new WebSocketException("Write timeout");
@@ -334,7 +337,9 @@ namespace vtortola.WebSockets.Rfc6455
                 {
                     if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation))
                         throw new WebSocketException("Write timeout");
-                    await _clientStream.WriteAsync(header.Raw, 0, header.HeaderLength);
+                    var aux = new ArraySegment<Byte>(new Byte[header.HeaderLength], 0, header.HeaderLength);
+                    header.ToArraySegment(aux);
+                    await _clientStream.WriteAsync(aux.Array, 0, header.HeaderLength);
                     await _clientStream.WriteAsync(buffer.Array, buffer.Offset, count);
                 }
             }

@@ -13,7 +13,6 @@ namespace vtortola.WebSockets.Rfc6455
         public UInt64 ContentLength { get; private set; }
         public Int32 HeaderLength { get; private set; }
         public WebSocketFrameHeaderFlags Flags { get; private set; }
-        public Byte[] Raw { get; internal set; }
         public UInt64 RemainingBytes { get; private set; }
 
         readonly Byte[] _key;
@@ -37,6 +36,39 @@ namespace vtortola.WebSockets.Rfc6455
 
             RemainingBytes-= (UInt64)readed;
         }
+
+        public void ToArraySegment(ArraySegment<Byte> segment)
+        {
+            if (segment.Count < 2)
+                throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
+
+            this.Flags.ToBytes(this.ContentLength, segment);
+            if (this.ContentLength <= 125)
+            {
+
+            }
+            else if (this.ContentLength < UInt16.MaxValue)
+            {
+                if (segment.Count < 4)
+                    throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
+
+                Byte[] i16 = BitConverter.GetBytes((UInt16)this.ContentLength);
+                i16.ReversePortion(0, i16.Length);
+                Array.Copy(i16, 0, segment.Array, segment.Offset + 2, 2);
+            }
+            else if (this.ContentLength < UInt64.MaxValue)
+            {
+                if (segment.Count < 10)
+                    throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
+
+                var ui64 = BitConverter.GetBytes(this.ContentLength);
+                ui64.ReversePortion(0, ui64.Length);
+                Array.Copy(ui64, 0, segment.Array, segment.Offset + 2, 8);
+            }
+            else
+                throw new WebSocketException("Invalid frame header " + this.ContentLength);
+        }
+
         public static Int32 GetHeaderLength(Byte[] frameStart, Int32 offset)
         {
             if (frameStart == null || frameStart.Length < offset + 2)
@@ -96,8 +128,7 @@ namespace vtortola.WebSockets.Rfc6455
                     ContentLength = contentLength,
                     HeaderLength = headerLength,
                     Flags = flags,
-                    RemainingBytes = contentLength,
-                    Raw = frameStart
+                    RemainingBytes = contentLength
                 };
 
                 if (flags.MASK)
@@ -117,25 +148,17 @@ namespace vtortola.WebSockets.Rfc6455
             var flags = new WebSocketFrameHeaderFlags(isComplete, headerSent ? WebSocketFrameOption.Continuation : option, extensionFlags);
 
             Int32 headerLength;
-            Byte[] headerBuffer = new Byte[14];
-            flags.ToBytes((UInt64)count,headerBuffer);
-            
+                        
             if (count <= 125)
             {
                 headerLength = 2;
             }
             else if (count < UInt16.MaxValue)
             {
-                Byte[] i16 = BitConverter.GetBytes((UInt16)count);
-                i16.ReversePortion(0, i16.Length);
-                i16.CopyTo(headerBuffer, 2);
                 headerLength = 4;
             }
             else if ((UInt64)count < UInt64.MaxValue)
             {
-                var ui64 = BitConverter.GetBytes((UInt64)count);
-                ui64.ReversePortion(0, ui64.Length);
-                ui64.CopyTo(headerBuffer, 2);
                 headerLength = 10;
             }
             else
@@ -146,7 +169,6 @@ namespace vtortola.WebSockets.Rfc6455
                 HeaderLength = headerLength,
                 ContentLength = (UInt64)count,
                 Flags = flags,
-                Raw = headerBuffer,
                 RemainingBytes = (UInt64)count
             };
         }

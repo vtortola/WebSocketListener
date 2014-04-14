@@ -74,8 +74,8 @@ namespace vtortola.WebSockets.Rfc6455
 
             if (count != 0)
             {
-                var a = new ArraySegment<Byte>(buffer, offset, count);
-                _webSocket.Handler.WriteInternal(a, count, false, _headerSent, _messageType, ExtensionFlags);
+                var aux = new ArraySegment<Byte>(buffer, offset, count);
+                _webSocket.Handler.WriteInternal(aux, count, false, _headerSent, _messageType, ExtensionFlags);
                 _headerSent = true;
             }
         }
@@ -117,8 +117,8 @@ namespace vtortola.WebSockets.Rfc6455
 
             if (count != 0)
             {
-                var a = new ArraySegment<Byte>(buffer, offset, count);
-                await _webSocket.Handler.WriteInternalAsync(a, count, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+                var aux = new ArraySegment<Byte>(buffer, offset, count);
+                await _webSocket.Handler.WriteInternalAsync(aux, count, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
                 _headerSent = true;
             }
         }
