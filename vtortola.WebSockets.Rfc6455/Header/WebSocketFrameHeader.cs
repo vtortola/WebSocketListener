@@ -15,20 +15,31 @@ namespace vtortola.WebSockets.Rfc6455
         public WebSocketFrameHeaderFlags Flags { get; private set; }
         public UInt64 RemainingBytes { get; private set; }
 
-        readonly Byte[] _key;
+        readonly ArraySegment<Byte> _key;
         Int32 cursor = 0;
+
+        private WebSocketFrameHeader(ArraySegment<Byte> keySegment)
+        {
+            if (keySegment.Count != 4)
+                throw new WebSocketException("The frame key must have a length of 4");
+            _key = keySegment;
+        }
 
         private WebSocketFrameHeader()
         {
-            _key = new Byte[4];
+            
         }
+
         public void DecodeBytes(Byte[] buffer, Int32 bufferOffset, Int32 readed)
         {
             if (Flags.MASK)
             {
+                if (_key == null)
+                    throw new WebSocketException("There is no key to decode the data");
+
                 for (int i = bufferOffset; i < bufferOffset + readed; i++)
                 {
-                    buffer[i] = (Byte)(buffer[i] ^ _key[cursor++]);
+                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + cursor++]);
                     if (cursor >= 4)
                         cursor = 0;
                 }
@@ -87,7 +98,7 @@ namespace vtortola.WebSockets.Rfc6455
             else
                 throw new WebSocketException("Cannot understand a length field of " + contentLength);
         }
-        public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 headerLength, out WebSocketFrameHeader header)
+        public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 headerLength, ArraySegment<Byte> keySegment, out WebSocketFrameHeader header)
         {
             header = null;
 
@@ -123,7 +134,7 @@ namespace vtortola.WebSockets.Rfc6455
             WebSocketFrameHeaderFlags flags;
             if (WebSocketFrameHeaderFlags.TryParse(frameStart, offset, out flags))
             {
-                header = new WebSocketFrameHeader()
+                header = new WebSocketFrameHeader(keySegment)
                 {
                     ContentLength = contentLength,
                     HeaderLength = headerLength,
@@ -135,7 +146,7 @@ namespace vtortola.WebSockets.Rfc6455
                 {
                     headerLength -= 4;
                     for (int i = 0; i < 4; i++)
-                        header._key[i] = frameStart[offset + i + headerLength];
+                        header._key.Array[header._key.Offset + i] = frameStart[offset + i + headerLength];
                 }
 
                 return true;

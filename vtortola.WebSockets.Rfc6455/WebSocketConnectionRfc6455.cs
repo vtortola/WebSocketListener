@@ -13,7 +13,7 @@ namespace vtortola.WebSockets.Rfc6455
     internal class WebSocketConnectionRfc6455 
     {
         readonly Byte[] _buffer;
-        readonly ArraySegment<Byte> _headerSegment, _pingSegment, _controlSegment;
+        readonly ArraySegment<Byte> _headerSegment, _pingSegment, _controlSegment, _keySegment;
         internal readonly ArraySegment<Byte> DataSegment;
 
         readonly SemaphoreSlim _writeSemaphore;
@@ -39,11 +39,12 @@ namespace vtortola.WebSockets.Rfc6455
             
             _clientStream = clientStream;
 
-            _buffer = new Byte[14 + 125 + 2 + _options.SendBufferSize];
+            _buffer = new Byte[14 + 125 + 2 + _options.SendBufferSize + 4];
             _headerSegment = new ArraySegment<Byte>(_buffer, 0, 14);
             _controlSegment = new ArraySegment<Byte>(_buffer, 14, 125);
             _pingSegment = new ArraySegment<Byte>(_buffer, 139, 2);
             DataSegment = new ArraySegment<Byte>(_buffer, 141, _options.SendBufferSize);
+            _keySegment = new ArraySegment<Byte>(_buffer, 141 + _options.SendBufferSize, 4);
 
             if (options.PingTimeout != Timeout.InfiniteTimeSpan)
             {
@@ -134,7 +135,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
 
             WebSocketFrameHeader header;
-            if (!WebSocketFrameHeader.TryParse(_headerSegment.Array, _headerSegment.Offset, headerlength, out header))
+            if (!WebSocketFrameHeader.TryParse(_headerSegment.Array, _headerSegment.Offset, headerlength, _keySegment, out header))
                 throw new WebSocketException("Cannot understand frame header");
 
             CurrentHeader = header;
