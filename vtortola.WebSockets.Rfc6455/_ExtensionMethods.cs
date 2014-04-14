@@ -49,5 +49,41 @@ namespace vtortola.WebSockets.Rfc6455
                 array[back--] = pivot;
             }
         }
+
+        internal static void ToBytes(this UInt16 value, Byte[] buffer, Int32 offset)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                buffer[offset + i] = (byte)value;
+                value >>= 8;
+            }
+        }
+
+        internal static void ToBytes(this UInt64 value, Byte[] buffer, Int32 offset)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                buffer[offset + i] = (byte)value;
+                value >>= 8;
+            }
+        }
+
+        internal static void ToBytesBackwards(this UInt16 value, Byte[] buffer, Int32 offset)
+        {
+            for (int i = offset+1; i >= offset; i--)
+            {
+                buffer[i] = (byte)value;
+                value >>= 8;
+            }
+        }
+
+        internal static void ToBytesBackwards(this UInt64 value, Byte[] buffer, Int32 offset)
+        {
+            for (int i = offset + 7; i >= offset; i--)
+            {
+                buffer[i] = (byte)value;
+                value >>= 8;
+            }
+        }
     }
 }

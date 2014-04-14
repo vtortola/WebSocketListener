@@ -63,18 +63,14 @@ namespace vtortola.WebSockets.Rfc6455
                 if (segment.Count < 4)
                     throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
 
-                Byte[] i16 = BitConverter.GetBytes((UInt16)this.ContentLength);
-                i16.ReversePortion(0, i16.Length);
-                Array.Copy(i16, 0, segment.Array, segment.Offset + 2, 2);
+                ((UInt16)this.ContentLength).ToBytesBackwards(segment.Array, segment.Offset + 2);
             }
             else if (this.ContentLength < UInt64.MaxValue)
             {
                 if (segment.Count < 10)
                     throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
 
-                var ui64 = BitConverter.GetBytes(this.ContentLength);
-                ui64.ReversePortion(0, ui64.Length);
-                Array.Copy(ui64, 0, segment.Array, segment.Offset + 2, 8);
+                this.ContentLength.ToBytesBackwards(segment.Array, segment.Offset + 2);
             }
             else
                 throw new WebSocketException("Invalid frame header " + this.ContentLength);
