@@ -44,10 +44,10 @@
     <Compile Include="Streams\WebSocketMessageWriteRfc6455Stream.cs" />
     <Compile Include="WebSocketCloseReasons.cs" />
     <Compile Include="WebSocketFactoryRfc6455.cs" />
-    <Compile Include="WebSocketFrameHeader.cs" />
-    <Compile Include="WebSocketFrameHeaderFlags.cs" />
-    <Compile Include="WebSocketFrameOption.cs" />
-    <Compile Include="WebSocketHandlerRfc6455.cs" />
+    <Compile Include="Header\WebSocketFrameHeader.cs" />
+    <Compile Include="Header\WebSocketFrameHeaderFlags.cs" />
+    <Compile Include="Header\WebSocketFrameOption.cs" />
+    <Compile Include="WebSocketConnectionRfc6455.cs" />
     <Compile Include="WebSocketRfc6455.cs" />
     <Compile Include="_ExtensionMethods.cs" />
   </ItemGroup>
@@ -57,9 +57,7 @@
       <Name>vtortola.WebSockets</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Header\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

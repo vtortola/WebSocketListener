@@ -19,28 +19,16 @@ namespace vtortola.WebSockets.Rfc6455
 
     internal static class ByteArrayExtensions
     {
-        internal static void ShiftLeft(this Byte[] array, Int32 from, Int32 count)
+        internal static void ShiftRight(this ArraySegment<Byte> segment, Int32 to, Int32 count)
         {
-            if (count + from > array.Length)
+            if (count + to > segment.Count)
                 throw new ArgumentException("The array is to small");
 
             if (count < 1)
                 return;
 
-            for (int i = 0; i < count; i++)
-                array[i] = array[i + from];
-        }
-
-        internal static void ShiftRight(this Byte[] array, Int32 to, Int32 count)
-        {
-            if (count + to > array.Length)
-                throw new ArgumentException("The array is to small");
-
-            if (count < 1)
-                return;
-
-            for (int i = (count-1)+to; i >= to; i--)
-                array[i] = array[i - to];
+            for (int i = (segment.Offset + count - 1) + to; i >= segment.Offset + to; i--)
+                segment.Array[i] = segment.Array[i - to];
         }
 
         internal static void ReversePortion(this Byte[] array, Int32 from, Int32 count)

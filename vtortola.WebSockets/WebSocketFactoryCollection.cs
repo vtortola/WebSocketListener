@@ -14,7 +14,6 @@ namespace vtortola.WebSockets
     {
         readonly List<WebSocketFactory> _factories;
         readonly WebSocketListener _listener;
-
         public WebSocketFactoryCollection()
         {
             _factories = new List<WebSocketFactory>();
@@ -30,6 +29,7 @@ namespace vtortola.WebSockets
                 throw new WebSocketException("Factories cannot be added after the service is started.");
             if(_factories.Any(x=>x.Version == factory.Version))
                 throw new WebSocketException("There is already a WebSocketFactory registered with that version.");
+           
             _factories.Add(factory);
         }
         public int Count

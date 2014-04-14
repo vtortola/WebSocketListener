@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -10,7 +11,7 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455:WebSocket
     {
-        readonly WebSocketHandlerRfc6455 _handler;
+        internal WebSocketConnectionRfc6455 Handler { get; private set; }
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
         Int32 _disposed;
 
@@ -19,10 +20,25 @@ namespace vtortola.WebSockets.Rfc6455
         public override WebSocketHttpRequest HttpRequest { get { return _httpRequest; } }
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
-        public override Boolean IsConnected { get { return _handler.IsConnected; } }
+        public override Boolean IsConnected { get { return Handler.IsConnected; } }
 
-        public WebSocketRfc6455(WebSocketHandlerRfc6455 handler, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
+            if (clientStream == null)
+                throw new ArgumentNullException("clientStream");
+
+            if (options == null)
+                throw new ArgumentNullException("options");
+
+            if (local == null)
+                throw new ArgumentNullException("local");
+
+            if (remote == null)
+                throw new ArgumentNullException("remote");
+
+            if (extensions == null)
+                throw new ArgumentNullException("extensions");
+
             if (httpRequest == null)
                 throw new ArgumentNullException("httpRequest");
 
@@ -30,16 +46,16 @@ namespace vtortola.WebSockets.Rfc6455
             _localEndpoint = local;
             _httpRequest = httpRequest;
 
-            _handler = handler;
+            Handler = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            await _handler.AwaitHeaderAsync(token);
+            await Handler.AwaitHeaderAsync(token);
 
-            if (_handler.IsConnected)
+            if (Handler.IsConnected)
             {
-                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(_handler);
+                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
                 foreach (var extension in _extensions)
                     reader = extension.ExtendReader(reader);
                 return reader;
@@ -47,14 +63,13 @@ namespace vtortola.WebSockets.Rfc6455
 
             return null;
         }
-
         public override WebSocketMessageReadStream ReadMessage()
         {
-            _handler.AwaitHeader();
+            Handler.AwaitHeader();
 
-            if (_handler.IsConnected && _handler.CurrentHeader != null)
+            if (Handler.IsConnected && Handler.CurrentHeader != null)
             {
-                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(_handler);
+                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
                 foreach (var extension in _extensions)
                     reader = extension.ExtendReader(reader);
                 return reader;
@@ -62,30 +77,27 @@ namespace vtortola.WebSockets.Rfc6455
 
             return null;
         }
-
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
-            _handler.BeginWritting();
-            WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(_handler, messageType);
+            Handler.BeginWritting();
+            WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);
 
             foreach (var extension in _extensions)
                 writer = extension.ExtendWriter(writer);
 
             return writer;
         }
-
         public override void Close()
         {
-            _handler.Close(WebSocketCloseReasons.NormalClose);
+            Handler.Close(WebSocketCloseReasons.NormalClose);
         }
-
         public void Dispose(Boolean disposing)
         {
             if(Interlocked.CompareExchange(ref _disposed,1,0)==0)
             {
                 if (disposing)
                     GC.SuppressFinalize(this);
-                _handler.Dispose();
+                Handler.Dispose();
             }
         }
         public override void Dispose()

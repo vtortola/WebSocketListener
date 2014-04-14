@@ -14,7 +14,6 @@ namespace vtortola.WebSockets
         {
 
         }
-
         public WebSocketException(String message, Exception inner)
             :base(message,inner)
         {

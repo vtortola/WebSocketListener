@@ -44,13 +44,10 @@ namespace vtortola.WebSockets
             Func<Socket, Task<WebSocketNegotiationResult>> negotiate = NegotiateWebSocket;
             _negotiationQueue = new TransformBlock<Socket, WebSocketNegotiationResult>(negotiate, new ExecutionDataflowBlockOptions() { CancellationToken = _cancel.Token, MaxDegreeOfParallelism = options.ParallelNegotiations, BoundedCapacity = options.NegotiationQueueCapacity });
         }
-
         public WebSocketListener(IPEndPoint endpoint)
             :this(endpoint,new WebSocketListenerOptions())
         {
- 
         }
-
         private async Task StartAccepting()
         {
             while(IsStarted)
@@ -61,13 +58,11 @@ namespace vtortola.WebSockets
                         FinishSocket(client);
             }
         }
-
         private void FinishSocket(Socket client)
         {
             try { client.Dispose(); }
             catch { }
         }
-
         public void Start()
         {
             if (_isDisposed == 0)
@@ -91,7 +86,6 @@ namespace vtortola.WebSockets
             client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
             client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
         }
-
         private async Task<WebSocketNegotiationResult> NegotiateWebSocket(Socket client)
         {
             var result = new WebSocketNegotiationResult();

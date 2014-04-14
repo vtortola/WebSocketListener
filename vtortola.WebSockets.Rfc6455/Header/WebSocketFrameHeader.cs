@@ -17,13 +17,12 @@ namespace vtortola.WebSockets.Rfc6455
         public UInt64 RemainingBytes { get; private set; }
 
         readonly Byte[] _key;
+        Int32 cursor = 0;
 
         private WebSocketFrameHeader()
         {
             _key = new Byte[4];
         }
-
-        Int32 cursor = 0;
         public void DecodeBytes(Byte[] buffer, Int32 bufferOffset, Int32 readed)
         {
             if (Flags.MASK)
@@ -38,7 +37,6 @@ namespace vtortola.WebSockets.Rfc6455
 
             RemainingBytes-= (UInt64)readed;
         }
-
         public static Int32 GetHeaderLength(Byte[] frameStart, Int32 offset)
         {
             if (frameStart == null || frameStart.Length < offset + 2)
@@ -57,7 +55,6 @@ namespace vtortola.WebSockets.Rfc6455
             else
                 throw new WebSocketException("Cannot understand a length field of " + contentLength);
         }
-
         public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 headerLength, out WebSocketFrameHeader header)
         {
             header = null;
@@ -115,7 +112,6 @@ namespace vtortola.WebSockets.Rfc6455
 
             return false; 
         }
-
         public static WebSocketFrameHeader Create(Int32 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             var flags = new WebSocketFrameHeaderFlags(isComplete, headerSent ? WebSocketFrameOption.Continuation : option, extensionFlags);
