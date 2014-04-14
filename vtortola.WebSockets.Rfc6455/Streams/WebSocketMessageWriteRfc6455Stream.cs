@@ -21,7 +21,7 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new ArgumentNullException("webSocket");
 
             _internalUsedBufferLength = 0;
-            _internalBuffer = webSocket.Handler._dataSegment;
+            _internalBuffer = webSocket.Handler.DataSegment;
             _messageType = messageType;
             _webSocket = webSocket;
         }

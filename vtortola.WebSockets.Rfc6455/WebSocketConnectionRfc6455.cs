@@ -14,7 +14,7 @@ namespace vtortola.WebSockets.Rfc6455
     {
         readonly Byte[] _buffer;
         readonly ArraySegment<Byte> _headerSegment, _pingSegment, _controlSegment;
-        internal readonly ArraySegment<Byte> _dataSegment;
+        internal readonly ArraySegment<Byte> DataSegment;
 
         readonly SemaphoreSlim _writeSemaphore;
         readonly Stream _clientStream;
@@ -43,7 +43,7 @@ namespace vtortola.WebSockets.Rfc6455
             _headerSegment = new ArraySegment<Byte>(_buffer, 0, 14);
             _controlSegment = new ArraySegment<Byte>(_buffer, 14, 125);
             _pingSegment = new ArraySegment<Byte>(_buffer, 139, 2);
-            _dataSegment = new ArraySegment<Byte>(_buffer, 141, _options.SendBufferSize);
+            DataSegment = new ArraySegment<Byte>(_buffer, 141, _options.SendBufferSize);
 
             if (options.PingTimeout != Timeout.InfiniteTimeSpan)
             {
