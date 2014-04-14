@@ -39,7 +39,11 @@ namespace vtortola.WebSockets.Rfc6455
             
             _clientStream = clientStream;
 
-            _buffer = new Byte[14 + 125 + 2 + _options.SendBufferSize + 4];
+            if (options.BufferManager != null)
+                _buffer = options.BufferManager.TakeBuffer(14 + 125 + 2 + _options.SendBufferSize + 4);
+            else
+                _buffer = new Byte[14 + 125 + 2 + _options.SendBufferSize + 4];
+
             _headerSegment = new ArraySegment<Byte>(_buffer, 0, 14);
             _controlSegment = new ArraySegment<Byte>(_buffer, 14, 125);
             _pingSegment = new ArraySegment<Byte>(_buffer, 139, 2);
@@ -391,11 +395,17 @@ namespace vtortola.WebSockets.Rfc6455
 
                 try
                 {
+                    this.Close();
                     _writeSemaphore.Dispose();
                     this.Close(WebSocketCloseReasons.NormalClose);
                     _clientStream.Dispose();
                 }
                 catch { }
+                finally
+                {
+                    if (_options.BufferManager != null)
+                        _options.BufferManager.ReturnBuffer(_buffer);
+                }
             }
         }
         public void Dispose()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ namespace vtortola.WebSockets
         public TimeSpan WebSocketReceiveTimeout { get; set; }
         public Int32 SendBufferSize { get; set; }
         public String[] SubProtocols { get; set; }
+        public BufferManager BufferManager { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
@@ -42,7 +44,8 @@ namespace vtortola.WebSockets
                 WebSocketSendTimeout = this.WebSocketSendTimeout,
                 WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
                 SendBufferSize = this.SendBufferSize,
-                SubProtocols = this.SubProtocols??_noSubProtocols
+                SubProtocols = this.SubProtocols??_noSubProtocols,
+                BufferManager = this.BufferManager
             };
         }
 
