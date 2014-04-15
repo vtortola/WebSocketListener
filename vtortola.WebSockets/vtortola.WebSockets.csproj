@@ -63,6 +63,7 @@
     <Compile Include="Streams\WebSocketMessageReadStream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
     <Compile Include="Tools\AsyncResultTask.cs" />
+    <Compile Include="Tools\ByteArrayExtensions.cs" />
     <Compile Include="WebSocket.cs" />
     <Compile Include="WebSocketFactory.cs" />
     <Compile Include="WebSocketFactoryCollection.cs" />

@@ -50,7 +50,7 @@
     <Compile Include="Header\WebSocketFrameOption.cs" />
     <Compile Include="WebSocketConnectionRfc6455.cs" />
     <Compile Include="WebSocketRfc6455.cs" />
-    <Compile Include="_ExtensionMethods.cs" />
+    <Compile Include="Header\_ExtensionMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj">

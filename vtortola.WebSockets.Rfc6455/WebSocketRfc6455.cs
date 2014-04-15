@@ -89,7 +89,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override void Close()
         {
-            Connection.Close(WebSocketCloseReasons.NormalClose);
+            Connection.Close();
         }
         public void Dispose(Boolean disposing)
         {
