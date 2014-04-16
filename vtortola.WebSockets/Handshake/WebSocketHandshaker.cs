@@ -19,20 +19,11 @@ namespace vtortola.WebSockets
         readonly Dictionary<String, String> _headers;
         readonly SHA1 _sha1;
         readonly WebSocketFactoryCollection _factories;
-        WebSocketFactory _factory;
+
         public WebSocketHttpRequest Request { get; private set; }
         public List<IWebSocketMessageExtensionContext> NegotiatedExtensions { get; private set; }
-        public Boolean IsWebSocketRequest
-        {
-            get
-            {
-                return _headers.ContainsKey("Host") &&
-                       _headers.ContainsKey("Upgrade") && "websocket".Equals(_headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase ) &&
-                       _headers.ContainsKey("Connection") &&
-                       _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
-                       _headers.ContainsKey("Sec-WebSocket-Version");
-            }
-        }
+        public Boolean IsWebSocketRequest { get; private set;}
+        public Boolean IsVersionSupported { get; private set;}
 
         public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
         {
@@ -56,18 +47,33 @@ namespace vtortola.WebSockets
         public async Task<WebSocketFactory> HandshakeAsync(Stream clientStream)
         {
             ReadHttpRequest(clientStream);
+            if (!(_headers.ContainsKey("Host") &&
+                   _headers.ContainsKey("Upgrade") && "websocket".Equals(_headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase) &&
+                   _headers.ContainsKey("Connection") &&
+                   _headers.ContainsKey("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(_headers["Sec-WebSocket-Key"]) &&
+                   _headers.ContainsKey("Sec-WebSocket-Version")))
+            {
+                await WriteHttpResponse(clientStream);
+                return null;
+            }
+
+            IsWebSocketRequest = true;
 
             ConsolidateObjectModel();
 
-            if (IsWebSocketRequest)
-                SelectExtensions(_factory);
+            var factory = _factories.GetWebSocketFactory(Request);
+            if (factory == null)
+            {
+                await WriteHttpResponse(clientStream);
+                return null;
+            }
 
+            IsVersionSupported = true;
+                        
+            SelectExtensions(factory);
             await WriteHttpResponse(clientStream);
 
-            if (IsWebSocketRequest)
-                return _factory;
-            else
-                return null;
+            return factory;
         }
 
         private void SelectExtensions(WebSocketFactory factory)
@@ -94,7 +100,11 @@ namespace vtortola.WebSockets
                 {
                     SendNegotiationErrorResponse(writer);
                     await writer.FlushAsync();
-                    clientStream.Close();
+                }
+                else if (!IsVersionSupported)
+                {
+                    SendVersionNegotiationErrorResponse(writer);
+                    await writer.FlushAsync();
                 }
                 else
                 {
@@ -190,6 +200,21 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 404 Bad Request\r\n");
             writer.Write("\r\n");
         }
+        private void SendVersionNegotiationErrorResponse(StreamWriter writer)
+        {
+            writer.Write("HTTP/1.1 426 Upgrade Required\r\n");
+            writer.Write("Sec-WebSocket-Version: ");
+            Boolean first = true;
+            foreach (var standard in _factories)
+            {
+                if(!first)
+                    writer.Write(",");
+                first = false;
+                writer.Write(standard.Version.ToString());
+            }
+            writer.Write("\r\n");
+            writer.Write("\r\n");
+        }
         private String GenerateHandshake()
         {
             return Convert.ToBase64String(_sha1.ComputeHash(Encoding.UTF8.GetBytes(_headers["Sec-WebSocket-Key"] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
@@ -201,7 +226,7 @@ namespace vtortola.WebSockets
                 Request.Cookies.SetCookies(new Uri("http://" + _headers["Host"]), _headers["Cookie"]);
             }
 
-            Request.Version = UInt16.Parse(_headers["Sec-WebSocket-Version"]);
+            Request.WebSocketVersion = UInt16.Parse(_headers["Sec-WebSocket-Version"]);
 
             if(_headers.ContainsKey("Sec-WebSocket-Protocol"))
             {
@@ -254,8 +279,6 @@ namespace vtortola.WebSockets
             Request.Headers = new HttpHeadersCollection();
             foreach (var kv in _headers)
                 Request.Headers.Add(kv.Key, kv.Value);
-
-            _factory = _factories.GetWebSocketFactory(Request);
         }
         private void AssertArrayIsAtLeast(String[] array, Int32 length, String error)
         {
