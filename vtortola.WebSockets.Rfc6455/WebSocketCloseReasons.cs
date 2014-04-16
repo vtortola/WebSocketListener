@@ -19,21 +19,4 @@ namespace vtortola.WebSockets.Rfc6455
         UnexpectedCondition=1011,
         TLSFailure=105,
     }
-
-    internal static class WebSocketCloseReasonsExtensions
-    {
-        static Dictionary<WebSocketCloseReasons, Byte[]> _bytes;
-
-        static WebSocketCloseReasonsExtensions()
-        {
-            _bytes = Enum.GetValues(typeof(WebSocketCloseReasons))
-                         .Cast<WebSocketCloseReasons>()
-                         .ToDictionary(v => v, v => BitConverter.GetBytes((UInt16)v));
-        }
-
-        internal static Byte[] GetBytes(this WebSocketCloseReasons reason)
-        {
-            return _bytes[reason];
-        }
-    }
 }

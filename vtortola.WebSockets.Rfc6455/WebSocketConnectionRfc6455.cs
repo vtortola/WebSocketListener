@@ -14,7 +14,7 @@ namespace vtortola.WebSockets.Rfc6455
     internal class WebSocketConnectionRfc6455 
     {
         readonly Byte[] _buffer;
-        readonly ArraySegment<Byte> _headerSegment, _pingSegment, _controlSegment, _keySegment;
+        readonly ArraySegment<Byte> _headerSegment, _pingSegment, _pongSegment, _controlSegment, _keySegment, _closeSegment;
         internal readonly ArraySegment<Byte> DataSegment;
 
         readonly SemaphoreSlim _writeSemaphore;
@@ -42,15 +42,17 @@ namespace vtortola.WebSockets.Rfc6455
             _clientStream = clientStream;
 
             if (options.BufferManager != null)
-                _buffer = options.BufferManager.TakeBuffer(14 + 125 + 2 + 10 + _options.SendBufferSize + 4);
+                _buffer = options.BufferManager.TakeBuffer(14 + 125 + 125 + 2 + 10 + _options.SendBufferSize + 4 + 2);
             else
-                _buffer = new Byte[14 + 125 + 2 + 10 + _options.SendBufferSize  + 4];
+                _buffer = new Byte[14 + 125 + 125 + 2 + 10 + _options.SendBufferSize  + 4 + 2];
 
             _headerSegment = new ArraySegment<Byte>(_buffer, 0, 14);
             _controlSegment = new ArraySegment<Byte>(_buffer, 14, 125);
-            _pingSegment = new ArraySegment<Byte>(_buffer, 139, 2);
-            DataSegment = new ArraySegment<Byte>(_buffer, 141 + 10, _options.SendBufferSize);
-            _keySegment = new ArraySegment<Byte>(_buffer, 141 + 10 + _options.SendBufferSize, 4);
+            _pongSegment = new ArraySegment<Byte>(_buffer, 139, 125);
+            _pingSegment = new ArraySegment<Byte>(_buffer, 264, 2);
+            DataSegment = new ArraySegment<Byte>(_buffer, 266 + 10, _options.SendBufferSize);
+            _keySegment = new ArraySegment<Byte>(_buffer, 266 + 10 + _options.SendBufferSize, 4);
+            _closeSegment = new ArraySegment<Byte>(_buffer, 266 + 10 + _options.SendBufferSize + 4, 2);
 
             if (options.PingTimeout != Timeout.InfiniteTimeSpan)
             {
@@ -255,20 +257,20 @@ namespace vtortola.WebSockets.Rfc6455
 
                 case WebSocketFrameOption.Ping: // read the buffer and echo
                 case WebSocketFrameOption.Pong: // read the buffer, remember timestamp
-                    Int32 contentLength = _controlSegment.Count;
+                    Int32 contentLength = _pongSegment.Count;
                     if (CurrentHeader.ContentLength < 125)
                         contentLength = (Int32)CurrentHeader.ContentLength;
                     Int32 readed = 0;
                     while (CurrentHeader.RemainingBytes > 0)
                     {
-                        readed = clientStream.Read(_controlSegment.Array, _controlSegment.Offset + readed, contentLength - readed);
-                        CurrentHeader.DecodeBytes(_controlSegment.Array, _controlSegment.Offset, readed);
+                        readed = clientStream.Read(_pongSegment.Array, _pongSegment.Offset + readed, contentLength - readed);
+                        CurrentHeader.DecodeBytes(_pongSegment.Array, _pongSegment.Offset, readed);
                     }
 
                     if(CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
                         _lastPong = DateTime.Now;
                     else // pong frames echo what was 'pinged'
-                        this.WriteInternal(_controlSegment, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
+                        this.WriteInternal(_pongSegment, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
                     
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
@@ -363,8 +365,8 @@ namespace vtortola.WebSockets.Rfc6455
                 if (Interlocked.CompareExchange(ref _closed, 1, 0) == 1)
                     return;
 
-                Array.Copy(reason.GetBytes(), 0, _controlSegment.Array, _controlSegment.Offset, 2);
-                WriteInternal(_controlSegment, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
+                ((UInt16)reason).ToBytes(_closeSegment.Array, _controlSegment.Offset);
+                WriteInternal(_closeSegment, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
 
                 _clientStream.Close();
             }
