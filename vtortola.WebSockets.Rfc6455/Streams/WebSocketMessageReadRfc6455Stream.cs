@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public sealed class WebSocketMessageReadRfc6455Stream : WebSocketMessageReadStream
+    public class WebSocketMessageReadRfc6455Stream : WebSocketMessageReadStream
     {
         readonly WebSocketRfc6455 _webSocket;
         Boolean _hasPendingFrames;

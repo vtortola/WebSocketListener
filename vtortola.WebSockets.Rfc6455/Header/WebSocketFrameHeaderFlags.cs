@@ -102,7 +102,7 @@ namespace vtortola.WebSockets.Rfc6455
                     break;
             }
         }
-        public void ToBytes(UInt64 length, ArraySegment<Byte> buffer)
+        public void ToBytes(UInt64 length, Byte[] buffer, Int32 offset)
         {
             Int32 headerLength;
             if (length <= 125)
@@ -114,8 +114,8 @@ namespace vtortola.WebSockets.Rfc6455
             else
                 throw new WebSocketException("Cannot create a header with a length of " + length);
 
-            buffer.Array[buffer.Offset] = _byte1;
-            buffer.Array[buffer.Offset+1] = (Byte)(_byte2 + headerLength);
+            buffer[offset] = _byte1;
+            buffer[offset+1] = (Byte)(_byte2 + headerLength);
         }
     }
 }

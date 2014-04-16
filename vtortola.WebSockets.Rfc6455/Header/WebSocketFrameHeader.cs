@@ -28,7 +28,6 @@ namespace vtortola.WebSockets.Rfc6455
 
         private WebSocketFrameHeader()
         {
-            
         }
 
         public void DecodeBytes(Byte[] buffer, Int32 bufferOffset, Int32 readed)
@@ -49,30 +48,16 @@ namespace vtortola.WebSockets.Rfc6455
             RemainingBytes-= (UInt64)readed;
         }
 
-        public void ToArraySegment(ArraySegment<Byte> segment)
+        public void ToArraySegment(Byte[] segment, Int32 offset)
         {
-            if (segment.Count < 2)
-                throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
-
-            this.Flags.ToBytes(this.ContentLength, segment);
+            this.Flags.ToBytes(this.ContentLength, segment, offset);
             if (this.ContentLength <= 125)
-            {
-
+            { // header length is included in the 2b header
             }
             else if (this.ContentLength < UInt16.MaxValue)
-            {
-                if (segment.Count < 4)
-                    throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
-
-                ((UInt16)this.ContentLength).ToBytesBackwards(segment.Array, segment.Offset + 2);
-            }
+                ((UInt16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
             else if (this.ContentLength < UInt64.MaxValue)
-            {
-                if (segment.Count < 10)
-                    throw new WebSocketException("Insuficient buffer length " + segment.Count.ToString());
-
-                this.ContentLength.ToBytesBackwards(segment.Array, segment.Offset + 2);
-            }
+                this.ContentLength.ToBytesBackwards(segment, offset + 2);
             else
                 throw new WebSocketException("Invalid frame header " + this.ContentLength);
         }

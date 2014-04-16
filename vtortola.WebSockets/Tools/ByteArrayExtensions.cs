@@ -8,18 +8,6 @@ namespace vtortola.WebSockets.Tools
 {
     public static class ByteArrayExtensions
     {
-        public static void ShiftRight(this ArraySegment<Byte> segment, Int32 to, Int32 count)
-        {
-            if (count + to > segment.Count)
-                throw new ArgumentException("The array is to small");
-
-            if (count < 1)
-                return;
-
-            for (int i = (segment.Offset + count - 1) + to; i >= segment.Offset + to; i--)
-                segment.Array[i] = segment.Array[i - to];
-        }
-
         public static void ReversePortion(this Byte[] array, Int32 from, Int32 count)
         {
             if (count + from > array.Length)

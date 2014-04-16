@@ -26,7 +26,7 @@ namespace vtortola.WebSockets
 
         public Boolean IsStarted { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
-        public WebSocketFactoryCollection Implementations { get; private set; }
+        public WebSocketFactoryCollection Standards { get; private set; }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             if (options == null)
@@ -40,7 +40,7 @@ namespace vtortola.WebSockets
             _listener = new TcpListener(endpoint);
             
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
-            Implementations = new WebSocketFactoryCollection(this);
+            Standards = new WebSocketFactoryCollection(this);
             Func<Socket, Task<WebSocketNegotiationResult>> negotiate = NegotiateWebSocket;
             _negotiationQueue = new TransformBlock<Socket, WebSocketNegotiationResult>(negotiate, new ExecutionDataflowBlockOptions() { CancellationToken = _cancel.Token, MaxDegreeOfParallelism = options.ParallelNegotiations, BoundedCapacity = options.NegotiationQueueCapacity });
         }
@@ -67,6 +67,9 @@ namespace vtortola.WebSockets
         {
             if (_isDisposed == 0)
             {
+                if (Standards.Count <= 0)
+                    throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
+
                 IsStarted = true;
                 if (_options.TcpBacklog.HasValue)
                     _listener.Start(_options.TcpBacklog.Value);
@@ -93,7 +96,7 @@ namespace vtortola.WebSockets
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
                 ConfigureSocket(client);
-                WebSocketHandshaker handShaker = new WebSocketHandshaker(Implementations, _options);
+                WebSocketHandshaker handShaker = new WebSocketHandshaker(Standards, _options);
 
                 Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
                 foreach (var conExt in ConnectionExtensions)

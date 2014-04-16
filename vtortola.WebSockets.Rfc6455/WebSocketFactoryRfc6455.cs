@@ -20,7 +20,6 @@ namespace vtortola.WebSockets.Rfc6455
             :base(listener)
         {
         }
-
         public override WebSocket CreateWebSocket(Stream stream, WebSocketListenerOptions options, IPEndPoint localEndpoint, IPEndPoint remoteEndpoint, WebSocketHttpRequest webSocketHttpRequest, List<IWebSocketMessageExtensionContext> negotiatedExtensions)
         {
             return new WebSocketRfc6455(stream, options, localEndpoint, remoteEndpoint, webSocketHttpRequest, negotiatedExtensions);
