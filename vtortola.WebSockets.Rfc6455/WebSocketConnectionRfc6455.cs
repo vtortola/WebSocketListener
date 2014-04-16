@@ -24,7 +24,7 @@ namespace vtortola.WebSockets.Rfc6455
         Int32 _closed,_ongoingMessageWrite,_ongoingMessageAwaiting, _disposed;
         readonly TimeSpan _pingInterval, _pingTimeout;
         DateTime _lastPong;
-        Boolean _pingFail;
+        Boolean _pingFail, _pingStarted;
 
         internal Boolean IsConnected { get { return _closed != 1; } }
         internal WebSocketFrameHeader CurrentHeader { get; set; }
@@ -54,17 +54,24 @@ namespace vtortola.WebSockets.Rfc6455
             _keySegment = new ArraySegment<Byte>(_buffer, 266 + 10 + _options.SendBufferSize, 4);
             _closeSegment = new ArraySegment<Byte>(_buffer, 266 + 10 + _options.SendBufferSize + 4, 2);
 
-            if (options.PingTimeout != Timeout.InfiniteTimeSpan)
+            _pingTimeout = _options.PingTimeout;
+            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, _options.PingTimeout.TotalMilliseconds / 2));
+        }
+        private void StartPing()
+        {
+            if (!_pingStarted)
             {
-                _pingTimeout = options.PingTimeout;
-                _lastPong = DateTime.Now.Add(_pingTimeout);
-                _pingInterval = TimeSpan.FromMilliseconds(Math.Min(5000, options.PingTimeout.TotalMilliseconds / 2));
-
-                Task.Run((Func<Task>)PingAsync);
+                _pingStarted = true;
+                if (_options.PingTimeout != Timeout.InfiniteTimeSpan)
+                {
+                    _lastPong = DateTime.Now.Add(_pingTimeout);
+                    Task.Run((Func<Task>)PingAsync);
+                }
             }
         }
         internal void AwaitHeader()
         {
+            StartPing();
             CheckForDoubleRead();
             try
             {
@@ -92,6 +99,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
         internal async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
+            StartPing();
             CheckForDoubleRead();
             try
             {
@@ -280,7 +288,7 @@ namespace vtortola.WebSockets.Rfc6455
         {
             while (this.IsConnected)
             {
-                await Task.Delay(_pingInterval);
+                await Task.Delay(_pingInterval).ConfigureAwait(false);
 
                 try
                 {
@@ -289,7 +297,7 @@ namespace vtortola.WebSockets.Rfc6455
                     if (_lastPong.Add(_pingTimeout) < now)
                         Close(WebSocketCloseReasons.NormalClose);
                     else
-                        await this.WriteInternalAsync(_pingSegment, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None);
+                        WriteInternal(_pingSegment, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                 }
                 catch
                 {
@@ -336,7 +344,7 @@ namespace vtortola.WebSockets.Rfc6455
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 header.ToArraySegment(buffer.Array, buffer.Offset - header.HeaderLength);
 
-                if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation))
+                if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                     throw new WebSocketException("Write timeout");
                 await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation);
             }
