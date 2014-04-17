@@ -71,8 +71,8 @@ namespace vtortola.WebSockets.Rfc6455
         }
         internal void AwaitHeader()
         {
-            StartPing();
             CheckForDoubleRead();
+            StartPing();
             try
             {
                 while (this.IsConnected && CurrentHeader == null)
@@ -99,8 +99,8 @@ namespace vtortola.WebSockets.Rfc6455
         }
         internal async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
-            StartPing();
             CheckForDoubleRead();
+            StartPing();
             try
             {
                 while (this.IsConnected && CurrentHeader == null)
