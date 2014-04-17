@@ -14,8 +14,8 @@ namespace vtortola.WebSockets.Rfc6455
         public override UInt16 Version { get { return 13; } }
         public WebSocketFactoryRfc6455()
             :base()
-	    {
-	    }
+	{
+	}
         public WebSocketFactoryRfc6455(WebSocketListener listener)
             :base(listener)
         {
