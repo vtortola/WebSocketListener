@@ -199,6 +199,7 @@ namespace WebSocketListener.UnitTests
             using (var ms = new MemoryStream())
             using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions() { PingTimeout = TimeSpan.FromMilliseconds(100) }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.NegotiatedExtensions))
             {
+                ws.ReadMessageAsync(CancellationToken.None);
                 // DateTime has no millisecond precission. 
                 Thread.Sleep(500);
                 Assert.IsFalse(ws.IsConnected);
