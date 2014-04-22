@@ -48,7 +48,7 @@ namespace vtortola.WebSockets.Rfc6455
             RemainingBytes-= (UInt64)readed;
         }
 
-        public void ToArraySegment(Byte[] segment, Int32 offset)
+        public void ToBytes(Byte[] segment, Int32 offset)
         {
             this.Flags.ToBytes(this.ContentLength, segment, offset);
             if (this.ContentLength <= 125)
