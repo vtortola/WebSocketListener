@@ -48,7 +48,7 @@ namespace vtortola.WebSockets.Rfc6455
             RemainingBytes-= (UInt64)readed;
         }
 
-        public void ToArraySegment(Byte[] segment, Int32 offset)
+        public void ToBytes(Byte[] segment, Int32 offset)
         {
             this.Flags.ToBytes(this.ContentLength, segment, offset);
             if (this.ContentLength <= 125)
@@ -143,17 +143,11 @@ namespace vtortola.WebSockets.Rfc6455
             Int32 headerLength;
                         
             if (count <= 125)
-            {
                 headerLength = 2;
-            }
             else if (count < UInt16.MaxValue)
-            {
                 headerLength = 4;
-            }
             else if ((UInt64)count < UInt64.MaxValue)
-            {
                 headerLength = 10;
-            }
             else
                 throw new WebSocketException("Cannot create a header with a length of " + count);
             

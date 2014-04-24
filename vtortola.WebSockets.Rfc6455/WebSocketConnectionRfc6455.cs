@@ -15,7 +15,7 @@ namespace vtortola.WebSockets.Rfc6455
     {
         readonly Byte[] _buffer;
         readonly ArraySegment<Byte> _headerSegment, _pingSegment, _pongSegment, _controlSegment, _keySegment, _closeSegment;
-        internal readonly ArraySegment<Byte> DataSegment;
+        internal readonly ArraySegment<Byte> SendBuffer;
 
         readonly SemaphoreSlim _writeSemaphore;
         readonly Stream _clientStream;
@@ -50,7 +50,7 @@ namespace vtortola.WebSockets.Rfc6455
             _controlSegment = new ArraySegment<Byte>(_buffer, 14, 125);
             _pongSegment = new ArraySegment<Byte>(_buffer, 139, 125);
             _pingSegment = new ArraySegment<Byte>(_buffer, 264, 2);
-            DataSegment = new ArraySegment<Byte>(_buffer, 266 + 10, _options.SendBufferSize);
+            SendBuffer = new ArraySegment<Byte>(_buffer, 266 + 10, _options.SendBufferSize);
             _keySegment = new ArraySegment<Byte>(_buffer, 266 + 10 + _options.SendBufferSize, 4);
             _closeSegment = new ArraySegment<Byte>(_buffer, 266 + 10 + _options.SendBufferSize + 4, 2);
 
@@ -313,7 +313,7 @@ namespace vtortola.WebSockets.Rfc6455
             try
             {
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
-                header.ToArraySegment(buffer.Array,buffer.Offset - header.HeaderLength);
+                header.ToBytes(buffer.Array,buffer.Offset - header.HeaderLength);
 
                 if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                     throw new WebSocketException("Write timeout");
@@ -342,7 +342,7 @@ namespace vtortola.WebSockets.Rfc6455
             try
             {
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
-                header.ToArraySegment(buffer.Array, buffer.Offset - header.HeaderLength);
+                header.ToBytes(buffer.Array, buffer.Offset - header.HeaderLength);
 
                 if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                     throw new WebSocketException("Write timeout");

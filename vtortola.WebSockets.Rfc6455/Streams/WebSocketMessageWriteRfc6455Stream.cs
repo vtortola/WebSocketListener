@@ -12,7 +12,6 @@ namespace vtortola.WebSockets.Rfc6455
         Boolean _headerSent = false;
         Int32 _finished, _internalUsedBufferLength;
 
-        readonly ArraySegment<Byte> _internalBuffer;
         readonly WebSocketRfc6455 _webSocket;
         readonly WebSocketMessageType _messageType;
         public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 webSocket, WebSocketMessageType messageType)
@@ -21,7 +20,6 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new ArgumentNullException("webSocket");
 
             _internalUsedBufferLength = 0;
-            _internalBuffer = webSocket.Connection.DataSegment;
             _messageType = messageType;
             _webSocket = webSocket;
         }
@@ -34,10 +32,10 @@ namespace vtortola.WebSockets.Rfc6455
         }
         private void BufferData(Byte[] buffer, ref Int32 offset, ref Int32 count)
         {
-            var read = Math.Min(count, _internalBuffer.Count - _internalUsedBufferLength);
+            var read = Math.Min(count, _webSocket.Connection.SendBuffer.Count - _internalUsedBufferLength);
             if (read == 0)
                 return;
-            Array.Copy(buffer, offset, _internalBuffer.Array, _internalBuffer.Offset + _internalUsedBufferLength, read);
+            Array.Copy(buffer, offset, _webSocket.Connection.SendBuffer.Array, _webSocket.Connection.SendBuffer.Offset + _internalUsedBufferLength, read);
             _internalUsedBufferLength += read;
             offset += read;
             count -= read;
@@ -55,9 +53,9 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 BufferData(buffer, ref offset, ref count);
 
-                if (_internalUsedBufferLength == _internalBuffer.Count && count > 0)
+                if (_internalUsedBufferLength == _webSocket.Connection.SendBuffer.Count && count > 0)
                 {
-                    _webSocket.Connection.WriteInternal(_internalBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags);
+                    _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags);
                     _internalUsedBufferLength = 0;
                     _headerSent = true;
                 }
@@ -76,9 +74,9 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 BufferData(buffer, ref offset, ref count);
 
-                if (_internalUsedBufferLength == _internalBuffer.Count && count > 0)
+                if (_internalUsedBufferLength == _webSocket.Connection.SendBuffer.Count && count > 0)
                 {
-                    await _webSocket.Connection.WriteInternalAsync(_internalBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+                    await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
                     _internalUsedBufferLength = 0;
                     _headerSent = true;
                 }
@@ -88,7 +86,7 @@ namespace vtortola.WebSockets.Rfc6455
         {
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
-                await _webSocket.Connection.WriteInternalAsync(_internalBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+                await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags, cancellationToken);
                 _webSocket.Connection.EndWritting();
             }
         }
@@ -96,7 +94,7 @@ namespace vtortola.WebSockets.Rfc6455
         {
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
-                _webSocket.Connection.WriteInternal(_internalBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags);
+                _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags);
                 _webSocket.Connection.EndWritting();
             }
         }
