@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public class WebSocketRfc6455:WebSocket
+    public class WebSocketRfc6455 : WebSocket, IWebSocketLatencyMeasure
     {
         internal WebSocketConnectionRfc6455 Connection { get; private set; }
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
@@ -21,6 +21,7 @@ namespace vtortola.WebSockets.Rfc6455
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
         public override Boolean IsConnected { get { return Connection.IsConnected; } }
+        public TimeSpan Latency { get { return Connection.Latency; } }
 
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
         {
