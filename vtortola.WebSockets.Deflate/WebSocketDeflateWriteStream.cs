@@ -35,6 +35,16 @@ namespace vtortola.WebSockets.Deflate
             await _deflate.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
+        public override async Task CloseAsync(CancellationToken cancellation)
+        {
+            if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
+                return;
+
+            _deflate.Close();
+            _inner.Write(_BFINAL, 0, 1);
+            await _inner.CloseAsync(cancellation);
+        }
+
         public override void Close()
         {
             if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)

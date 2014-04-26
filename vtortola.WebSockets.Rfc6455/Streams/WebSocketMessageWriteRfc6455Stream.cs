@@ -84,17 +84,24 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
-            {
-                await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags, cancellationToken);
-                _webSocket.Connection.EndWritting();
-            }
+            await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _headerSent, _messageType, ExtensionFlags, cancellationToken);
+            _internalUsedBufferLength = 0;
+            _headerSent = true;
         }
         public override void Close()
         {
             if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
             {
                 _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags);
+                _webSocket.Connection.EndWritting();
+            }
+        }
+
+        public override async Task CloseAsync(CancellationToken cancellation)
+        {
+            if (Interlocked.CompareExchange(ref _finished, 1, 0) == 0)
+            {
+                await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _headerSent, _messageType, ExtensionFlags, cancellation);
                 _webSocket.Connection.EndWritting();
             }
         }
