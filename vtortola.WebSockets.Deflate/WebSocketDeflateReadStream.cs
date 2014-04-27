@@ -28,5 +28,11 @@ namespace vtortola.WebSockets.Deflate
         {
             return _deflate.ReadAsync(buffer, offset, count, cancellationToken);
         }
+        protected override void Dispose(bool disposing)
+        {
+            _deflate.Dispose();
+            _inner.Dispose();
+            base.Dispose(disposing);
+        }
     }
 }
