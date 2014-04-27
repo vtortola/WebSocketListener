@@ -12,6 +12,7 @@ namespace vtortola.WebSockets.Deflate
     {
         readonly WebSocketMessageReadStream _inner;
         readonly DeflateStream _deflate;
+        Int32 _isDisposed;
 
         public WebSocketDeflateReadStream(WebSocketMessageReadStream inner)
         {
@@ -30,8 +31,11 @@ namespace vtortola.WebSockets.Deflate
         }
         protected override void Dispose(bool disposing)
         {
-            _deflate.Dispose();
-            _inner.Dispose();
+            if (Interlocked.CompareExchange(ref _isDisposed, 1, 0) == 0)
+            {
+                _deflate.Dispose();
+                _inner.Dispose();
+            }
             base.Dispose(disposing);
         }
     }

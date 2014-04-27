@@ -92,9 +92,9 @@ namespace vtortola.WebSockets.Rfc6455
         {
             Connection.Close();
         }
-        public void Dispose(Boolean disposing)
+        protected virtual void Dispose(Boolean disposing)
         {
-            if(Interlocked.CompareExchange(ref _disposed,1,0)==0)
+            if(Interlocked.CompareExchange(ref _disposed,1,0) == 0)
             {
                 if (disposing)
                     GC.SuppressFinalize(this);

@@ -87,8 +87,6 @@ namespace vtortola.WebSockets
                 }
             }
         }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         private async Task WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;

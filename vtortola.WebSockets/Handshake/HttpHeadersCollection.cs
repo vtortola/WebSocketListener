@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable")]
     public sealed class HttpHeadersCollection : NameValueCollection
     {
         public Uri Origin { get; private set; }

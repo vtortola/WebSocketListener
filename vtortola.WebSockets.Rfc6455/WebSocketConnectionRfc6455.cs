@@ -11,7 +11,7 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    internal class WebSocketConnectionRfc6455 
+    internal class WebSocketConnectionRfc6455 :IDisposable
     {
         readonly Byte[] _buffer;
         readonly ArraySegment<Byte> _headerBuffer, _pingBuffer, _pongBuffer, _controlBuffer, _keyBuffer, _closeBuffer;
@@ -191,7 +191,7 @@ namespace vtortola.WebSockets.Rfc6455
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
-        internal void Dispose()
+        public void Dispose()
         {
             Dispose(true);
         }

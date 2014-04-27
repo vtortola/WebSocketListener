@@ -54,6 +54,7 @@
     <Compile Include="Extensibility\WebSocketSecureConnectionExtension.cs" />
     <Compile Include="Extensibility\WebSocketConnectionExtensionCollection.cs" />
     <Compile Include="Extensibility\WebSocketMessageExtensionCollection.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Handshake\WebSocketHandshake.cs" />
     <Compile Include="Header\WebSocketExtensionFlags.cs" />
     <Compile Include="Header\WebSocketMessageType.cs" />
