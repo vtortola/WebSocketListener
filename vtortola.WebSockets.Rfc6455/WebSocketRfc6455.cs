@@ -15,8 +15,8 @@ namespace vtortola.WebSockets.Rfc6455
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
         Int32 _disposed;
 
-        WebSocketHttpRequest _httpRequest;
-        IPEndPoint _remoteEndpoint, _localEndpoint;
+        readonly WebSocketHttpRequest _httpRequest;
+        readonly IPEndPoint _remoteEndpoint, _localEndpoint;
         public override WebSocketHttpRequest HttpRequest { get { return _httpRequest; } }
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
