@@ -1,45 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>WebSocketListener by vtortola</title>
-    <meta property="og:image" content="http://i.imgur.com/Z8wroPo.png">
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="WebSocketListener : A lightweight asynchronous WebSocket listener" />
 
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>WebSocketListener</title>
   </head>
+
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/vtortola/WebSocketListener">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/vtortola/WebSocketListener/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/vtortola/WebSocketListener/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
 
-    <div class="wrapper">
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/vtortola/WebSocketListener">View on GitHub</a>
 
-      <section>
-        <div id="title">
-          <h1>WebSocketListener</h1>
-          <p>A lightweight asynchronous WebSocket listener</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/vtortola">vtortola</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+          <h1 id="project_title">WebSocketListener</h1>
+          <h2 id="project_tagline">A lightweight asynchronous WebSocket listener</h2>
 
-        <p>The <strong>WebSocketListener</strong> class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener that follows the official <a href="http://tools.ietf.org/html/rfc6455">RFC 6455</a> specification with an API very similar to the <code>System.Net.TcpListener</code> class.</p>
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/vtortola/WebSocketListener/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/vtortola/WebSocketListener/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <blockquote>
+<p><a href="//github.com/vtortola/WebSocketListener/wiki/Changes-from-version-1-to-2">Changes from version 1.x to 2.0</a>.</p>
+</blockquote>
+
+<p>The <strong>WebSocketListener</strong> class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener with an API very similar to the <code>System.Net.TcpListener</code> class.</p>
 
 <p>It <strong>does not use</strong> the Microsoft's <code>System.Net.WebSockets</code> namespace. It should work in any operating system running <em>Microsoft .NET v4.5</em>.</p>
 
@@ -48,10 +44,14 @@
 <ul>
 <li>It can work with both <strong>Text or Binary</strong> messages.</li>
 <li>It supports <code>wss://</code>(secure). <a href="//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)">More info</a>.</li>
-<li>It supports per-message deflate compression. <a href="//github.com/vtortola/WebSocketListener/wiki/Deflate-extension">More info</a>.</li>
-<li>It is <strong>extensible</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">More info</a>.</li> </li>
+<li>It supports <strong>per-message deflate compression</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/Deflate-extension">More info</a>. </li>
+<li>It can work with <strong>multiple WebSocket standards</strong> at the same time. <a href="//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support">More info</a>
+</li>
+<li>It is <strong>extensible</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">More info</a>.</li>
 <li>It is <strong>asynchronous</strong>. </li>
-<li>It has the <strong>Ping/Pong</strong> functionality <strong>built-in</strong>.</li>
+<li>It has the <a href="http://tools.ietf.org/html/rfc6455#section-5.5.2"><strong>Ping/Pong</strong> functionality</a> <strong>built-in</strong>.</li>
+<li>It can measure <strong>connection latency</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency">More info</a>
+</li>
 <li>It detects and disconnects <strong>half open connections</strong>.</li>
 <li>It allows to <strong>send and receive messages as streams</strong>. WebSocket messages are represented as delimited stream-like objects, that allows integration with other .NET objects like e.g. <code>StreamReader</code> and <code>StreamWriter</code>. Two different WebSocket messages, yield two different streams.</li>
 <li>Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.</li>
@@ -73,12 +73,15 @@
 <h4>
 <a name="set-up" class="anchor" href="#set-up"><span class="octicon octicon-link"></span></a>Set up</h4>
 
-<p>Setting up a server and start listening for clients is very similar to a <code>TcpListener</code>:</p>
+<p>Setting up a server and start listening for clients is very similar to a <code>TcpListener</code>. An listening endpoint and a WebSocket standard is the minimum needed to set up a server.</p>
 
-<div class="highlight highlight-cs"><pre><span class="kt">var</span> <span class="n">local</span> <span class="p">=</span> <span class="k">new</span> <span class="n">IPEndPoint</span><span class="p">(</span><span class="n">IPAddress</span><span class="p">.</span><span class="n">Any</span><span class="p">,</span> <span class="m">8006</span><span class="p">);</span>
-<span class="kt">var</span> <span class="n">server</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebSocketListener</span><span class="p">(</span><span class="n">local</span><span class="p">);</span>
+<div class="highlight highlight-cs"><pre><span class="kt">var</span> <span class="n">server</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebSocketListener</span><span class="p">(</span><span class="k">new</span> <span class="n">IPEndPoint</span><span class="p">(</span><span class="n">IPAddress</span><span class="p">.</span><span class="n">Any</span><span class="p">,</span> <span class="m">8006</span><span class="p">));</span>
+<span class="kt">var</span> <span class="n">rfc6455</span> <span class="p">=</span> <span class="k">new</span> <span class="n">vtortola</span><span class="p">.</span><span class="n">WebSockets</span><span class="p">.</span><span class="n">Rfc6455</span><span class="p">.</span><span class="n">WebSocketFactoryRfc6455</span><span class="p">(</span><span class="n">server</span><span class="p">);</span>
+<span class="n">server</span><span class="p">.</span><span class="n">Standards</span><span class="p">.</span><span class="n">RegisterStandard</span><span class="p">(</span><span class="n">rfc6455</span><span class="p">);</span>
 <span class="n">server</span><span class="p">.</span><span class="n">Start</span><span class="p">();</span>
 </pre></div>
+
+<p>The class <code>vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455</code> gives support to the <a href="http://tools.ietf.org/html/rfc6455">RFC 6455</a>, that is the WebSocket standard used at the moment. Future standards can be added in the <a href="//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support">same way</a>.</p>
 
 <p>Optionally, you can also:</p>
 
@@ -88,7 +91,7 @@
 <li>
 <a href="//github.com/vtortola/WebSocketListener/wiki/Deflate-extension">enable deflate compression for messages</a>.</li>
 <li>
-<a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options">customize subprotocols, queuing and ping behaviours</a>.</li>
+<a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options">customize memory use, subprotocols, queuing and ping behaviours</a>.</li>
 <li>
 <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions">add customized extensions</a>.</li>
 </ul><h4>
@@ -101,7 +104,7 @@
 
 <p>The client provides means to read and write messages. With the client, as in the underlying <code>NetworkStream</code>, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.</p>
 
-<p><code>AcceptWebSocketAsync</code> should be in a loop to continuously accept new clients, also wraped in a <code>try/catch</code> since errors in the negotiation process will be thrown here. Take a look to the <a href="//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
+<p><code>AcceptWebSocketAsync</code> should be in a loop to continuously accept new clients, also wrapped in a <code>try/catch</code> since errors in the negotiation process will be thrown here. Take a look to the <a href="https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example">simple host tutorial</a>.</p>
 
 <h4>
 <a name="receiving-messages" class="anchor" href="#receiving-messages"><span class="octicon octicon-link"></span></a>Receiving messages</h4>
@@ -146,14 +149,11 @@
 <div class="highlight highlight-cs"><pre><span class="k">using</span> <span class="p">(</span><span class="n">WebSocketMessageWriteStream</span> <span class="n">messageWriterStream</span> <span class="p">=</span> <span class="n">client</span><span class="p">.</span><span class="n">CreateMessageWriter</span><span class="p">(</span><span class="n">WebSocketMessageType</span><span class="p">.</span><span class="n">Text</span><span class="p">))</span>
 </pre></div>
 
-<p>It is important to point out, that despite of the length of the message, the last part won't be sent till the stream is closed (call to <code>Stream.Close</code>) or flushed asynchronously. So disposing the message is the more practical way of ensuring that <code>Stream.Close</code> is called, but that would send the tail of the message synchronously, so calling <code>Stream.FlushAsync</code> will ensure that the last part is sent asynchronously. This allows the sending of arbitrary amounts of data which length is not known before hand.</p>
-
 <p>Once a message writer is created, regular .NET tools can be used to write in it:</p>
 
 <div class="highlight highlight-cs"><pre><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">sw</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StreamWriter</span><span class="p">(</span><span class="n">messageWriterStream</span><span class="p">,</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">UTF8</span><span class="p">))</span>
 <span class="p">{</span>
    <span class="k">await</span> <span class="n">sw</span><span class="p">.</span><span class="n">WriteAsync</span><span class="p">(</span><span class="s">"Hello World!"</span><span class="p">);</span>
-   <span class="k">await</span> <span class="n">sw</span><span class="p">.</span><span class="n">FlushAsync</span><span class="p">();</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -191,9 +191,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.</p>
       </section>
-
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">WebSocketListener maintained by <a href="https://github.com/vtortola">vtortola</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
     
+
   </body>
 </html>
