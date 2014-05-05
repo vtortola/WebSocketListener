@@ -55,7 +55,7 @@ namespace WebSocketListenerTests.Echo
             });
             var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
             rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
-            server.Standards.RegisterImplementation(rfc6455);
+            server.Standards.RegisterStandard(rfc6455);
             // adding the WSS extension
             //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
 
