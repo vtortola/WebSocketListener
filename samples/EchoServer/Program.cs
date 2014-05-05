@@ -57,7 +57,7 @@ namespace WebSocketListenerTests.Echo
             rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
             server.Standards.RegisterStandard(rfc6455);
             // adding the WSS extension
-            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
 
             server.Start();
 
