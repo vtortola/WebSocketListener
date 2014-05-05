@@ -1,6 +1,8 @@
 WebSocketListener 
 =================
 
+# This is version 2, please visit https://github.com/vtortola/WebSocketListener for the current version.
+
 The **WebSocketListener** class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener that follows the official [RFC 6455](http://tools.ietf.org/html/rfc6455) specification with an API very similar to the `System.Net.TcpListener` class.
 
 It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.

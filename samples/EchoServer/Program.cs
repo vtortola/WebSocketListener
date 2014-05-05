@@ -5,25 +5,26 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
+using vtortola.WebSockets.Deflate;
 
 namespace WebSocketListenerTests.Echo
 {
     class Program
     {
-        static PerformanceCounter _pf_inMessages, _pf_outMessages, _pf_connected;
         static ILog _log = log4net.LogManager.GetLogger("Main");
 
         static void Main(string[] args)
         {
-            if (CreatePerformanceCounters())
+            if (PerformanceCounters.CreatePerformanceCounters())
                 return;
 
             // reseting peformance counter
-            _pf_connected.RawValue = 0;
+            PerformanceCounters.Connected.RawValue = 0;
 
             // configuring logging
             log4net.Config.XmlConfigurator.Configure();
@@ -43,7 +44,18 @@ namespace WebSocketListenerTests.Echo
             var endpoint = new IPEndPoint(IPAddress.Any, 8006);
             
             // starting the server
-            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { PingTimeout = TimeSpan.FromSeconds(5), NegotiationQueueCapacity = 128, ParallelNegotiations = 16 });
+            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() 
+            { 
+                PingTimeout = TimeSpan.FromSeconds(5),
+                NegotiationTimeout = TimeSpan.FromSeconds(25),
+                ParallelNegotiations = 32,
+                NegotiationQueueCapacity = 256,
+                TcpBacklog = 1000,
+                BufferManager = BufferManager.CreateBufferManager((8192 + 1024)*4000, 8192 + 1024)
+            });
+            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
+            rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
+            server.Standards.RegisterImplementation(rfc6455);
             // adding the WSS extension
             server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
 
@@ -51,7 +63,7 @@ namespace WebSocketListenerTests.Echo
 
             Log("Echo Server started at " + endpoint.ToString());
 
-            var task = AcceptWebSocketClients(server, cancellation.Token);
+            var task = Task.Run(()=> AcceptWebSocketClients(server, cancellation.Token));
 
             Console.ReadKey(true);
             Log("Server stoping");
@@ -66,20 +78,23 @@ namespace WebSocketListenerTests.Echo
 
         static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
         {
-            await Task.Yield();
             while (!token.IsCancellationRequested)
             {
                 try
                 {
                     var ws = await server.AcceptWebSocketAsync(token);
-                    if(ws!=null)
-                        HandleConnectionAsync(ws, token);
+                    if (ws != null)
+                        Task.Run(() => HandleConnectionAsync(ws, token));
+                }
+                catch (TaskCanceledException)
+                {
+
                 }
                 catch (Exception aex)
                 {
                     var ex = aex.GetBaseException();
                     _log.Error("AcceptWebSocketClients", ex);
-                    Log("Error Accepting clients: " + ex.Message);
+                    Log("Error Accepting client: " + ex.GetType().Name +": " + ex.Message);
                 }
             }
             Log("Server Stop accepting clients");
@@ -87,12 +102,13 @@ namespace WebSocketListenerTests.Echo
 
         static async Task HandleConnectionAsync(WebSocket ws, CancellationToken token)
         {
-            await Task.Yield();
             try
             {
-                _pf_connected.Increment();
+                PerformanceCounters.Connected.Increment();
                 Byte[] buffer = new Byte[2046];
                 Int32 readed;
+
+                IWebSocketLatencyMeasure l = ws as IWebSocketLatencyMeasure;
                 while (ws.IsConnected && !token.IsCancellationRequested)
                 {
                     // await a message
@@ -104,20 +120,25 @@ namespace WebSocketListenerTests.Echo
                         switch (messageReader.MessageType)
                         {
                             case WebSocketMessageType.Text:
-                                
-                                _pf_inMessages.Increment();
+
+                                PerformanceCounters.MessagesIn.Increment();
                                 using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
                                 {
                                     readed = -1;
+                                    Int32 r = 0;
                                     while(readed!=0)
                                     {
-                                        readed = await messageReader.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                                        messageWriter.Write(buffer, 0, readed);
+                                        readed = messageReader.Read(buffer, 0, buffer.Length);
+                                        if (readed != 0)
+                                        {
+                                            messageWriter.Write(buffer, 0, readed);
+                                            r += readed;
+                                        }
                                     }
-                                    // avoiding synchronous flush on disposing
-                                    await messageReader.FlushAsync(token).ConfigureAwait(false);
+
+                                    await messageWriter.CloseAsync(token).ConfigureAwait(false);
                                 }
-                                _pf_outMessages.Increment();
+                               PerformanceCounters.MessagesOut.Increment();
 
                                 break;
 
@@ -127,75 +148,33 @@ namespace WebSocketListenerTests.Echo
                                 break;
                         }
                     }
+
+                    PerformanceCounters.Delay.IncrementBy(l.Latency.Ticks * Stopwatch.Frequency / 10000);
+                    PerformanceCounters.DelayBase.Increment();
                 }
+            }
+            catch (TaskCanceledException)
+            {
+
             }
             catch (Exception aex)
             {
                 var ex = aex.GetBaseException();
                 _log.Error("HandleConnectionAsync", ex);
-                Log("Error Handling connection: " + ex.Message);
+                Log("Error Handling connection: " + ex.GetType().Name + ": " + ex.Message);
                 try { ws.Close(); }
                 catch { }
             }
             finally
             {
-                _pf_connected.Decrement();
+                ws.Dispose();
+                PerformanceCounters.Connected.Decrement();
             }
-            //Log("Client Disconnected: " + ws.RemoteEndpoint.ToString());
-
         }
 
         static void Log(String line)
         {
             Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
-        }
-
-        static String pflabel_msgIn = "Messages In /sec", pflabel_msgOut = "Messages Out /sec", pflabel_connected = "Connected";
-
-        private static bool CreatePerformanceCounters()
-        {
-            string categoryName = "WebSocketListener_Test";
-
-            if (!PerformanceCounterCategory.Exists(categoryName))
-            {
-                var ccdc = new CounterCreationDataCollection();
-
-                ccdc.Add(new CounterCreationData
-                {
-                    CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = pflabel_msgIn
-                });
-
-                ccdc.Add(new CounterCreationData
-                {
-                    CounterType = PerformanceCounterType.RateOfCountsPerSecond64,
-                    CounterName = pflabel_msgOut
-                });
-
-                ccdc.Add(new CounterCreationData
-                {
-                    CounterType = PerformanceCounterType.NumberOfItems64,
-                    CounterName = pflabel_connected
-                });
-
-                PerformanceCounterCategory.Create(categoryName, "", PerformanceCounterCategoryType.SingleInstance, ccdc);
-
-                Log("Performance counters have been created, please re-run the app");
-                return true;
-            }
-            else
-            {
-                //PerformanceCounterCategory.Delete(categoryName);
-                //Console.WriteLine("Delete");
-                //return true;
-
-                _pf_inMessages = new PerformanceCounter(categoryName, pflabel_msgIn, false);
-                _pf_outMessages = new PerformanceCounter(categoryName, pflabel_msgOut, false);
-                _pf_connected = new PerformanceCounter(categoryName, pflabel_connected, false);
-                _pf_connected.RawValue = 0;
-
-                return false;
-            }
         }
 
     }

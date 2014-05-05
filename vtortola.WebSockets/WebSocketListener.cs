@@ -22,11 +22,12 @@ namespace vtortola.WebSockets
         readonly TransformBlock<Socket, WebSocketNegotiationResult> _negotiationQueue;
         readonly CancellationTokenSource _cancel;
         readonly WebSocketListenerOptions _options;
+        readonly WebSocketHandshaker _handShaker;
         Int32 _isDisposed;
 
         public Boolean IsStarted { get; private set; }
-        public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
+        public WebSocketFactoryCollection Standards { get; private set; }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             if (options == null)
@@ -38,18 +39,18 @@ namespace vtortola.WebSockets
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
             _listener = new TcpListener(endpoint);
-            MessageExtensions = new WebSocketMessageExtensionCollection(this);
+            
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
+            Standards = new WebSocketFactoryCollection(this);
             Func<Socket, Task<WebSocketNegotiationResult>> negotiate = NegotiateWebSocket;
             _negotiationQueue = new TransformBlock<Socket, WebSocketNegotiationResult>(negotiate, new ExecutionDataflowBlockOptions() { CancellationToken = _cancel.Token, MaxDegreeOfParallelism = options.ParallelNegotiations, BoundedCapacity = options.NegotiationQueueCapacity });
-        }
 
+            _handShaker = new WebSocketHandshaker(Standards, _options);
+        }
         public WebSocketListener(IPEndPoint endpoint)
             :this(endpoint,new WebSocketListenerOptions())
         {
- 
         }
-
         private async Task StartAccepting()
         {
             while(IsStarted)
@@ -60,17 +61,18 @@ namespace vtortola.WebSockets
                         FinishSocket(client);
             }
         }
-
         private void FinishSocket(Socket client)
         {
             try { client.Dispose(); }
             catch { }
         }
-
         public void Start()
         {
             if (_isDisposed == 0)
             {
+                if (Standards.Count <= 0)
+                    throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
+
                 IsStarted = true;
                 if (_options.TcpBacklog.HasValue)
                     _listener.Start(_options.TcpBacklog.Value);
@@ -90,7 +92,6 @@ namespace vtortola.WebSockets
             client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
             client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
         }
-
         private async Task<WebSocketNegotiationResult> NegotiateWebSocket(Socket client)
         {
             var result = new WebSocketNegotiationResult();
@@ -98,7 +99,6 @@ namespace vtortola.WebSockets
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
                 ConfigureSocket(client);
-                WebSocketHandshaker handShaker = new WebSocketHandshaker(MessageExtensions, _options);
 
                 Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
                 foreach (var conExt in ConnectionExtensions)
@@ -111,13 +111,17 @@ namespace vtortola.WebSockets
                     stream = await extTask;
                 }
 
-                var handshakeTask = handShaker.HandshakeAsync(stream);
+                var handshakeTask = _handShaker.HandshakeAsync(stream);
                 await Task.WhenAny(timeoutTask, handshakeTask).ConfigureAwait(false);
-                    if (timeoutTask.IsCompleted)
-                        throw new WebSocketException("Negotiation timeout");
+                if (timeoutTask.IsCompleted)
+                    throw new WebSocketException("Negotiation timeout");
 
-                if (await handshakeTask)
-                    result.Result = new WebSocket(stream, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handShaker.Request, _options, handShaker.NegotiatedExtensions);
+                var handshake = await handshakeTask;
+
+                if (handshake.IsValid)
+                    result.Result = handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.NegotiatedMessageExtensions);
+                else
+                    result.Error = ExceptionDispatchInfo.Capture(handshake.Error);
             }
             catch (Exception ex)
             {

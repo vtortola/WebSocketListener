@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets
+namespace vtortola.WebSockets.Rfc6455
 {
     public sealed class WebSocketFrameHeaderFlags
     {
@@ -102,7 +102,7 @@ namespace vtortola.WebSockets
                     break;
             }
         }
-        public void ToBytes(UInt64 length, Byte[] buffer)
+        public void ToBytes(UInt64 length, Byte[] buffer, Int32 offset)
         {
             Int32 headerLength;
             if (length <= 125)
@@ -114,8 +114,8 @@ namespace vtortola.WebSockets
             else
                 throw new WebSocketException("Cannot create a header with a length of " + length);
 
-            buffer[0] = _byte1;
-            buffer[1] = (Byte)(_byte2 + headerLength);
+            buffer[offset] = _byte1;
+            buffer[offset+1] = (Byte)(_byte2 + headerLength);
         }
     }
 }

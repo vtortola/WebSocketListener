@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable")]
     public sealed class HttpHeadersCollection : NameValueCollection
     {
         public Uri Origin { get; private set; }
         public Uri Host { get; private set; }
+        public UInt16 WebSocketVersion { get; internal set; }
         
         public String this[HttpRequestHeader header]
         {
@@ -22,13 +22,19 @@ namespace vtortola.WebSockets
         public override void Add(string name, string value)
         {
             base.Add(name, value);
-            if(name == "Origin")
-                Origin = new Uri(this["Origin"]);
-            if (name == "Host")
+            switch (name)
             {
-                Uri uri;
-                if(Uri.TryCreate("http://"+ this["Host"], UriKind.Absolute, out uri))
-                    Host = uri;
+                case "Origin":
+                    Origin = new Uri(this["Origin"]);
+                    break;
+                case "Host":
+                    Uri uri;
+                    if(Uri.TryCreate("http://"+ this["Host"], UriKind.Absolute, out uri))
+                        Host = uri;
+                    break;
+                case "Sec-WebSocket-Version":
+                    WebSocketVersion = UInt16.Parse(value);
+                    break;
             }
         }
     }

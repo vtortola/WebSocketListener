@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using vtortola.WebSockets;
 using System.Collections;
+using vtortola.WebSockets.Rfc6455;
 
 namespace WebSocketListenerTests.UnitTests
 {

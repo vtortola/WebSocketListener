@@ -21,7 +21,6 @@ namespace vtortola.WebSockets
         {
             _none = true;
         }
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
         public static readonly WebSocketExtensionFlags None = new WebSocketExtensionFlags(true);
     }
 }

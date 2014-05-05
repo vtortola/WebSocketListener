@@ -12,6 +12,7 @@ namespace vtortola.WebSockets.Deflate
     {
         readonly WebSocketMessageReadStream _inner;
         readonly DeflateStream _deflate;
+        Int32 _isDisposed;
 
         public WebSocketDeflateReadStream(WebSocketMessageReadStream inner)
         {
@@ -19,7 +20,7 @@ namespace vtortola.WebSockets.Deflate
             _deflate = new DeflateStream(_inner, CompressionMode.Decompress, true);
         }
         public override WebSocketMessageType MessageType { get { return _inner.MessageType; } }
-        public override WebSocketFrameHeaderFlags Flags { get { return _inner.Flags; } }
+        public override WebSocketExtensionFlags Flags { get { return _inner.Flags; } }
         public override int Read(byte[] buffer, int offset, int count)
         {
             return _deflate.Read(buffer, offset, count);
@@ -27,6 +28,15 @@ namespace vtortola.WebSockets.Deflate
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             return _deflate.ReadAsync(buffer, offset, count, cancellationToken);
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (Interlocked.CompareExchange(ref _isDisposed, 1, 0) == 0)
+            {
+                _deflate.Dispose();
+                _inner.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

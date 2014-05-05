@@ -4,13 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets
+namespace vtortola.WebSockets.Rfc6455
 {
-    public enum WebSocketMessageType
-    {
-        Text = 1,
-        Binary = 2,
-    }
     public enum WebSocketFrameOption
     {
         Continuation = 0,
