@@ -47,6 +47,18 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="vtortola.WebSockets, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.dll</HintPath>
+    </Reference>
+    <Reference Include="vtortola.WebSockets.Deflate, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.Deflate.dll</HintPath>
+    </Reference>
+    <Reference Include="vtortola.WebSockets.Rfc6455, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.Rfc6455.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PerformanceCounters.cs" />
@@ -56,20 +68,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj">
-      <Project>{3bfdae73-a6a9-40b9-9026-84dd005bbac9}</Project>
-      <Name>vtortola.WebSockets.Deflate</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj">
-      <Project>{72114f0d-ec56-43d5-8c13-43fb013c0c1d}</Project>
-      <Name>vtortola.WebSockets.Rfc6455</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
-      <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
-      <Name>vtortola.WebSockets</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
