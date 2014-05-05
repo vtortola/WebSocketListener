@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
 using System.Reactive.Subjects;
+using vtortola.WebSockets.Deflate;
 
 namespace ChatServer
 {
@@ -25,6 +26,9 @@ namespace ChatServer
 
             var endpoint = new IPEndPoint(IPAddress.Any, 8001);
             WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() { SubProtocols = new[] {"chat"} });
+            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
+            rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
+            server.Standards.RegisterStandard(rfc6455);
             server.Start();
 
             Log("Rx Chat Server started at " + endpoint.ToString());

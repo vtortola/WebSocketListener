@@ -16,7 +16,7 @@ namespace WebSocketListener.UnitTests
         public With_WebSocket()
         {
             _factories = new WebSocketFactoryCollection();
-            _factories.RegisterImplementation(new WebSocketFactoryRfc6455());
+            _factories.RegisterStandard(new WebSocketFactoryRfc6455());
         }
 
         [TestMethod]

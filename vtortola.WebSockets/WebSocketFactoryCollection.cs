@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
         {
             _listener = webSocketListener;
         }
-        public void RegisterImplementation(WebSocketFactory factory)
+        public void RegisterStandard(WebSocketFactory factory)
         {
             if (_listener != null && _listener.IsStarted)
                 throw new WebSocketException("Factories cannot be added after the service is started.");

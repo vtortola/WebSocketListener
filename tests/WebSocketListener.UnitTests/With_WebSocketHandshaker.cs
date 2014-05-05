@@ -17,7 +17,7 @@ namespace WebSocketListenerTests.UnitTests
         public With_WebSocketHandshaker()
         {
             _factories = new WebSocketFactoryCollection();
-            _factories.RegisterImplementation(new WebSocketFactoryRfc6455());
+            _factories.RegisterStandard(new WebSocketFactoryRfc6455());
         }
 
         [TestMethod]
@@ -182,7 +182,7 @@ namespace WebSocketListenerTests.UnitTests
             var factory = new WebSocketFactoryRfc6455();
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterImplementation(factory);
+            factories.RegisterStandard(factory);
             WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
             
             using (var ms = new MemoryStream())
@@ -243,7 +243,7 @@ namespace WebSocketListenerTests.UnitTests
             var factory = new WebSocketFactoryRfc6455();
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterImplementation(factory);
+            factories.RegisterStandard(factory);
             WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
@@ -369,7 +369,7 @@ namespace WebSocketListenerTests.UnitTests
             var factory = new WebSocketFactoryRfc6455();
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterImplementation(factory);
+            factories.RegisterStandard(factory);
             WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
@@ -424,7 +424,7 @@ namespace WebSocketListenerTests.UnitTests
             var factory = new WebSocketFactoryRfc6455();
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterImplementation(factory);
+            factories.RegisterStandard(factory);
             WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
@@ -471,7 +471,7 @@ namespace WebSocketListenerTests.UnitTests
             var factory = new WebSocketFactoryRfc6455();
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterImplementation(factory);
+            factories.RegisterStandard(factory);
             WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
@@ -522,7 +522,7 @@ namespace WebSocketListenerTests.UnitTests
             var factory = new WebSocketFactoryRfc6455();
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterImplementation(factory);
+            factories.RegisterStandard(factory);
             WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
 
             using (var ms = new MemoryStream())
