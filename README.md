@@ -1,7 +1,9 @@
 WebSocketListener 
 =================
 
-The **WebSocketListener** class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener that follows the official [RFC 6455](http://tools.ietf.org/html/rfc6455) specification with an API very similar to the `System.Net.TcpListener` class.
+> [Changes from version 1.x to 2.0] (//github.com/vtortola/WebSocketListener/wiki/Changes-from-version-1-to-2).
+
+The **WebSocketListener** class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener with an API very similar to the `System.Net.TcpListener` class.
 
 It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should work in any operating system running *Microsoft .NET v4.5*.
 
@@ -9,10 +11,12 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
 
  * It can work with both **Text or Binary** messages.
  * It supports `wss://`(secure). [More info] (//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
- * It supports per-message deflate compression. [More info] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
+ * It supports **per-message deflate compression**. [More info] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension). 
+ * It can work with **multiple WebSocket standards** at the same time. [More info] (//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support)
  * It is **extensible**. [More info](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
  * It is **asynchronous**. 
  * It has the [**Ping/Pong** functionality](http://tools.ietf.org/html/rfc6455#section-5.5.2) **built-in**.
+ * It can measure **connection latency**. [More info](//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency)
  * It detects and disconnects **half open connections**.
  * It allows to **send and receive messages as streams**. WebSocket messages are represented as delimited stream-like objects, that allows integration with other .NET objects like e.g. `StreamReader` and `StreamWriter`. Two different WebSocket messages, yield two different streams.
  * Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.
@@ -32,18 +36,21 @@ PM> Install-Package vtortola.WebSocketListener
 ```
 
 #### Set up
-Setting up a server and start listening for clients is very similar to a `TcpListener`:
+Setting up a server and start listening for clients is very similar to a `TcpListener`. An listening endpoint and a WebSocket standard is the minimum needed to set up a server.
 
 ```cs
-var local = new IPEndPoint(IPAddress.Any, 8006);
-var server = new WebSocketListener(local);
+var server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 8006));
+var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
+server.Standards.RegisterStandard(rfc6455);
 server.Start();
 ```
+
+The class ```vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455``` gives support to the [RFC 6455](http://tools.ietf.org/html/rfc6455), that is the WebSocket standard used at the moment. Future standards can be added in the [same way](//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support).
 
 Optionally, you can also:
  * [enable TLS for secure WebSocket connections](//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
  * [enable deflate compression for messages] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
- * [customize subprotocols, queuing and ping behaviours](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
+ * [customize memory use, subprotocols, queuing and ping behaviours](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
  * [add customized extensions](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
 
 
@@ -56,7 +63,7 @@ WebSocket client = await server.AcceptWebSocketAsync(cancellationToken);
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
 
-`AcceptWebSocketAsync` should be in a loop to continuously accept new clients, also wraped in a `try/catch` since errors in the negotiation process will be thrown here. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example).
+`AcceptWebSocketAsync` should be in a loop to continuously accept new clients, also wrapped in a `try/catch` since errors in the negotiation process will be thrown here. Take a look to the [simple host tutorial](https://github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Echo-Server-Example).
 
 #### Receiving messages
 With the client we can *await* a message as a readonly stream:
@@ -101,15 +108,12 @@ Writing messages is also easy. The `WebSocketMessageReadStream.CreateMessageWrit
 using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
 ```
 
-It is important to point out, that despite of the length of the message, the last part won't be sent till the stream is closed (call to `Stream.Close`) or flushed asynchronously. So disposing the message is the more practical way of ensuring that `Stream.Close` is called, but that would send the tail of the message synchronously, so calling `Stream.FlushAsync` will ensure that the last part is sent asynchronously. This allows the sending of arbitrary amounts of data which length is not known before hand.
-
 Once a message writer is created, regular .NET tools can be used to write in it:
 
 ```cs
 using (var sw = new StreamWriter(messageWriterStream, Encoding.UTF8))
 {
    await sw.WriteAsync("Hello World!");
-   await sw.FlushAsync();
 }
 ```    
 
