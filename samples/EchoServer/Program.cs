@@ -41,12 +41,12 @@ namespace WebSocketListenerTests.Echo
             CancellationTokenSource cancellation = new CancellationTokenSource();
             
             // local endpoint
-            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
             
             // starting the server
             WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() 
-            { 
-                PingTimeout = TimeSpan.FromSeconds(5),
+            {
+                PingTimeout = TimeSpan.FromSeconds(25),
                 NegotiationTimeout = TimeSpan.FromSeconds(25),
                 ParallelNegotiations = 32,
                 NegotiationQueueCapacity = 256,
@@ -57,7 +57,7 @@ namespace WebSocketListenerTests.Echo
             rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
             server.Standards.RegisterImplementation(rfc6455);
             // adding the WSS extension
-            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
 
             server.Start();
 
@@ -135,7 +135,6 @@ namespace WebSocketListenerTests.Echo
                                             r += readed;
                                         }
                                     }
-
                                     await messageWriter.CloseAsync(token).ConfigureAwait(false);
                                 }
                                PerformanceCounters.MessagesOut.Increment();
