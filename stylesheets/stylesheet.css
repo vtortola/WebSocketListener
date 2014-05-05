@@ -69,7 +69,6 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
   font-size: 36px;
   font-weight: 700;
-  background-image:url('https://tyrus.java.net/images/websocket_logo_white.png');
 }
 
 h2 {
@@ -292,6 +291,7 @@ Full-Width Styles
   background: -ms-linear-gradient(top, #373737, #212121);
   background: -o-linear-gradient(top, #373737, #212121);
   background: linear-gradient(top, #373737, #212121);
+  background-image:url('https://tyrus.java.net/images/websocket_logo_white.png');
 }
 
 #header_wrap .inner {
