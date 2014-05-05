@@ -281,7 +281,7 @@ namespace vtortola.WebSockets.Rfc6455
                         var now = DateTime.Now;
                         _lastPong = now;
                         var timestamp = BitConverter.ToInt64(_pongBuffer.Array, _pongBuffer.Offset);
-                        Latency = TimeSpan.FromTicks(now.Ticks - timestamp);
+                        Latency = TimeSpan.FromTicks((now.Ticks - timestamp) / 2);
                     }
                     else // pong frames echo what was 'pinged'
                         this.WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
