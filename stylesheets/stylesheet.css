@@ -292,6 +292,9 @@ Full-Width Styles
   background: -o-linear-gradient(top, #373737, #212121);
   background: linear-gradient(top, #373737, #212121);
   background-image:url('https://tyrus.java.net/images/websocket_logo_white.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position-x: 100px;
 }
 
 #header_wrap .inner {
