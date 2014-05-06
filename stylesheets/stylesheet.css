@@ -75,13 +75,13 @@ header h1 {
   letter-spacing: -1px;
   font-size: 72px;
   color: #fff;
-  line-height: 1;
+  line-height: 80px;
   margin-bottom: 0.2em;
   width: 616px;
   background-image: url('http://i.imgur.com/oNvjsel.png');
   background-repeat: no-repeat;
   background-position-x: 0px;
-  padding-left: 76px;
+  padding-left: 85px;
 }
 
 header h2 {
