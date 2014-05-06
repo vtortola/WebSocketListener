@@ -176,12 +176,12 @@ code {
 }
 
 pre {
-  padding: 20px;
+  padding: 15px;
   background: #fff;
   text-shadow: none;
   overflow: auto;
   border: solid 1px #3A85F6;
-  font-size:12px;
+  font-size:11px;
 }
 pre code {
   color: #2879d0;
