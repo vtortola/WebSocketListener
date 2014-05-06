@@ -96,7 +96,7 @@ header h2 {
 
 .inner {
   position: relative;
-  width: 1000px;
+  width: 1024px;
   margin: 0 auto;
 }
 
@@ -166,7 +166,6 @@ code, pre {
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
   color: #222;
   margin-bottom: 30px;
-  font-size: 13px;
 }
 
 code {
