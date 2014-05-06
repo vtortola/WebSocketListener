@@ -77,7 +77,12 @@ header h1 {
   color: #fff;
   line-height: 1;
   margin-bottom: 0.2em;
-  width: 540px;
+  width: 616px;
+  background-image: url('https://tyrus.java.net/images/websocket_logo_white.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position-x: 0px;
+  padding-left: 76px;
 }
 
 header h2 {
@@ -91,7 +96,7 @@ header h2 {
 
 .inner {
   position: relative;
-  width: 940px;
+  width: 1000px;
   margin: 0 auto;
 }
 
@@ -175,7 +180,7 @@ pre {
   background: #fff;
   text-shadow: none;
   overflow: auto;
-  border: solid 1px #f2f2f2;
+  border: solid 1px #3A85F6;
 }
 pre code {
   color: #2879d0;
