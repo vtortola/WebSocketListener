@@ -320,6 +320,18 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.IsNotNull(result.Error);
                 Assert.IsFalse(result.IsValid);
+
+                ms.Seek(position, SeekOrigin.Begin);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine();
+
+                using (var sr = new StreamReader(ms))
+                {
+                    var s = sr.ReadToEnd();
+                    Assert.AreEqual(sb.ToString(), s);
+                }
             }
         }
         
@@ -352,6 +364,18 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.IsNotNull(result.Error);
                 Assert.IsFalse(result.IsValid);
+
+                ms.Seek(position, SeekOrigin.Begin);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine();
+
+                using (var sr = new StreamReader(ms))
+                {
+                    var s = sr.ReadToEnd();
+                    Assert.AreEqual(sb.ToString(), s);
+                }
             }
         }
 
@@ -548,6 +572,18 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.IsTrue(result.NegotiatedMessageExtensions.Count == 0);
+
+                ms.Seek(position, SeekOrigin.Begin);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine();
+
+                using (var sr = new StreamReader(ms))
+                {
+                    var s = sr.ReadToEnd();
+                    Assert.AreEqual(sb.ToString(), s);
+                }
             }
         }
 

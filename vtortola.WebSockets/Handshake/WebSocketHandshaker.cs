@@ -63,12 +63,13 @@ namespace vtortola.WebSockets
             }
             catch(Exception ex)
             {
+                handshake.Error = ex;
+                handshake.IsValid = false;
                 if (!handshake.IsResponseSent)
                 {
                     try { WriteHttpResponse(handshake, clientStream); }
                     catch { };
                 }
-                handshake.Error = ex;
             }
             return handshake;
         }
@@ -96,17 +97,21 @@ namespace vtortola.WebSockets
                 {
                     handshake.ResponseCode = HttpStatusCode.BadRequest;
                     SendNegotiationErrorResponse(writer);
-                    
                 }
                 else if (!handshake.IsVersionSupported)
                 {
                     handshake.ResponseCode = HttpStatusCode.UpgradeRequired;
                     SendVersionNegotiationErrorResponse(writer);
                 }
-                else
+                else if(handshake.IsValid)
                 {
                     handshake.ResponseCode = HttpStatusCode.SwitchingProtocols;
                     SendNegotiationResponse(handshake, writer);
+                }
+                else
+                {
+                    handshake.ResponseCode = HttpStatusCode.BadRequest;
+                    SendNegotiationErrorResponse(writer);
                 }
                 await writer.FlushAsync().ConfigureAwait(false);
             }
@@ -224,7 +229,10 @@ namespace vtortola.WebSockets
                 var subprotocolRequest = handshake.Request.Headers["Sec-WebSocket-Protocol"];
 
                 if (!_options.SubProtocols.Any())
+                {
+                    handshake.HasSubProtocolMatch = false;
                     throw new WebSocketException("Client is requiring a sub protocol '" + subprotocolRequest + "' but there are not subprotocols defined");
+                }
 
                 String[] sp = subprotocolRequest.Split(',');
                 AssertArrayIsAtLeast(sp, 1, "Cannot understand the 'Sec-WebSocket-Protocol' header '" + subprotocolRequest + "'");
@@ -240,7 +248,10 @@ namespace vtortola.WebSockets
                 }
 
                 if (String.IsNullOrWhiteSpace(handshake.Request.WebSocketProtocol))
-                    throw new WebSocketException("There is no subprotocol defined for '"+subprotocolRequest+"'");
+                {
+                    handshake.HasSubProtocolMatch = false;
+                    throw new WebSocketException("There is no subprotocol defined for '" + subprotocolRequest + "'");
+                }
             }
 
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();

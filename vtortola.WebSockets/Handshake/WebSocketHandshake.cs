@@ -10,11 +10,20 @@ namespace vtortola.WebSockets
 {
     public class WebSocketHandshake
     {
-        public Boolean IsValid { get { return Error == null && IsWebSocketRequest && IsVersionSupported; } }
+        Boolean _invalidated;
+        public Boolean IsValid 
+        { 
+            get 
+            { 
+                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && HasSubProtocolMatch; 
+            }
+            set { _invalidated = !value; }
+        }
         public WebSocketHttpRequest Request { get; private set; }
         public List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions { get; private set; }
         public Boolean IsWebSocketRequest { get; internal set; }
         public Boolean IsVersionSupported { get; internal set; }
+        public Boolean HasSubProtocolMatch { get; internal set; }
         public WebSocketFactory Factory { get; internal set; }
         public Exception Error { get; set; }
         public Boolean  IsResponseSent { get; internal set; }
@@ -27,6 +36,8 @@ namespace vtortola.WebSockets
             Request = new WebSocketHttpRequest();
             NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
             ResponseExtensions = new List<WebSocketExtension>();
+            HasSubProtocolMatch = true;
+            _invalidated = false;
         }
 
         public String GenerateHandshake()
