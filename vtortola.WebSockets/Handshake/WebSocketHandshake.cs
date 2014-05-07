@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace vtortola.WebSockets
         public Boolean IsVersionSupported { get; internal set; }
         public Boolean HasSubProtocolMatch { get; internal set; }
         public WebSocketFactory Factory { get; internal set; }
-        public Exception Error { get; set; }
+        public ExceptionDispatchInfo Error { get; set; }
         public Boolean  IsResponseSent { get; internal set; }
         public HttpStatusCode ResponseCode { get; internal set; }
 

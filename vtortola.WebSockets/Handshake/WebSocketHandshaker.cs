@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,7 +42,7 @@ namespace vtortola.WebSockets
                        handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
                        handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Version")))
                 {
-                    await WriteHttpResponse(handshake, clientStream);
+                    await WriteHttpResponseAsync(handshake, clientStream);
                     return handshake;
                 }
 
@@ -50,7 +51,7 @@ namespace vtortola.WebSockets
                 handshake.Factory = _factories.GetWebSocketFactory(handshake.Request);
                 if (handshake.Factory == null)
                 {
-                    await WriteHttpResponse(handshake, clientStream);
+                    await WriteHttpResponseAsync(handshake, clientStream);
                     return handshake;
                 }
 
@@ -59,11 +60,11 @@ namespace vtortola.WebSockets
                 ConsolidateObjectModel(handshake);
 
                 SelectExtensions(handshake);
-                await WriteHttpResponse(handshake, clientStream);
+                await WriteHttpResponseAsync(handshake, clientStream);
             }
             catch(Exception ex)
             {
-                handshake.Error = ex;
+                handshake.Error = ExceptionDispatchInfo.Capture(ex);
                 handshake.IsValid = false;
                 if (!handshake.IsResponseSent)
                 {
@@ -88,32 +89,47 @@ namespace vtortola.WebSockets
                 }
             }
         }
-        private async Task WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
+        private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
             using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
-                if (!handshake.IsWebSocketRequest)
-                {
-                    handshake.ResponseCode = HttpStatusCode.BadRequest;
-                    SendNegotiationErrorResponse(writer);
-                }
-                else if (!handshake.IsVersionSupported)
-                {
-                    handshake.ResponseCode = HttpStatusCode.UpgradeRequired;
-                    SendVersionNegotiationErrorResponse(writer);
-                }
-                else if(handshake.IsValid)
-                {
-                    handshake.ResponseCode = HttpStatusCode.SwitchingProtocols;
-                    SendNegotiationResponse(handshake, writer);
-                }
-                else
-                {
-                    handshake.ResponseCode = HttpStatusCode.BadRequest;
-                    SendNegotiationErrorResponse(writer);
-                }
+                WriteResponseInternal(handshake, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
+            }
+        }
+
+        private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
+        {
+            handshake.IsResponseSent = true;
+            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            {
+                WriteResponseInternal(handshake, writer);
+                writer.Flush();
+            }
+        }
+
+        private void WriteResponseInternal(WebSocketHandshake handshake, StreamWriter writer)
+        {
+            if (!handshake.IsWebSocketRequest)
+            {
+                handshake.ResponseCode = HttpStatusCode.BadRequest;
+                SendNegotiationErrorResponse(writer);
+            }
+            else if (!handshake.IsVersionSupported)
+            {
+                handshake.ResponseCode = HttpStatusCode.UpgradeRequired;
+                SendVersionNegotiationErrorResponse(writer);
+            }
+            else if (handshake.IsValid)
+            {
+                handshake.ResponseCode = HttpStatusCode.SwitchingProtocols;
+                SendNegotiationResponse(handshake, writer);
+            }
+            else
+            {
+                handshake.ResponseCode = HttpStatusCode.BadRequest;
+                SendNegotiationErrorResponse(writer);
             }
         }
         private void ReadHttpRequest(Stream clientStream, WebSocketHandshake handshake)

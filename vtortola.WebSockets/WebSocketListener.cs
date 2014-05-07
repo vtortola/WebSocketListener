@@ -121,7 +121,7 @@ namespace vtortola.WebSockets
                 if (handshake.IsValid)
                     result.Result = handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.NegotiatedMessageExtensions);
                 else
-                    result.Error = ExceptionDispatchInfo.Capture(handshake.Error);
+                    result.Error = handshake.Error;
             }
             catch (Exception ex)
             {
