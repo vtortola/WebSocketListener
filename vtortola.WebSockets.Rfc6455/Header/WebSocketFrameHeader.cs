@@ -99,7 +99,8 @@ namespace vtortola.WebSockets.Rfc6455
                 if (frameStart.Length < headerLength)
                     return false;
 
-                frameStart.ReversePortion(offset + 2, 2);
+                if(BitConverter.IsLittleEndian)
+                    frameStart.ReversePortion(offset + 2, 2);
                 contentLength = BitConverter.ToUInt16(frameStart, 2);
             }
             else if (contentLength == 127)
@@ -107,7 +108,8 @@ namespace vtortola.WebSockets.Rfc6455
                 if (frameStart.Length < headerLength)
                     return false;
 
-                frameStart.ReversePortion(offset + 2, 8);
+                if (BitConverter.IsLittleEndian)
+                    frameStart.ReversePortion(offset + 2, 8);
                 contentLength = (UInt64)BitConverter.ToUInt64(frameStart, 2);
             }
             else
