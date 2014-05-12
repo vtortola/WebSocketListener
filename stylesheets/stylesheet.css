@@ -429,6 +429,9 @@ footer a:hover {
   }
   header h1 {
     font-size: 24px;
+    padding-left: 50px;
+    background-size: 50px;
+    background-position-y: 50%;
   }
   header h2 {
     font-size: 18px;
