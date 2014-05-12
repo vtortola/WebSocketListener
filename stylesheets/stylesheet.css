@@ -373,6 +373,10 @@ footer a:hover {
 * html .clearfix {height: 1%;}
 .clearfix {display: block;}
 
+.badge{
+	max-width:200px;
+}
+
 /* #Media Queries
 ================================================== */
 
