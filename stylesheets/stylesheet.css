@@ -393,7 +393,10 @@ footer a:hover {
     width: 340px;
   }
   header h1 {
-    font-size: 60px;
+    font-size: 48px;
+    padding-left: 100px;
+    background-size: 100px;
+    background-position-y: 50%;
   }
   header h2 {
     font-size: 30px;
