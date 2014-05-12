@@ -21,12 +21,12 @@ namespace vtortola.WebSockets.Rfc6455
         readonly Stream _clientStream;
         readonly WebSocketListenerOptions _options;
         
-        Int32 _closed,_ongoingMessageWrite,_ongoingMessageAwaiting, _disposed;
+        Boolean _isClosed,_ongoingMessageWrite,_ongoingMessageAwaiting, _isDisposed;
         readonly TimeSpan _pingInterval, _pingTimeout;
         DateTime _lastPong;
         Boolean _pingFail, _pingStarted;
 
-        internal Boolean IsConnected { get { return _closed != 1; } }
+        internal Boolean IsConnected { get { return !_isClosed; } }
         internal WebSocketFrameHeader CurrentHeader { get; set; }
         public TimeSpan Latency { get; private set; }
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
@@ -172,12 +172,13 @@ namespace vtortola.WebSockets.Rfc6455
         }
         internal void EndWritting()
         {
-            _ongoingMessageWrite = 0;
+            _ongoingMessageWrite = false;
         }
         internal void BeginWritting()
         {
-            if (Interlocked.CompareExchange(ref _ongoingMessageWrite, 1, 0) == 1)
+            if (_ongoingMessageWrite)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
+            _ongoingMessageWrite = true;
         }
         internal void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags)
         {
@@ -227,7 +228,7 @@ namespace vtortola.WebSockets.Rfc6455
                 CurrentHeader = null;
             }
             else
-                _ongoingMessageAwaiting = 0;
+                _ongoingMessageAwaiting = false;
         }
         private Boolean TryReadHeaderUntil(ref Int32 readed, Int32 until)
         {
@@ -245,9 +246,11 @@ namespace vtortola.WebSockets.Rfc6455
         }
         private void CheckForDoubleRead()
         {
-            if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting, 1, 0) == 1)
+            if (_ongoingMessageAwaiting)
                 throw new WebSocketException("There is an ongoing message await from somewhere else. Only a single write is allowed at the time.");
-
+            
+            _ongoingMessageAwaiting = true;
+            
             if (CurrentHeader != null)
                 throw new WebSocketException("There is an ongoing message that is being readed from somewhere else");
         }
@@ -379,8 +382,10 @@ namespace vtortola.WebSockets.Rfc6455
         {
             try
             {
-                if (Interlocked.CompareExchange(ref _closed, 1, 0) == 1)
+                if (_isClosed)
                     return;
+
+                _isClosed = true;
 
                 ((UInt16)reason).ToBytes(_closeBuffer.Array, _controlBuffer.Offset);
                 WriteInternal(_closeBuffer, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
@@ -391,8 +396,9 @@ namespace vtortola.WebSockets.Rfc6455
         }
         private void Dispose(Boolean disposing)
         {
-            if (Interlocked.CompareExchange(ref _disposed, 1,0) == 0)
+            if (!_isDisposed)
             {
+                _isDisposed = true;
                 if (disposing)
                     GC.SuppressFinalize(this);
 

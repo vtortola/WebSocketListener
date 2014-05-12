@@ -13,7 +13,7 @@ namespace vtortola.WebSockets.Deflate
         readonly static Byte[] _BFINAL = new Byte[] { 0 };
         readonly WebSocketMessageWriteStream _inner;
         readonly DeflateStream _deflate;
-        Int32 _isClosed, _isDisposed;
+        Boolean _isClosed, _isDisposed;
 
         public WebSocketDeflateWriteStream(WebSocketMessageWriteStream inner)
         {
@@ -37,9 +37,10 @@ namespace vtortola.WebSockets.Deflate
 
         public override async Task CloseAsync(CancellationToken cancellation)
         {
-            if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
+            if (_isClosed)
                 return;
 
+            _isClosed = true;
             _deflate.Close();
             _inner.Write(_BFINAL, 0, 1);
             await _inner.CloseAsync(cancellation);
@@ -47,9 +48,10 @@ namespace vtortola.WebSockets.Deflate
 
         public override void Close()
         {
-            if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
+            if (_isClosed)
                 return;
 
+            _isClosed = true;
             _deflate.Close();
             _inner.Write(_BFINAL, 0, 1);
             _inner.Close();
@@ -57,8 +59,9 @@ namespace vtortola.WebSockets.Deflate
         
         protected override void Dispose(Boolean disposing)
         {
-            if (Interlocked.CompareExchange(ref _isDisposed, 1, 0) == 0)
+            if (!_isDisposed)
             {
+                _isDisposed = true;
                 _deflate.Dispose();
                 _inner.Dispose();
             }

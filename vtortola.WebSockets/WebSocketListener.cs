@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
         readonly CancellationTokenSource _cancel;
         readonly WebSocketListenerOptions _options;
         readonly WebSocketHandshaker _handShaker;
-        Int32 _isDisposed;
+        Boolean _isDisposed;
 
         public Boolean IsStarted { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
@@ -68,7 +68,7 @@ namespace vtortola.WebSockets
         }
         public void Start()
         {
-            if (_isDisposed == 0)
+            if (!_isDisposed)
             {
                 if (Standards.Count <= 0)
                     throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
@@ -144,8 +144,9 @@ namespace vtortola.WebSockets
         }
         private void Dispose(Boolean disposing)
         {
-            if(Interlocked.CompareExchange(ref _isDisposed,1,0)==0)
+            if(!_isDisposed)
             {
+                _isDisposed = true;
                 if (disposing)
                     GC.SuppressFinalize(this);
                 this.Stop();

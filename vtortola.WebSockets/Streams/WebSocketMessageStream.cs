@@ -5,19 +5,12 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        static readonly Task _completed;
-        static WebSocketMessageStream()
-        {
-            TaskCompletionSource<Object> source = new TaskCompletionSource<Object>();
-            source.SetResult(null);
-            _completed = source.Task;
-        }
-
         public override Boolean CanRead { get { return false; } }
         public override sealed Boolean CanSeek { get { return false; } }
         public override Boolean CanWrite { get { return false; } }
@@ -35,7 +28,7 @@ namespace vtortola.WebSockets
 
         public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
         {
-            return _completed;
+            return CompletedTasks.Void;
         }
 
         public override sealed int ReadByte()

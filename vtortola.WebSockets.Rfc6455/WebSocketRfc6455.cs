@@ -13,7 +13,7 @@ namespace vtortola.WebSockets.Rfc6455
     {
         internal WebSocketConnectionRfc6455 Connection { get; private set; }
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-        Int32 _disposed;
+        Boolean _isDisposed;
 
         readonly WebSocketHttpRequest _httpRequest;
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
@@ -94,8 +94,9 @@ namespace vtortola.WebSockets.Rfc6455
         }
         protected virtual void Dispose(Boolean disposing)
         {
-            if(Interlocked.CompareExchange(ref _disposed,1,0) == 0)
+            if (!_isDisposed)
             {
+                _isDisposed = true;
                 if (disposing)
                     GC.SuppressFinalize(this);
                 Connection.Dispose();
