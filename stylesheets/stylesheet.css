@@ -78,7 +78,7 @@ header h1 {
   line-height: 80px;
   margin-bottom: 0.2em;
   width: 640px;
-  background-image: url('https://raw.githubusercontent.com/vtortola/WebSocketListener/gh-pages/images/websocket.png');
+  background-image: url('../images/websocket.png');
   background-repeat: no-repeat;
   background-position-x: 0px;
   padding-left: 90px;
