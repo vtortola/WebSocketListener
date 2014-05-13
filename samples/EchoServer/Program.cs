@@ -41,19 +41,21 @@ namespace WebSocketListenerTests.Echo
             CancellationTokenSource cancellation = new CancellationTokenSource();
             
             // local endpoint
-            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
             
             // starting the server
             WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() 
             {
-                PingTimeout = TimeSpan.FromSeconds(25),
-                NegotiationTimeout = TimeSpan.FromSeconds(25),
-                ParallelNegotiations = 32,
+                SubProtocols = new []{"text"},
+                PingTimeout = TimeSpan.FromSeconds(5),
+                NegotiationTimeout = TimeSpan.FromSeconds(5),
+                ParallelNegotiations = 16,
                 NegotiationQueueCapacity = 256,
                 TcpBacklog = 1000,
-                BufferManager = BufferManager.CreateBufferManager((8192 + 1024)*4000, 8192 + 1024)
+                BufferManager = BufferManager.CreateBufferManager((8192 + 1024)*1000, 8192 + 1024)
             });
             var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
+            // adding the deflate extension
             rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
             server.Standards.RegisterStandard(rfc6455);
             // adding the WSS extension
@@ -63,11 +65,14 @@ namespace WebSocketListenerTests.Echo
 
             Log("Echo Server started at " + endpoint.ToString());
 
-            var task = Task.Run(()=> AcceptWebSocketClients(server, cancellation.Token));
+            var acceptingTask = Task.Run(()=> AcceptWebSocketClients(server, cancellation.Token));
 
             Console.ReadKey(true);
             Log("Server stoping");
+
             cancellation.Cancel();
+            acceptingTask.Wait();
+
             Console.ReadKey(true);
         }
 
@@ -100,53 +105,20 @@ namespace WebSocketListenerTests.Echo
             Log("Server Stop accepting clients");
         }
 
-        static async Task HandleConnectionAsync(WebSocket ws, CancellationToken token)
+        static async Task HandleConnectionAsync(WebSocket ws, CancellationToken cancellation)
         {
             try
             {
-                PerformanceCounters.Connected.Increment();
-                Byte[] buffer = new Byte[2046];
-                Int32 readed;
-
                 IWebSocketLatencyMeasure l = ws as IWebSocketLatencyMeasure;
-                while (ws.IsConnected && !token.IsCancellationRequested)
+
+                PerformanceCounters.Connected.Increment();
+                while (ws.IsConnected && !cancellation.IsCancellationRequested)
                 {
-                    // await a message
-                    using (var messageReader = await ws.ReadMessageAsync(token).ConfigureAwait(false))
-                    {
-                        if (messageReader == null)
-                            continue; // disconnection
+                    String msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
+                    PerformanceCounters.MessagesIn.Increment();
 
-                        switch (messageReader.MessageType)
-                        {
-                            case WebSocketMessageType.Text:
-
-                                PerformanceCounters.MessagesIn.Increment();
-                                using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Text))
-                                {
-                                    readed = -1;
-                                    Int32 r = 0;
-                                    while(readed!=0)
-                                    {
-                                        readed = messageReader.Read(buffer, 0, buffer.Length);
-                                        if (readed != 0)
-                                        {
-                                            messageWriter.Write(buffer, 0, readed);
-                                            r += readed;
-                                        }
-                                    }
-                                    await messageWriter.CloseAsync(token).ConfigureAwait(false);
-                                }
-                               PerformanceCounters.MessagesOut.Increment();
-
-                                break;
-
-                            case WebSocketMessageType.Binary:
-                                using (var messageWriter = ws.CreateMessageWriter(WebSocketMessageType.Binary))
-                                    await messageReader.CopyToAsync(messageWriter).ConfigureAwait(false);
-                                break;
-                        }
-                    }
+                    ws.WriteString(msg);
+                    PerformanceCounters.MessagesOut.Increment();
 
                     PerformanceCounters.Delay.IncrementBy(l.Latency.Ticks * Stopwatch.Frequency / 10000);
                     PerformanceCounters.DelayBase.Increment();
@@ -158,9 +130,7 @@ namespace WebSocketListenerTests.Echo
             }
             catch (Exception aex)
             {
-                var ex = aex.GetBaseException();
-                _log.Error("HandleConnectionAsync", ex);
-                Log("Error Handling connection: " + ex.GetType().Name + ": " + ex.Message);
+                Log("Error Handling connection: " + aex.GetBaseException().Message);
                 try { ws.Close(); }
                 catch { }
             }
