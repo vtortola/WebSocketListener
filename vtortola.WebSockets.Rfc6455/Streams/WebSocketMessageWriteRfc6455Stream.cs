@@ -73,7 +73,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (_internalUsedBufferLength == _webSocket.Connection.SendBuffer.Count && count > 0)
                 {
-                    await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken);
+                    await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken).ConfigureAwait(false);
                     _internalUsedBufferLength = 0;
                     _isHeaderSent = true;                
                 }
@@ -81,7 +81,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken);
+            await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken).ConfigureAwait(false);
             _internalUsedBufferLength = 0;
             _isHeaderSent = true;
         }
@@ -100,7 +100,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (!_isFinished)
             {
                 _isFinished = true;
-                await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags, cancellation);
+                await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags, cancellation).ConfigureAwait(false);
                 _webSocket.Connection.EndWritting();
             }
         }

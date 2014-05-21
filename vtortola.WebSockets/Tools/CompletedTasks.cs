@@ -8,12 +8,6 @@ namespace vtortola.WebSockets.Tools
 {
     public static class CompletedTasks
     {
-        public static readonly Task Void;
-        static CompletedTasks()
-        {
-            TaskCompletionSource<Object> source = new TaskCompletionSource<Object>();
-            source.SetResult(null);
-            Void = source.Task;
-        }
+        public static readonly Task Void = Task.FromResult<Object>(null);
     }
 }

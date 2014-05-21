@@ -32,7 +32,7 @@ namespace vtortola.WebSockets.Deflate
             RemoveUTF8BOM(buffer, ref offset, ref count);
             if (count == 0)
                 return;
-            await _deflate.WriteAsync(buffer, offset, count, cancellationToken);
+            await _deflate.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
         }
 
         public override async Task CloseAsync(CancellationToken cancellation)
@@ -43,7 +43,7 @@ namespace vtortola.WebSockets.Deflate
             _isClosed = true;
             _deflate.Close();
             _inner.Write(_BFINAL, 0, 1);
-            await _inner.CloseAsync(cancellation);
+            await _inner.CloseAsync(cancellation).ConfigureAwait(false);
         }
 
         public override void Close()

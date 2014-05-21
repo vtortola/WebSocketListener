@@ -52,9 +52,9 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            await Connection.AwaitHeaderAsync(token);
+            await Connection.AwaitHeaderAsync(token).ConfigureAwait(false);
 
-            if (Connection.IsConnected)
+            if (Connection.IsConnected && Connection.CurrentHeader != null)
             {
                 WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
                 foreach (var extension in _extensions)

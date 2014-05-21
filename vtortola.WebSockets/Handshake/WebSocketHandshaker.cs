@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
                        handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
                        handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Version")))
                 {
-                    await WriteHttpResponseAsync(handshake, clientStream);
+                    await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
                     return handshake;
                 }
 
@@ -51,7 +51,7 @@ namespace vtortola.WebSockets
                 handshake.Factory = _factories.GetWebSocketFactory(handshake.Request);
                 if (handshake.Factory == null)
                 {
-                    await WriteHttpResponseAsync(handshake, clientStream);
+                    await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
                     return handshake;
                 }
 
@@ -60,7 +60,7 @@ namespace vtortola.WebSockets
                 ConsolidateObjectModel(handshake);
 
                 SelectExtensions(handshake);
-                await WriteHttpResponseAsync(handshake, clientStream);
+                await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
             }
             catch(Exception ex)
             {

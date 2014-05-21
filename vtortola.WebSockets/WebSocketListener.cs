@@ -133,7 +133,7 @@ namespace vtortola.WebSockets
         }
         public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
         {
-            var result = await _negotiationQueue.ReceiveAsync(token);
+            var result = await _negotiationQueue.ReceiveAsync(token).ConfigureAwait(false);
             if (result.Error != null)
             {
                 result.Error.Throw();

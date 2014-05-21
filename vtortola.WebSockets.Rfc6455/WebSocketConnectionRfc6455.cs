@@ -107,7 +107,7 @@ namespace vtortola.WebSockets.Rfc6455
                 while (this.IsConnected && CurrentHeader == null)
                 {
                     // try read minimal frame first
-                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset, 6, cancellation);
+                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset, 6, cancellation).ConfigureAwait(false);
                     if (readed == 0 || cancellation.IsCancellationRequested)
                     {
                         Close(WebSocketCloseReasons.ProtocolError);
@@ -130,7 +130,7 @@ namespace vtortola.WebSockets.Rfc6455
         {
             try
             {
-                var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken);
+                var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 
                 CurrentHeader.DecodeBytes(buffer, offset, readed);
                 if (CurrentHeader.RemainingBytes == 0)
@@ -358,7 +358,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                     throw new WebSocketException("Write timeout");
-                await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation);
+                await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation).ConfigureAwait(false);
             }
             catch (InvalidOperationException)
             {
