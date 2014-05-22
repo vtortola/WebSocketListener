@@ -22,14 +22,17 @@ namespace vtortola.WebSockets
         public override void Add(string name, string value)
         {
             base.Add(name, value);
+            Uri uri;
             switch (name)
             {
                 case "Origin":
-                    Origin = new Uri(this["Origin"]);
+                    if (!Uri.TryCreate(this["Origin"], UriKind.Absolute, out uri))
+                        throw new WebSocketException("Cannot parse '" + this["Origin"] + "' as Origin header Uri");
+                    Origin = uri;
                     break;
                 case "Host":
-                    Uri uri;
-                    if(Uri.TryCreate("http://"+ this["Host"], UriKind.Absolute, out uri))
+                    if(!Uri.TryCreate("http://"+ this["Host"], UriKind.Absolute, out uri))
+                        throw new WebSocketException("Cannot parse '" + this["Origin"] + "' as Host header Uri");
                         Host = uri;
                     break;
                 case "Sec-WebSocket-Version":
