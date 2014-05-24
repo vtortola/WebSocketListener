@@ -324,7 +324,7 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
@@ -368,7 +368,7 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
@@ -469,7 +469,7 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
@@ -479,7 +479,6 @@ namespace WebSocketListenerTests.UnitTests
                 }
             }
         }
-
 
         [TestMethod]
         public void WebSocketHandshaker_FailsWhenBadRequest()
@@ -521,7 +520,7 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
@@ -576,7 +575,7 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
@@ -593,7 +592,11 @@ namespace WebSocketListenerTests.UnitTests
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
                 new WebSocketListenerOptions()
                 {
-                    HandshakeCookies = (r) => new[] { new Cookie("name1", "value1"), new Cookie("name2", "value2") }
+                    OnHttpNegotiation = (request, response) => 
+                        {
+                            response.Cookies.Add(new Cookie("name1", "value1"));
+                            response.Cookies.Add(new Cookie("name2", "value2"));
+                        }
                 });
 
             using (var ms = new MemoryStream())
@@ -642,7 +645,7 @@ namespace WebSocketListenerTests.UnitTests
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
                 new WebSocketListenerOptions()
                 {
-                    HandshakeCookies = (r) => { throw new Exception("dummy"); }
+                    OnHttpNegotiation = (req,res) => { throw new Exception("dummy"); }
                 });
 
             using (var ms = new MemoryStream())
@@ -670,7 +673,7 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 500 Internal Server Error");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))

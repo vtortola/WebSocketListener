@@ -15,15 +15,14 @@ namespace vtortola.WebSockets.Rfc6455
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
         Boolean _isDisposed;
 
-        readonly WebSocketHttpRequest _httpRequest;
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
-        public override WebSocketHttpRequest HttpRequest { get { return _httpRequest; } }
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
         public override Boolean IsConnected { get { return Connection.IsConnected; } }
         public TimeSpan Latency { get { return Connection.Latency; } }
 
-        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+            :base(httpRequest, httpResponse)
         {
             if (clientStream == null)
                 throw new ArgumentNullException("clientStream");
@@ -45,7 +44,6 @@ namespace vtortola.WebSockets.Rfc6455
 
             _remoteEndpoint = remote;
             _localEndpoint = local;
-            _httpRequest = httpRequest;
 
             Connection = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;

@@ -119,7 +119,7 @@ namespace vtortola.WebSockets
                 var handshake = await handshakeTask;
 
                 if (handshake.IsValid)
-                    result.Result = handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.NegotiatedMessageExtensions);
+                    result.Result = handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
                 else
                     result.Error = handshake.Error;
             }

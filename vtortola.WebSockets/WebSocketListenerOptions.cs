@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public delegate IEnumerable<Cookie> NegotiationCookiesDelegate(WebSocketHttpRequest request);
+    public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
 
     public sealed class WebSocketListenerOptions
     {
@@ -22,7 +22,7 @@ namespace vtortola.WebSockets
         public Int32 SendBufferSize { get; set; }
         public String[] SubProtocols { get; set; }
         public BufferManager BufferManager { get; set; }
-        public NegotiationCookiesDelegate HandshakeCookies { get; set; }
+        public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
@@ -35,7 +35,7 @@ namespace vtortola.WebSockets
             WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
             SendBufferSize = 8192;
             SubProtocols = _noSubProtocols;
-            HandshakeCookies = null;
+            OnHttpNegotiation = null;
         }
 
         public WebSocketListenerOptions Clone()
@@ -51,7 +51,7 @@ namespace vtortola.WebSockets
                 SendBufferSize = this.SendBufferSize,
                 SubProtocols = this.SubProtocols??_noSubProtocols,
                 BufferManager = this.BufferManager,
-                HandshakeCookies = this.HandshakeCookies
+                OnHttpNegotiation = this.OnHttpNegotiation
             };
         }
 
