@@ -8,7 +8,7 @@ using Moq;
 using System.Collections.Generic;
 using vtortola.WebSockets.Rfc6455;
 
-namespace WebSocketListener.UnitTests
+namespace WebSocketListenerTests.UnitTests
 {
     [TestClass]
     public class With_WebSocketHandshaker

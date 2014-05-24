@@ -7,7 +7,7 @@ using System.Net;
 using System.Threading;
 using vtortola.WebSockets.Rfc6455;
 
-namespace WebSocketListener.UnitTests
+namespace WebSocketListenerTests.UnitTests
 {
     [TestClass]
     public class With_WebSocket
