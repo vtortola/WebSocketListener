@@ -16,7 +16,7 @@ namespace vtortola.WebSockets
         { 
             get 
             { 
-                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && HasSubProtocolMatch; 
+                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && HasSubProtocolMatch && Response.Status == HttpStatusCode.SwitchingProtocols; 
             }
             set { _invalidated = !value; }
         }

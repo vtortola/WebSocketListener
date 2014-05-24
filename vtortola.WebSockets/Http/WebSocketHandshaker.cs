@@ -198,7 +198,7 @@ namespace vtortola.WebSockets
             {
                 writer.Write("\r\n");
                 writer.Write("Sec-WebSocket-Protocol: ");
-                writer.Write(handshake.Request.WebSocketProtocol);
+                writer.Write(handshake.Response.WebSocketProtocol);
             }
 
             if (handshake.Response.WebSocketExtensions.Any())
@@ -291,12 +291,12 @@ namespace vtortola.WebSockets
                     var match = _options.SubProtocols.SingleOrDefault(s => s.Equals(sp[i].Trim(), StringComparison.OrdinalIgnoreCase));
                     if (match != null)
                     {
-                        handshake.Request.WebSocketProtocol = match;
+                        handshake.Response.WebSocketProtocol = match;
                         break;
                     }
                 }
 
-                if (String.IsNullOrWhiteSpace(handshake.Request.WebSocketProtocol))
+                if (String.IsNullOrWhiteSpace(handshake.Response.WebSocketProtocol))
                 {
                     handshake.HasSubProtocolMatch = false;
                     throw new WebSocketException("There is no subprotocol defined for '" + subprotocolRequest + "'");

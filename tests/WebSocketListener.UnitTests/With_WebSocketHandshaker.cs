@@ -99,7 +99,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.AreEqual("superchat", result.Request.WebSocketProtocol);
+                Assert.AreEqual("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -148,7 +148,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.AreEqual("superchat", result.Request.WebSocketProtocol);
+                Assert.AreEqual("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -208,7 +208,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.AreEqual("superchat", result.Request.WebSocketProtocol);
+                Assert.AreEqual("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -269,7 +269,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.AreEqual(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.AreEqual("superchat", result.Request.WebSocketProtocol);
+                Assert.AreEqual("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -674,6 +674,53 @@ namespace WebSocketListenerTests.UnitTests
 
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 500 Internal Server Error");
+                sb.AppendLine();
+
+                using (var sr = new StreamReader(ms))
+                {
+                    var s = sr.ReadToEnd();
+                    Assert.AreEqual(sb.ToString(), s);
+                }
+            }
+
+        }
+
+
+        [TestMethod]
+        public void WebSocketHandshaker_CanSendCustomErrorCode()
+        {
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
+                new WebSocketListenerOptions()
+                {
+                    OnHttpNegotiation = (req, res) => { res.Status = HttpStatusCode.Unauthorized; }
+                });
+
+            using (var ms = new MemoryStream())
+            {
+                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                {
+                    sw.WriteLine(@"GET /chat HTTP/1.1");
+                    sw.WriteLine(@"Host: server.example.com");
+                    sw.WriteLine(@"Upgrade: websocket");
+                    sw.WriteLine(@"Connection: Upgrade");
+                    sw.WriteLine(@"Cookie: key=W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5;");
+                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
+                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
+                    sw.WriteLine(@"Origin: http://example.com");
+                }
+
+                var position = ms.Position;
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(ms).Result;
+                Assert.IsNotNull(result);
+                Assert.IsFalse(result.IsValid);
+                Assert.IsNull(result.Error);
+
+                ms.Seek(position, SeekOrigin.Begin);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(@"HTTP/1.1 401 Unauthorized");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
