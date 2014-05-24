@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
                        handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
                        handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Version")))
                 {
-                    await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
+                    await WriteHttpResponseAsync(handshake,null, clientStream).ConfigureAwait(false);
                     return handshake;
                 }
 
@@ -51,7 +51,7 @@ namespace vtortola.WebSockets
                 handshake.Factory = _factories.GetWebSocketFactory(handshake.Request);
                 if (handshake.Factory == null)
                 {
-                    await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
+                    await WriteHttpResponseAsync(handshake, null, clientStream).ConfigureAwait(false);
                     return handshake;
                 }
 
@@ -60,7 +60,12 @@ namespace vtortola.WebSockets
                 ConsolidateObjectModel(handshake);
 
                 SelectExtensions(handshake);
-                await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
+
+                Cookie[] cookies = null;
+                if (_options.HandshakeCookies != null)
+                    cookies = _options.HandshakeCookies(handshake.Request).ToArray();
+
+                await WriteHttpResponseAsync(handshake,cookies, clientStream).ConfigureAwait(false);
             }
             catch(Exception ex)
             {
@@ -68,7 +73,7 @@ namespace vtortola.WebSockets
                 handshake.IsValid = false;
                 if (!handshake.IsResponseSent)
                 {
-                    try { WriteHttpResponse(handshake, clientStream); }
+                    try { WriteHttpResponse(handshake,null, clientStream); }
                     catch { };
                 }
             }
@@ -89,27 +94,27 @@ namespace vtortola.WebSockets
                 }
             }
         }
-        private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
+        private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Cookie[] cookies, Stream clientStream)
         {
             handshake.IsResponseSent = true;
             using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
-                WriteResponseInternal(handshake, writer);
+                WriteResponseInternal(handshake, cookies, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
             }
         }
 
-        private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
+        private void WriteHttpResponse(WebSocketHandshake handshake, Cookie[] cookies, Stream clientStream)
         {
             handshake.IsResponseSent = true;
             using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
-                WriteResponseInternal(handshake, writer);
+                WriteResponseInternal(handshake, cookies, writer);
                 writer.Flush();
             }
         }
 
-        private void WriteResponseInternal(WebSocketHandshake handshake, StreamWriter writer)
+        private void WriteResponseInternal(WebSocketHandshake handshake, Cookie[] cookies, StreamWriter writer)
         {
             if (!handshake.IsWebSocketRequest)
             {
@@ -124,7 +129,7 @@ namespace vtortola.WebSockets
             else if (handshake.IsValid)
             {
                 handshake.ResponseCode = HttpStatusCode.SwitchingProtocols;
-                SendNegotiationResponse(handshake, writer);
+                SendNegotiationResponse(handshake, cookies, writer);
             }
             else
             {
@@ -163,11 +168,20 @@ namespace vtortola.WebSockets
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             handshake.Request.Headers.Add(key,value);
         }
-        private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
+        private void SendNegotiationResponse(WebSocketHandshake handshake, Cookie[] cookies, StreamWriter writer)
         {
             writer.Write("HTTP/1.1 101 Switching Protocols\r\n");
             writer.Write("Upgrade: websocket\r\n");
             writer.Write("Connection: Upgrade\r\n");
+            if (cookies != null && cookies.Any())
+            {
+                foreach (var cookie in cookies)
+                {
+                    writer.Write("Set-Cookie: ");
+                    writer.Write(cookie.ToString());
+                    writer.Write("\r\n");
+                }
+            }
             writer.Write("Sec-WebSocket-Accept: ");
             writer.Write(handshake.GenerateHandshake());
 
@@ -237,9 +251,15 @@ namespace vtortola.WebSockets
 
         private void ConsolidateObjectModel(WebSocketHandshake handshake)
         {
-            if (handshake.Request.Headers.AllKeys.Contains("Cookie"))
-                handshake.Request.Cookies.SetCookies(new Uri("http://" + handshake.Request.Headers["Host"]), handshake.Request.Headers["Cookie"]);
+            ParseCookies(handshake);
 
+            ParseWebSocketProtocol(handshake);
+
+            ParseWebSocketExtensions(handshake);
+        }
+
+        private void ParseWebSocketProtocol(WebSocketHandshake handshake)
+        {
             if (handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Protocol"))
             {
                 var subprotocolRequest = handshake.Request.Headers["Sec-WebSocket-Protocol"];
@@ -269,14 +289,17 @@ namespace vtortola.WebSockets
                     throw new WebSocketException("There is no subprotocol defined for '" + subprotocolRequest + "'");
                 }
             }
+        }
 
+        private void ParseWebSocketExtensions(WebSocketHandshake handshake)
+        {
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
             if (handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Extensions"))
             {
                 var header = handshake.Request.Headers["Sec-WebSocket-Extensions"];
                 var extensions = header.Split(',');
 
-                AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension [" + header +"]");
+                AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension [" + header + "]");
 
                 if (extensions.Any(e => String.IsNullOrWhiteSpace(e)))
                     throw new WebSocketException("Cannot parse a null extension");
@@ -294,15 +317,33 @@ namespace vtortola.WebSockets
                         AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options [" + header + "]");
                         if (optParts.Any(e => String.IsNullOrWhiteSpace(e)))
                             throw new WebSocketException("Cannot parse a null extension part option");
-                        if(optParts.Length==1)
-                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption=true });
+                        if (optParts.Length == 1)
+                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption = true });
                         else
-                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], Value = optParts[1]});
+                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], Value = optParts[1] });
                     }
                     extensionList.Add(new WebSocketExtension(parts[0], extOptions));
                 }
             }
             handshake.Request.SetExtensions(extensionList);
+        }
+
+        static readonly Uri _dummyCookie = new Uri("http://vtortola.github.io/WebSocketListener/");
+        private void ParseCookies(WebSocketHandshake handshake)
+        {
+            if (handshake.Request.Headers.AllKeys.Contains("Cookie"))
+            {
+                CookieContainer container = new CookieContainer();
+                container.SetCookies(_dummyCookie, handshake.Request.Headers["Cookie"]);
+                var cookies = container.GetCookies(_dummyCookie);
+                foreach (var cookie in cookies.OfType<Cookie>())
+                {
+                    cookie.Domain = handshake.Request.Headers.Host;
+                    cookie.Path = String.Empty;
+                    handshake.Request.Cookies.Add(cookie);
+                }
+                container.GetCookieHeader(_dummyCookie);
+            }
         }
         private void AssertArrayIsAtLeast(String[] array, Int32 length, String error)
         {

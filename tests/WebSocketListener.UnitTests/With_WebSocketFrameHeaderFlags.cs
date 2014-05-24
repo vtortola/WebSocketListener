@@ -4,7 +4,7 @@ using vtortola.WebSockets;
 using System.Collections;
 using vtortola.WebSockets.Rfc6455;
 
-namespace WebSocketListenerTests.UnitTests
+namespace WebSocketListener.UnitTests
 {
     [TestClass]
     public class With_WebSocketFrameHeaderFlags

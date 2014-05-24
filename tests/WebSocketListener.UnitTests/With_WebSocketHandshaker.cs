@@ -8,7 +8,7 @@ using Moq;
 using System.Collections.Generic;
 using vtortola.WebSockets.Rfc6455;
 
-namespace WebSocketListenerTests.UnitTests
+namespace WebSocketListener.UnitTests
 {
     [TestClass]
     public class With_WebSocketHandshaker
@@ -50,7 +50,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.AreEqual("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
                 Assert.AreEqual(@"/chat", result.Request.RequestUri.ToString());
                 Assert.AreEqual(1, result.Request.Cookies.Count);
-                var cookie = result.Request.Cookies.GetCookies(result.Request.Headers.Host)[0];
+                var cookie = result.Request.Cookies[0];
                 Assert.AreEqual("key", cookie.Name);
                 Assert.AreEqual(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
                                 
@@ -587,5 +587,99 @@ namespace WebSocketListenerTests.UnitTests
             }
         }
 
+        [TestMethod]
+        public void WebSocketHandshaker_CanReturnCookies()
+        {
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
+                new WebSocketListenerOptions()
+                {
+                    HandshakeCookies = (r) => new[] { new Cookie("name1", "value1"), new Cookie("name2", "value2") }
+                });
+
+            using (var ms = new MemoryStream())
+            {
+                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                {
+                    sw.WriteLine(@"GET /chat HTTP/1.1");
+                    sw.WriteLine(@"Host: server.example.com");
+                    sw.WriteLine(@"Upgrade: websocket");
+                    sw.WriteLine(@"Connection: Upgrade");
+                    sw.WriteLine(@"Cookie: key=W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5;");
+                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
+                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
+                    sw.WriteLine(@"Origin: http://example.com");
+                }
+
+                var position = ms.Position;
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(ms).Result;
+                Assert.IsNotNull(result);
+                
+                ms.Seek(position, SeekOrigin.Begin);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
+                sb.AppendLine(@"Upgrade: websocket");
+                sb.AppendLine(@"Connection: Upgrade");
+                sb.AppendLine(@"Set-Cookie: name1=value1");
+                sb.AppendLine(@"Set-Cookie: name2=value2");
+                sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
+                sb.AppendLine();
+
+                using (var sr = new StreamReader(ms))
+                {
+                    var s = sr.ReadToEnd();
+                    Assert.AreEqual(sb.ToString(), s);
+                }
+            }
+
+        }
+
+        [TestMethod]
+        public void WebSocketHandshaker_CanDetectReturnCookieErrors()
+        {
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
+                new WebSocketListenerOptions()
+                {
+                    HandshakeCookies = (r) => { throw new Exception("dummy"); }
+                });
+
+            using (var ms = new MemoryStream())
+            {
+                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                {
+                    sw.WriteLine(@"GET /chat HTTP/1.1");
+                    sw.WriteLine(@"Host: server.example.com");
+                    sw.WriteLine(@"Upgrade: websocket");
+                    sw.WriteLine(@"Connection: Upgrade");
+                    sw.WriteLine(@"Cookie: key=W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5;");
+                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
+                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
+                    sw.WriteLine(@"Origin: http://example.com");
+                }
+
+                var position = ms.Position;
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(ms).Result;
+                Assert.IsNotNull(result);
+                Assert.IsFalse(result.IsValid);
+                Assert.IsNotNull(result.Error);
+
+                ms.Seek(position, SeekOrigin.Begin);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(@"HTTP/1.1 404 Bad Request");
+                sb.AppendLine();
+
+                using (var sr = new StreamReader(ms))
+                {
+                    var s = sr.ReadToEnd();
+                    Assert.AreEqual(sb.ToString(), s);
+                }
+            }
+
+        }
     }
 }

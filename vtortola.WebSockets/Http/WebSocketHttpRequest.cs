@@ -12,7 +12,7 @@ namespace vtortola.WebSockets
     {
         public Uri RequestUri { get; internal set; }
         public Version HttpVersion { get; internal set; }
-        public CookieContainer Cookies { get; private set; }
+        public CookieCollection Cookies { get; private set; }
         public String WebSocketProtocol { get; internal set; }
         public HttpHeadersCollection Headers { get; private set; }
         public UInt16 WebSocketVersion { get { return Headers.WebSocketVersion; } }
@@ -24,7 +24,7 @@ namespace vtortola.WebSockets
         public WebSocketHttpRequest()
         {
             Headers = new HttpHeadersCollection();
-            Cookies = new CookieContainer();
+            Cookies = new CookieCollection();
         }
     }
 }
