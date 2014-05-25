@@ -18,6 +18,7 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It supports **Mono**. [More info] (//github.com/vtortola/WebSocketListener/wiki/Mono-support)
  * It has the [**Ping/Pong** functionality](http://tools.ietf.org/html/rfc6455#section-5.5.2) **built-in**.
  * It can measure **connection latency**. [More info](//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency)
+ * It can work with cookies and custom HTTP response statuses. [More info](https://github.com/vtortola/WebSocketListener/wiki/Hooking-into-the-HTTP-negotiation)
  * It detects and disconnects **half open connections**.
  * It allows to **send and receive messages as streams**. WebSocket messages are represented as delimited stream-like objects, that allows integration with other .NET objects like e.g. `StreamReader` and `StreamWriter`. Two different WebSocket messages, yield two different streams.
  * Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.
