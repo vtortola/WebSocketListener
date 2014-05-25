@@ -51,7 +51,7 @@
 <li>It supports <strong>Mono</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/Mono-support">More info</a></li>
 <li>It has the <a href="http://tools.ietf.org/html/rfc6455#section-5.5.2"><strong>Ping/Pong</strong> functionality</a> <strong>built-in</strong>.</li>
 <li>It can measure <strong>connection latency</strong>. <a href="//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency">More info</a></li>
-<li>It detects and disconnects <strong>half open connections</strong>.</li>
+<li>It can work with <strong>cookies and custom HTTP response statuses</strong>. <a href="https://github.com/vtortola/WebSocketListener/wiki/Hooking-into-the-HTTP-negotiation">More info</a></li>
 <li>It allows to <strong>send and receive messages as streams</strong>. WebSocket messages are represented as delimited stream-like objects, that allows integration with other .NET objects like e.g. <code>StreamReader</code> and <code>StreamWriter</code>. Two different WebSocket messages, yield two different streams.</li>
 <li>Messages reads and writes are streamed. Big messages are not held in memory during reads or writes.</li>
 <li>It <strong>handles partial frames transparently</strong>. The WebSocket specification states that a single message can be sent across multiple individual frames. The message stream will allow to read all the message data, no matter if it was sent in a single or multiple frames.</li>
