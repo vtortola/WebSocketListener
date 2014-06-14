@@ -56,7 +56,7 @@ namespace vtortola.WebSockets.Rfc6455
             _closeBuffer = new ArraySegment<Byte>(_buffer, 14 + 125 + 125 + 8 + 10 + _options.SendBufferSize + 4, 2);
 
             _pingTimeout = _options.PingTimeout;
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(500, _options.PingTimeout.TotalMilliseconds / 3));
+            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(500, _options.PingTimeout.TotalMilliseconds / 2));
         }
         private void StartPing()
         {
@@ -304,7 +304,7 @@ namespace vtortola.WebSockets.Rfc6455
                     var now = DateTime.Now;
 
                     if (_lastPong.Add(_pingTimeout) < now)
-                        Close(WebSocketCloseReasons.NormalClose);
+                        Close(WebSocketCloseReasons.GoingAway);
                     else
                     {
                         ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
