@@ -95,7 +95,22 @@ namespace WebSocketListener.UnitTests
             Byte[] buffer = new Byte[2];
             header.ToBytes(buffer, 0);
             Assert.AreEqual(226, buffer[0]);
-            Assert.AreEqual(101, buffer[1]);
+            Assert.AreEqual(101, buffer[1]); 
+        }
+
+        [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Can_ParseSmallHeader()
+        {
+            Byte[] buffer = new Byte[6];
+            buffer[0]=129;
+            buffer[1]=101;
+
+            WebSocketFrameHeader header;
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4],0,4), out header));
+            Assert.IsNotNull(header);
+            Assert.IsTrue(header.Flags.FIN);
+            Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual((UInt64)101, header.ContentLength);
         }
     }
 }
