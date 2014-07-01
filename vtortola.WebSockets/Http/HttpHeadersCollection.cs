@@ -26,7 +26,9 @@ namespace vtortola.WebSockets
             switch (name)
             {
                 case "Origin":
-                    if (!Uri.TryCreate(value, UriKind.Absolute, out uri))
+                    if (String.Equals(value, "null", StringComparison.OrdinalIgnoreCase))
+                        uri = null;
+                    else if (!Uri.TryCreate(value, UriKind.Absolute, out uri))
                         throw new WebSocketException("Cannot parse '" + value + "' as Origin header Uri");
                     Origin = uri;
                     break;
