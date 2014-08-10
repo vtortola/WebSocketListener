@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TerminalServer.Server.CLI.Control;
+using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
 using TerminalServer.Server.Messaging.TerminalControl;
 using TerminalServer.Server.Messaging.TerminalControl.Events;
@@ -14,6 +15,7 @@ namespace TerminalServer.Server.CLI
     public class CliControl:IDisposable
     {
         readonly IMessageBus _bus;
+        readonly ILogger _log;
         readonly Dictionary<String, SessionState> _sessions;
 
         public IEnumerable<ICliSession> Sessions { get { return _sessions.Values.Select(x=>x.Session); } }
@@ -23,9 +25,10 @@ namespace TerminalServer.Server.CLI
             public ICliSession Session;
             public IDisposable Subscription;
         }
-        public CliControl(IMessageBus bus)
+        public CliControl(IMessageBus bus, ILogger log)
         {
             _bus = bus;
+            _log = log;
             _sessions = new Dictionary<String, SessionState>();
         }
         public void AddSession(ICliSession session)
@@ -53,7 +56,7 @@ namespace TerminalServer.Server.CLI
         }
         public void Dispose()
         {
-            Console.WriteLine(this.GetType().Name + " dispose");
+            _log.Debug(this.GetType().Name + " dispose");
             foreach (var cli in _sessions.Values)
             {
                 cli.Session.Dispose();
@@ -64,7 +67,7 @@ namespace TerminalServer.Server.CLI
 
         ~CliControl()
         {
-            Console.WriteLine(this.GetType().Name + " destroy");
+            _log.Debug(this.GetType().Name + " destroy");
         }
     }
 }

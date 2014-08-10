@@ -48,6 +48,10 @@ namespace TerminalServer.Server.Messaging.Serialization
                     return new TerminalInputRequest(json.Property("terminalId").Value.ToString(),
                                                     json.Property("input").Value.ToString());
                 }
+                else if (command == CloseTerminalRequest.Command)
+                {
+                    return new CloseTerminalRequest(json.Property("terminalId").Value.ToString());
+                }
             }
 
             throw new IOException("There is no suitable deserialization for this object");

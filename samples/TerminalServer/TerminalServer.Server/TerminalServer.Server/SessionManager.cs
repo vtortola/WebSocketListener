@@ -69,7 +69,7 @@ namespace TerminalServer.Server
         public void Register(WebSocket ws)
         {
             String sessionId = GetSessionId(ws);
-            Console.WriteLine("Register: " + sessionId);
+            _log.Info("Register: {0}", sessionId);
 
             UserSession oldsession = null;
             if (_sessions.TryRemove(sessionId, out oldsession))

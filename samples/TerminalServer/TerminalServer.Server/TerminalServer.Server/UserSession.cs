@@ -52,12 +52,12 @@ namespace TerminalServer.Server
             {
                 _control.Deattach(cli);
                 session._control.AddSession(cli);
-                session._init.Add(new CreatedTerminalEvent(cli.Id, "type", null));
+                session._init.Add(new CreatedTerminalEvent(cli.Id, cli.Type, null));
             }
         }
         public void Dispose()
         {
-            _log.Debug(this.GetType().Name + " disposed.");
+            _log.Debug("UserSession disposed: {0}",SessionId);
             Console.WriteLine();
             _bus.Dispose();
             _control.Dispose();

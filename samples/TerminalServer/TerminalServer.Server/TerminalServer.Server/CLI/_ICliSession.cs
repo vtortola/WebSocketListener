@@ -10,5 +10,6 @@ namespace TerminalServer.Server.CLI
     public interface ICliSession:IObserver<String>, IObservable<EventBase>, IDisposable
     {
         String Id { get; }
+        String Type { get; }
     }
 }

@@ -13,10 +13,12 @@ namespace TerminalServer.Server.CLI
 {
     public class ConsoleSessionFactory : ICliSessionFactory
     {
+        public static readonly String TypeName = "cmd.exe";
+
         readonly ILogger _log;
         public string Type
         {
-            get { return "command"; }
+            get { return ConsoleSessionFactory.TypeName; }
         }
 
         public ConsoleSessionFactory(ILogger log)
@@ -36,7 +38,8 @@ namespace TerminalServer.Server.CLI
         readonly List<IObserver<EventBase>> _subscriptors;
         readonly CancellationTokenSource _cancel;
         readonly ILogger _log;
-        public string Id { get; private set; }
+        public String Id { get; private set; }
+        public String Type { get { return ConsoleSessionFactory.TypeName; } }
         public ConsoleSession(String id, ILogger log)
         {
             _log = log;
@@ -104,12 +107,12 @@ namespace TerminalServer.Server.CLI
         {
             _proc.Dispose();
             _cancel.Cancel();
-            Console.WriteLine(this.GetType().Name + " dispose");
+            _log.Debug(this.GetType().Name + " dispose");
         }
 
        ~ConsoleSession()
        {
-           Console.WriteLine(this.GetType().Name + " destroy");
+           _log.Debug(this.GetType().Name + " destroy");
        }
     }
 }

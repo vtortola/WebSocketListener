@@ -51,6 +51,7 @@ namespace TerminalServer.Server
 
                 this.Bind<IObserver<RequestBase>>().To<CreateTerminalRequestHandler>().InCallScope();
                 this.Bind<IObserver<RequestBase>>().To<InputTerminalRequestHandler>().InCallScope();
+                this.Bind<IObserver<RequestBase>>().To<CloseTerminalRequestHandler>().InCallScope();
             }
         }
 

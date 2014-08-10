@@ -134,7 +134,7 @@
         $connection.send({
             label: "terminal-control-request",
             command: "create-terminal",
-            type: "command",
+            type: "cmd.exe",
             correlationId: crrId
         });
     };
@@ -145,10 +145,15 @@
 
     $connection.listen(function (msg) { return true; }, function (msg) {
         if (msg.command == "terminal-created-event") {
-            $scope.terminals.push({
+            var terminal = {
                 type: msg.type,
                 id: msg.terminalId
-            });
+            };
+            terminal.remove=function () {
+                var index = $scope.terminals.indexOf(terminal);
+                $scope.terminals.splice(index, 1);
+            };
+            $scope.terminals.push(terminal);
             $scope.$$phase || $scope.$apply();
         }
     });
@@ -157,13 +162,18 @@
 .controller("consoleController", ["$scope", "$connection", function ($scope, $connection) {
 
     $scope.terminalId = "empty";
-    $scope.init = function (tid) {
-        $scope.terminalId = tid;
+    var terminal = null;
+    $scope.init = function (t) {
+        terminal = t;
+        $scope.terminalId = t.id;
     };
 
     $connection.listen(function (msg) { return true; }, function (msg) {
         if (msg.output && msg.terminalId && msg.terminalId == $scope.terminalId) {
             
+            if (!$scope.selected)
+                $scope.pendingOutput = true;
+
             $scope.$broadcast('terminal-output', {
                 output: true,
                 text: [msg.output]
@@ -173,6 +183,18 @@
         }
     });
 
+    $scope.pendingOutput = false;
+    $scope.selected = false;
+
+    $scope.select = function () {
+        $scope.selected = true;
+        $scope.pendingOutput = false;
+    };
+
+    $scope.deselect = function () {
+        $scope.selected = false;
+    };
+
     $scope.send = function (cmd) {
         $connection.send({
             label: "terminal-control-request",
@@ -180,6 +202,15 @@
             input: cmd,
             terminalId: $scope.terminalId
         });
+    };
+
+    $scope.close = function () {
+        $connection.send({
+            label: "terminal-control-request",
+            command: "terminal-close",
+            terminalId: $scope.terminalId
+        });
+       terminal.remove();
     };
 
     $scope.$on('terminal-input', function (e, consoleInput) {

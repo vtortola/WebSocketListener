@@ -64,6 +64,7 @@
     <Compile Include="CLI\CliSessionAbstractFactory.cs" />
     <Compile Include="CLI\Control\CliControl.cs" />
     <Compile Include="CLI\CommandSession.cs" />
+    <Compile Include="CLI\Control\CloseTerminalRequestHandler.cs" />
     <Compile Include="CLI\Control\CreateTerminalRequestHandler.cs" />
     <Compile Include="CLI\Control\InputTerminalRequestHandler.cs" />
     <Compile Include="CLI\_ICliSessionFactory.cs" />
@@ -74,8 +75,10 @@
     <Compile Include="Messaging\IMessageBus.cs" />
     <Compile Include="Messaging\Serialization\DefaultEventSerializator.cs" />
     <Compile Include="Messaging\Subscription.cs" />
+    <Compile Include="Messaging\TerminalControl\Events\ClosedTerminalEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\CreatedTerminalEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\TerminalOutputEvent.cs" />
+    <Compile Include="Messaging\TerminalControl\Requests\CloseTerminalRequest.cs" />
     <Compile Include="Messaging\TerminalControl\Requests\CreateTerminalRequest.cs" />
     <Compile Include="Messaging\TerminalControl\Events\_TerminalControlEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Requests\TerminalInputRequest.cs" />

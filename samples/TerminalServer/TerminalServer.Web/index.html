@@ -8,6 +8,8 @@
     <script src="content/scripts/app.js"></script>
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="http://vtortola.github.io/ng-terminal-emulator/src/vtortola.ng-terminal.css" rel="stylesheet">
+    <link href="content/styles/app.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Architects+Daughter" rel="stylesheet" type="text/css">
     <style>
         .terminal-line {
             color: #fff;
@@ -19,18 +21,32 @@
     <!--http://angular-ui.github.io/bootstrap/-->
 </head>
 <body ng-app="terminalServer" ng-controller="mainController">
+    <section id="content">
+        <section id="header" class="page-header">
+            <h1>WebSocketListener: Terminal Server</h1>
+        </section>
+        <section id="sidebar">
+            <button class="btn btn-primary" ng-click="createConsole()">Create console</button>
+        </section>
 
-    <button class="btn btn-primary" ng-click="createConsole()">Create console</button>
+        <section id="terminals">
+            <tabset>
+                <tab ng-repeat="terminal in terminals" ng-controller="consoleController" ng-init="init(terminal)" 
+                     select="select()" deselect="deselect()">
+                    <tab-heading>
+                        {{terminal.type}}
+                        <a class="glyphicon glyphicon-off" href="#" ng-click="close()"></a>
+                        <a class="glyphicon glyphicon-download-alt" href="#" ng-class="{transparent: !pendingOutput}"></a>
+                    </tab-heading>
+                    <div style="background-color:#000">
+                        <p>{{terminalId}}</p>
+                        <terminal>
 
-    <tabset>
-        <tab ng-repeat="terminal in terminals" heading="{{terminal.type}}">
-            <div ng-controller="consoleController" ng-init="init(terminal.id)" style="background-color:#000">
-                <p>{{terminalId}}</p>
-                <terminal>
-
-                </terminal>
-            </div>
-        </tab>
-    </tabset>
+                        </terminal>
+                    </div>
+                </tab>
+            </tabset>
+        </section>
+    </section>
 </body>
 </html>

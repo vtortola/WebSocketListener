@@ -53,15 +53,26 @@ namespace TerminalServer.Server.Messaging
                         if (message.MessageType != WebSocketMessageType.Text)
                             _log.Error("Invalid message", new Exception("Binary messages not supported"));
 
-                        var e = _serializator.Deserialize(message);
+                        try
+                        {
+                            var e = _serializator.Deserialize(message);
 
-                        if (e == null)
-                            continue;
+                            if (e == null)
+                                continue;
 
-                        foreach (var subscriber in _subscribers)
-                            subscriber.OnNext(e);
+                            foreach (var subscriber in _subscribers)
+                                subscriber.OnNext(e);
+                        }
+                        catch (Exception error)
+                        {
+                            _log.Error("WebsocketMessageBus", error);
+                        }
                     }
                 }
+            }
+            catch (Exception fatal)
+            {
+                _log.Fatal("WebSocketMessageBus", fatal);
             }
             finally
             {
@@ -105,6 +116,7 @@ namespace TerminalServer.Server.Messaging
         }
         public void OnError(Exception error)
         {
+            _log.Error("WebSocketMessageBus", error);
         }
         public void OnNext(EventBase value)
         {

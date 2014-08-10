@@ -6,19 +6,18 @@ using System.Threading.Tasks;
 using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
 using TerminalServer.Server.Messaging.TerminalControl;
+using TerminalServer.Server.Messaging.TerminalControl.Events;
+using TerminalServer.Server.Messaging.TerminalControl.Requests;
 
 namespace TerminalServer.Server.CLI.Control
 {
-    public class CreateTerminalRequestHandler : IObserver<RequestBase>, IObservable<EventBase>
+    public class CloseTerminalRequestHandler : IObserver<RequestBase>, IObservable<EventBase>
     {
-        readonly CliSessionAbstractFactory _factory;
         readonly CliControl _control;
         readonly List<IObserver<EventBase>> _subscriptions;
         readonly ILogger _log;
-
-        public CreateTerminalRequestHandler(CliControl control, CliSessionAbstractFactory factory, ILogger log)
+        public CloseTerminalRequestHandler(CliControl control, ILogger log)
         {
-            _factory = factory;
             _control = control;
             _log = log;
             _subscriptions = new List<IObserver<EventBase>>();
@@ -36,18 +35,15 @@ namespace TerminalServer.Server.CLI.Control
         }
         public void OnNext(RequestBase req)
         {
-            if (TerminalControlRequest.Label != req.Label || req.Command != CreateTerminalRequest.Command)
+            if (TerminalControlRequest.Label != req.Label || req.Command != CloseTerminalRequest.Command)
                 return;
 
-            var cte = (CreateTerminalRequest)req;
-            var cli = _factory.Create(cte.Type);
-            _control.AddSession(cli);
+            var cte = (CloseTerminalRequest)req;
+            var cli =_control.GetSession(cte.TerminalId);
+            _control.Deattach(cli);
+            cli.Dispose();
             foreach (var subscription in _subscriptions)
-                subscription.OnNext(new CreatedTerminalEvent(cli.Id, cli.Type, cte.CorrelationId));
-        }
-        ~CreateTerminalRequestHandler()
-        {
-            _log.Debug(this.GetType().Name + " destroy");
+                subscription.OnNext(new ClosedTerminalEvent(cli.Id));
         }
     }
 }

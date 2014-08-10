@@ -1,0 +1,26 @@
+﻿#content{
+    width:1280px;
+    margin:auto auto;
+}
+
+#header{
+    font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
+    text-align:right;
+    padding-right:100px;
+}
+
+#terminals {
+    width:1000px;
+    display:inline-block;
+}
+
+#sidebar{
+    width:200px;
+    display: inline-block;
+    vertical-align: top;
+    text-align:center;
+}
+
+.transparent{
+    color:transparent;
+}

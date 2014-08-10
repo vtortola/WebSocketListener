@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
 using TerminalServer.Server.Messaging.TerminalControl;
 using TerminalServer.Server.Messaging.TerminalControl.Events;
@@ -13,9 +14,11 @@ namespace TerminalServer.Server.CLI.Control
     public class InputTerminalRequestHandler : IObserver<RequestBase>
     {
         readonly CliControl _control;
-        public InputTerminalRequestHandler(CliControl control)
+        readonly ILogger _log;
+        public InputTerminalRequestHandler(CliControl control, ILogger log)
         {
             _control = control;
+            _log = log;
         }
         public void OnCompleted()
         {
@@ -39,7 +42,7 @@ namespace TerminalServer.Server.CLI.Control
 
         ~InputTerminalRequestHandler()
         {
-            Console.WriteLine(this.GetType().Name + " destroy");
+            _log.Debug(this.GetType().Name + " destroy");
         }
     }
 }
