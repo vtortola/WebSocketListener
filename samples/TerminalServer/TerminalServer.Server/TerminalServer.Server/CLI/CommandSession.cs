@@ -55,13 +55,15 @@ namespace TerminalServer.Server.CLI
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardInput = true,
+                    RedirectStandardError = true,
                     CreateNoWindow = true,
-                     WorkingDirectory = "C:\\"
+                    WorkingDirectory = "C:\\"
                 }
             };
 
             _proc.Start();
             Task.Run((Func<Task>)ReadAsync);
+            Task.Run((Func<Task>)ReadErrorAsync);
         }
 
         private async Task ReadAsync()
@@ -76,7 +78,23 @@ namespace TerminalServer.Server.CLI
                 }
                 catch(Exception ex)
                 {
-                    _log.Error("Command session error", ex);
+                    _log.Error("cmd.exe session error", ex);
+                }
+            }
+        }
+        private async Task ReadErrorAsync()
+        {
+            while (!_cancel.IsCancellationRequested && !_proc.HasExited)
+            {
+                try
+                {
+                    var rline = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
+                    if (rline != null)
+                        Propagate(new TerminalOutputEvent(Id, rline));
+                }
+                catch (Exception ex)
+                {
+                    _log.Error("cmd.exe session error", ex);
                 }
             }
         }

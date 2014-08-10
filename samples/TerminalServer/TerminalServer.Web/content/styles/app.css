@@ -24,3 +24,25 @@
 .transparent{
     color:transparent;
 }
+
+.terminal-container{
+    margin: 0 10px 10px 10px;
+}
+.terminal-container .terminal {
+    background:none;
+    background-color:#000;
+    box-shadow:none;
+    border-radius:0px;
+}
+.terminal-container .terminal-viewport{
+    margin:0;
+    padding:10px;
+    overflow-y:scroll;
+    height:100%;
+}
+
+.tab-content{
+    border-bottom: 1px solid #DDD;
+    border-right: 1px solid #DDD;
+    border-left: 1px solid #DDD;
+}

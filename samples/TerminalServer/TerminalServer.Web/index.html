@@ -38,11 +38,10 @@
                         <a class="glyphicon glyphicon-off" href="#" ng-click="close()"></a>
                         <a class="glyphicon glyphicon-download-alt" href="#" ng-class="{transparent: !pendingOutput}"></a>
                     </tab-heading>
-                    <div style="background-color:#000">
-                        <p>{{terminalId}}</p>
-                        <terminal>
-
-                        </terminal>
+                    <div>
+                        <div class="terminal-container">
+                            <terminal></terminal>
+                        </div>
                     </div>
                 </tab>
             </tabset>

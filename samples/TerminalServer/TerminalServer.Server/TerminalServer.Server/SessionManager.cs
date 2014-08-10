@@ -37,18 +37,19 @@ namespace TerminalServer.Server
 
         private async Task WatchSessionsAsync()
         {
-            UserSession s;
             while (true)
             {
                 await Task.Delay(5000).ConfigureAwait(false);
 
-                List<UserSession> disconnected = new List<UserSession>(_sessions.Values.Where(v=>!v.IsConnected));
-                foreach (var session in disconnected)
+                UserSession disconnected = _sessions.Values.FirstOrDefault(v=> !v.IsConnected);
+                while (disconnected != null)
                 {
-                    _log.Info("Disconnecting: " + session.SessionId);
-                    _sessions.TryRemove(session.SessionId, out s);
-                    s.Dispose();
-                    s = null;
+                    if (_sessions.TryRemove(disconnected.SessionId, out disconnected))
+                    {
+                        _log.Info("Disconnecting: " + disconnected.SessionId);
+                        disconnected.Dispose();
+                    }
+                    disconnected = _sessions.Values.FirstOrDefault(v => !v.IsConnected);
                 }
 
                 GC.Collect();
@@ -76,17 +77,26 @@ namespace TerminalServer.Server
             {
                 _log.Info("Session rescued: " + sessionId);
             }
+            else
+                _log.Info("Session created: " + sessionId);
 
             var session = _injector.Get<UserSession>(new WeakConstructorArgument("websocket", ws, true),
                                                  new WeakConstructorArgument("sessionId", sessionId, true));
-            _sessions.TryAdd(session.SessionId, session);
+
+            if (!_sessions.TryAdd(session.SessionId, session))
+            {
+                _log.Info("Session NOT added: " + sessionId);
+                throw new Exception("I cannot register session");
+            }
 
             if (oldsession != null)
             {
+                _log.Info("Transfering session '{0}'", session.SessionId);
                 oldsession.TransferTo(session);
                 oldsession.Dispose();
             }
 
+            _log.Info("Session Start '{0}'", session.SessionId);
             session.Start();
             
         }

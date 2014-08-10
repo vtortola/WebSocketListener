@@ -30,7 +30,7 @@ namespace TerminalServer.Server
 
             CancellationTokenSource cancellation = new CancellationTokenSource();
 
-            var endpoint = new IPEndPoint(IPAddress.Any, 8008);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8009);
             WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions()
             {
                 PingTimeout = Timeout.InfiniteTimeSpan,

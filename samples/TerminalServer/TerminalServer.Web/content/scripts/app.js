@@ -1,6 +1,6 @@
 ﻿angular.module("terminalServer", ['ui.bootstrap','vtortola.ng-terminal'])
 
-.value("websocketUrl", "ws://localhost:8008")
+.value("websocketUrl", "ws://localhost:8009")
 
 .service('$connection', ["$q", "$timeout", "websocketUrl", "$rootScope", function ($q, $timeout, websocketUrl, $rootScope) {
     var connection = function () {
@@ -163,6 +163,7 @@
 
     $scope.terminalId = "empty";
     var terminal = null;
+
     $scope.init = function (t) {
         terminal = t;
         $scope.terminalId = t.id;
@@ -220,7 +221,7 @@
 }])
 
 .config(['terminalConfigurationProvider', function (terminalConfigurationProvider) {
-
+    terminalConfigurationProvider.promptConfiguration = { end:'>', user:'', separator:'', path:''};
 }])
 
 ;

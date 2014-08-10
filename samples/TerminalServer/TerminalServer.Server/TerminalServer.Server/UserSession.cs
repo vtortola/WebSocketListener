@@ -44,7 +44,6 @@ namespace TerminalServer.Server
         }
         public void TransferTo(UserSession session)
         {
-            _log.Info("Transfering session '{0}'", session.SessionId);
             foreach (var sub in _subscriptions)
                 sub.Dispose();
 
