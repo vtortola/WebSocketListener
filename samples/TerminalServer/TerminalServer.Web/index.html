@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Terminal Server</title>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.js"></script>
+    <script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.11.0.js"></script>
+    <script src="http://vtortola.github.io/ng-terminal-emulator/src/vtortola.ng-terminal.js"></script>
+    <script src="content/scripts/app.js"></script>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://vtortola.github.io/ng-terminal-emulator/src/vtortola.ng-terminal.css" rel="stylesheet">
+    <style>
+        .terminal-line {
+            color: #fff;
+            background-color: #000;
+            border: none;
+            border-radius: 0;
+        }
+    </style>
+    <!--http://angular-ui.github.io/bootstrap/-->
+</head>
+<body ng-app="terminalServer" ng-controller="mainController">
+
+    <button class="btn btn-primary" ng-click="createConsole()">Create console</button>
+
+    <tabset>
+        <tab ng-repeat="terminal in terminals" heading="{{terminal.type}}">
+            <div ng-controller="consoleController" ng-init="init(terminal.id)" style="background-color:#000">
+                <p>{{terminalId}}</p>
+                <terminal>
+
+                </terminal>
+            </div>
+        </tab>
+    </tabset>
+</body>
+</html>
