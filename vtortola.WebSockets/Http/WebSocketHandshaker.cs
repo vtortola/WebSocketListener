@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -346,16 +347,21 @@ namespace vtortola.WebSockets
         {
             if (handshake.Request.Headers.AllKeys.Contains("Cookie"))
             {
-                CookieContainer container = new CookieContainer();
-                container.SetCookies(_dummyCookie, handshake.Request.Headers["Cookie"]);
-                var cookies = container.GetCookies(_dummyCookie);
-                foreach (var cookie in cookies.OfType<Cookie>())
+                var cookieString = handshake.Request.Headers["Cookie"];
+                try
                 {
-                    cookie.Domain = handshake.Request.Headers.Host;
-                    cookie.Path = String.Empty;
-                    handshake.Request.Cookies.Add(cookie);
+                    CookieParser parser = new CookieParser();
+                    foreach (var cookie in parser.Parse(cookieString))
+                    {
+                        cookie.Domain = handshake.Request.Headers.Host;
+                        cookie.Path = String.Empty;
+                        handshake.Request.Cookies.Add(cookie);
+                    }
                 }
-                container.GetCookieHeader(_dummyCookie);
+                catch (Exception ex)
+                {
+                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "'");
+                }
             }
         }
         private void AssertArrayIsAtLeast(String[] array, Int32 length, String error)

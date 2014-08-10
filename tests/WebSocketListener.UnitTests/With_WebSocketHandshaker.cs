@@ -4,6 +4,7 @@ using vtortola.WebSockets;
 using System.Net;
 using System.IO;
 using System.Text;
+using System.Linq;
 using Moq;
 using System.Collections.Generic;
 using vtortola.WebSockets.Rfc6455;
@@ -18,6 +19,53 @@ namespace WebSocketListenerTests.UnitTests
         {
             _factories = new WebSocketFactoryCollection();
             _factories.RegisterStandard(new WebSocketFactoryRfc6455());
+        }
+        [TestMethod]
+        public void WebSocketHandshaker_CanParseCookies()
+        {
+            CookieParser parser = new CookieParser();
+
+            var parsed = parser.Parse("cookie1=uno").ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(1, parsed.Length);
+            Assert.AreEqual("cookie1", parsed[0].Name);
+            Assert.AreEqual("uno", parsed[0].Value);
+
+            parsed = parser.Parse("cookie1=uno;cookie2=dos").ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(2, parsed.Length);
+            Assert.AreEqual("cookie1", parsed[0].Name);
+            Assert.AreEqual("uno", parsed[0].Value);
+            Assert.AreEqual("cookie2", parsed[1].Name);
+            Assert.AreEqual("dos", parsed[1].Value);
+
+            parsed = parser.Parse("cookie1=uno; cookie2=dos ").ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(2, parsed.Length);
+            Assert.AreEqual("cookie1", parsed[0].Name);
+            Assert.AreEqual("uno", parsed[0].Value);
+            Assert.AreEqual("cookie2", parsed[1].Name);
+            Assert.AreEqual("dos", parsed[1].Value);
+
+            parsed = parser.Parse("cookie1=uno; cookie2===dos== ").ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(2, parsed.Length);
+            Assert.AreEqual("cookie1", parsed[0].Name);
+            Assert.AreEqual("uno", parsed[0].Value);
+            Assert.AreEqual("cookie2", parsed[1].Name);
+            Assert.AreEqual("==dos==", parsed[1].Value);
+
+            parsed = parser.Parse(null).ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(0, parsed.Length);
+
+            parsed = parser.Parse(String.Empty).ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(0, parsed.Length);
+
+            parsed = parser.Parse("   ").ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(0, parsed.Length);
         }
 
         [TestMethod]
@@ -637,6 +685,39 @@ namespace WebSocketListenerTests.UnitTests
                 }
             }
 
+        }
+
+        [TestMethod]
+        public void WebSocketHandshaker_CanParseMultipleCookie()
+        {
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
+                new WebSocketListenerOptions()
+                {
+                   
+                });
+
+            using (var ms = new MemoryStream())
+            {
+                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                {
+                    sw.WriteLine(@"GET /chat HTTP/1.1");
+                    sw.WriteLine(@"Host: server.example.com");
+                    sw.WriteLine(@"Upgrade: websocket");
+                    sw.WriteLine(@"Connection: Upgrade");
+                    sw.WriteLine(@"Cookie: cookie1=uno; cookie2=dos");
+                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
+                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
+                    sw.WriteLine(@"Origin: http://example.com");
+                }
+
+                var position = ms.Position;
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(ms).Result;
+                Assert.IsNotNull(result);
+
+                Assert.AreEqual(2, result.Request.Cookies.Count);
+            }
         }
 
         [TestMethod]
