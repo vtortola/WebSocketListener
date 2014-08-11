@@ -18,12 +18,13 @@ namespace TerminalServer.Server.Infrastructure
         readonly SubscriptionManager<EventBase> _subscriptions;
         public String Id { get; private set; }
         public String Type { get { return _inner.Type; } }
+  
         public CliAdapter(String id, ICliSession cli)
         {
             _inner = cli;
             Id = id;
             _subscriptions = new SubscriptionManager<EventBase>(this);
-            _innerSubscription = _inner.Subscribe(new Wrapper((s)=>_subscriptions.OnNext(new TerminalOutputEvent(Id,s)), OnError,OnCompleted));
+            _innerSubscription = _inner.Subscribe(new Wrapper((s)=>_subscriptions.OnNext(new TerminalOutputEvent(Id,s,_inner.CurrentPath)), OnError,OnCompleted));
         }
         public void OnCompleted()
         {

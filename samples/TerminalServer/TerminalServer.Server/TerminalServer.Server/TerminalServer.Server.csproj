@@ -70,7 +70,7 @@
     <Compile Include="CLI\_ICliSessionFactory.cs" />
     <Compile Include="CLI\PowerShellSession.cs" />
     <Compile Include="CLI\_ICliSession.cs" />
-    <Compile Include="Infrastructure\CliAdapter.cs" />
+    <Compile Include="CLI\CliAdapter.cs" />
     <Compile Include="Infrastructure\ILogger.cs" />
     <Compile Include="Infrastructure\Log4NetLogger.cs" />
     <Compile Include="Infrastructure\SubscriptionManager.cs" />

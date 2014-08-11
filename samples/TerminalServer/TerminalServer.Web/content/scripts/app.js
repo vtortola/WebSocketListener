@@ -170,7 +170,7 @@
     };
 
     $connection.listen(function (msg) { return true; }, function (msg) {
-        if (msg.output && msg.terminalId && msg.terminalId == $scope.terminalId) {
+        if (msg.command && msg.command == 'terminal-output' && msg.terminalId && msg.terminalId == $scope.terminalId) {
             
             if (!$scope.selected)
                 $scope.pendingOutput = true;
@@ -178,6 +178,11 @@
             $scope.$broadcast('terminal-output', {
                 output: true,
                 text: [msg.output]
+            });
+
+            $scope.$broadcast('terminal-command', {
+                command: "change-prompt",
+                prompt: { path: msg.currentPath }
             });
 
             $scope.$$phase || $scope.$apply();

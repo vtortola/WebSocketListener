@@ -38,8 +38,11 @@ namespace TerminalServer.Server.CLI
         readonly SubscriptionManager<String> _subscriptors;
         readonly CancellationTokenSource _cancel;
         readonly ILogger _log;
+        String _lastCommand = null;
+        Boolean _nextIsPath = false;
 
         public String Type { get { return ConsoleSessionFactory.TypeName; } }
+        public String CurrentPath { get; private set; }
         public ConsoleSession(ILogger log)
         {
             _log = log;
@@ -56,13 +59,34 @@ namespace TerminalServer.Server.CLI
                     RedirectStandardInput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
-                    WorkingDirectory = "C:\\"
+                    WorkingDirectory = CurrentPath = "C:\\"
                 }
             };
 
             _proc.Start();
             Task.Run((Func<Task>)ReadAsync);
             Task.Run((Func<Task>)ReadErrorAsync);
+        }
+        private void Emit(String line)
+        {
+            line = line.Trim();
+            if (_nextIsPath)
+            {
+                CurrentPath = line;
+                _nextIsPath = false;
+                return;
+            }
+            if (line == "XXX")
+            {
+                _nextIsPath = true;
+                return;
+            }
+            if (_lastCommand != null && line.EndsWith(_lastCommand))
+            {
+                return;
+            }
+
+            _subscriptors.OnNext(line);
         }
 
         private async Task ReadAsync()
@@ -73,7 +97,7 @@ namespace TerminalServer.Server.CLI
                 {
                     var rline = await _proc.StandardOutput.ReadLineAsync().ConfigureAwait(false);
                     if (rline != null)
-                        _subscriptors.OnNext(rline);
+                        Emit(rline);
                 }
                 catch (TaskCanceledException)
                 {
@@ -94,7 +118,7 @@ namespace TerminalServer.Server.CLI
                 {
                     var rline = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
                     if (rline != null)
-                        _subscriptors.OnNext(rline);
+                        Emit(rline);
                 }
                 catch (TaskCanceledException)
                 {
@@ -121,7 +145,8 @@ namespace TerminalServer.Server.CLI
         }
         public void OnNext(String value)
         {
-            _proc.StandardInput.WriteLine(value);
+            _lastCommand = value + " & echo XXX & cd";
+            _proc.StandardInput.WriteLine(_lastCommand);
         }
 
         public IDisposable Subscribe(IObserver<String> observer)
