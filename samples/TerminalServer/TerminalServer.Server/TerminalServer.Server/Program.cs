@@ -1,21 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using TerminalServer.Server.CLI;
-using TerminalServer.Server.CLI.Control;
-using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.Serialization;
-using TerminalServer.Server.Messaging.TerminalControl;
-using vtortola.WebSockets;
-using Ninject;
-using Ninject.Parameters;
-using vtortola.WebSockets.Rfc6455;
-using System.Collections.Concurrent;
 using TerminalServer.Server.Infrastructure;
+using TerminalServer.Server.Session;
+using vtortola.WebSockets;
 
 namespace TerminalServer.Server
 {

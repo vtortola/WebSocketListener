@@ -2,15 +2,10 @@
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.Server.Messaging.TerminalControl;
-using TerminalServer.Server.Messaging.TerminalControl.Requests;
 
-namespace TerminalServer.Server.Messaging.Serialization
+namespace TerminalServer.Server.Messaging
 {
     public class DefaultEventSerializator : IEventSerializator
     {

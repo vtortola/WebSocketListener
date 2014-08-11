@@ -1,21 +1,14 @@
-﻿using Ninject.Parameters;
+﻿using Ninject;
+using Ninject.Parameters;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.Server.Messaging;
-using vtortola.WebSockets;
-using Ninject;
-using TerminalServer.Server.Messaging.Serialization;
-using TerminalServer.Server.Messaging.TerminalControl;
-using TerminalServer.Server.CLI.Control;
-using TerminalServer.Server.CLI;
-using TerminalServer.Server.Infrastructure;
 using System.Net;
+using System.Threading.Tasks;
+using TerminalServer.Server.Infrastructure;
+using vtortola.WebSockets;
 
-namespace TerminalServer.Server
+namespace TerminalServer.Server.Session
 {
     public class SessionManager
     {

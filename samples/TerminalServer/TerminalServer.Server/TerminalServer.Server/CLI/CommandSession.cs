@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TerminalServer.Server.Infrastructure;
-using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl.Events;
 
 namespace TerminalServer.Server.CLI
 {
@@ -34,6 +29,8 @@ namespace TerminalServer.Server.CLI
 
     public class ConsoleSession : ICliSession
     {
+        static readonly String _preCDID = "xx_vtortola_xx";
+
         readonly Process _proc;
         readonly SubscriptionManager<String> _subscriptors;
         readonly CancellationTokenSource _cancel;
@@ -69,24 +66,17 @@ namespace TerminalServer.Server.CLI
         }
         private void Emit(String line)
         {
-            line = line.Trim();
             if (_nextIsPath)
             {
                 CurrentPath = line;
                 _nextIsPath = false;
-                return;
             }
-            if (line == "XXX")
-            {
+            else if (line == _preCDID)
                 _nextIsPath = true;
+            else if (_lastCommand != null && line.EndsWith(_lastCommand))
                 return;
-            }
-            if (_lastCommand != null && line.EndsWith(_lastCommand))
-            {
-                return;
-            }
-
-            _subscriptors.OnNext(line);
+            else
+                _subscriptors.OnNext(line);
         }
 
         private async Task ReadAsync()
@@ -135,18 +125,25 @@ namespace TerminalServer.Server.CLI
         {
             _cancel.Cancel();
             _proc.Dispose();
+            //_subscriptors.OnCompleted();
             _log.Debug(this.GetType().Name + " OnCompleted");
         }
         public void OnError(Exception error)
         {
             _cancel.Cancel();
             _proc.Dispose();
+            _subscriptors.OnError(error);
             _log.Debug(this.GetType().Name + " OnError");
         }
         public void OnNext(String value)
         {
-            _lastCommand = value + " & echo XXX & cd";
-            _proc.StandardInput.WriteLine(_lastCommand);
+            if (value.ToLowerInvariant() == "exit")
+                OnCompleted();
+            else
+            {
+                _lastCommand = value + " & echo " + _preCDID + "& cd";
+                _proc.StandardInput.WriteLine(_lastCommand);
+            }
         }
 
         public IDisposable Subscribe(IObserver<String> observer)

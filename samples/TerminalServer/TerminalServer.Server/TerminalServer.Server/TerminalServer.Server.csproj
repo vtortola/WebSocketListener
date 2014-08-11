@@ -62,11 +62,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CLI\CliSessionAbstractFactory.cs" />
-    <Compile Include="CLI\Control\CliControl.cs" />
+    <Compile Include="Session\CliSessions.cs" />
     <Compile Include="CLI\CommandSession.cs" />
-    <Compile Include="CLI\Control\CloseTerminalRequestHandler.cs" />
-    <Compile Include="CLI\Control\CreateTerminalRequestHandler.cs" />
-    <Compile Include="CLI\Control\InputTerminalRequestHandler.cs" />
+    <Compile Include="Messaging\TerminalControl\Handlers\CloseTerminalRequestHandler.cs" />
+    <Compile Include="Messaging\TerminalControl\Handlers\CreateTerminalRequestHandler.cs" />
+    <Compile Include="Messaging\TerminalControl\Handlers\InputTerminalRequestHandler.cs" />
     <Compile Include="CLI\_ICliSessionFactory.cs" />
     <Compile Include="CLI\PowerShellSession.cs" />
     <Compile Include="CLI\_ICliSession.cs" />
@@ -93,9 +93,9 @@
     <Compile Include="Infrastructure\_ISystemInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SessionManager.cs" />
-    <Compile Include="TerminalServerInjection.cs" />
-    <Compile Include="UserSession.cs" />
+    <Compile Include="Session\SessionManager.cs" />
+    <Compile Include="Infrastructure\TerminalServerInjection.cs" />
+    <Compile Include="Session\UserSession.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

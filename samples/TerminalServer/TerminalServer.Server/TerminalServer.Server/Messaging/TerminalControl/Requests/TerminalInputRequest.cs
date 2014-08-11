@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace TerminalServer.Server.Messaging.TerminalControl.Requests
+namespace TerminalServer.Server.Messaging
 {
     public class TerminalInputRequest:TerminalControlRequest
     {

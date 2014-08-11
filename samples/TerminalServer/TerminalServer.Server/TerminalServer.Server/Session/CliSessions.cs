@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.Server.CLI.Control;
+using TerminalServer.Server.CLI;
 using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl;
-using TerminalServer.Server.Messaging.TerminalControl.Events;
-using TerminalServer.Server.Messaging.TerminalControl.Requests;
 
-namespace TerminalServer.Server.CLI
+namespace TerminalServer.Server.Session
 {
-    public class CliControl:IDisposable
+    public class CliSessions:IDisposable
     {
         readonly IMessageBus _bus;
         readonly ILogger _log;
@@ -25,7 +20,7 @@ namespace TerminalServer.Server.CLI
             public CliAdapter Session;
             public IDisposable Subscription;
         }
-        public CliControl(IMessageBus bus, ILogger log)
+        public CliSessions(IMessageBus bus, ILogger log)
         {
             _bus = bus;
             _log = log;
@@ -65,7 +60,7 @@ namespace TerminalServer.Server.CLI
             _sessions.Clear();
         }
 
-        ~CliControl()
+        ~CliSessions()
         {
             _log.Debug(this.GetType().Name + " destroy");
         }

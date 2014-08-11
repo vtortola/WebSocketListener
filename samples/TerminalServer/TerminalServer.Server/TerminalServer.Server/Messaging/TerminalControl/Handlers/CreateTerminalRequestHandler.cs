@@ -3,23 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TerminalServer.Server.CLI;
 using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl;
+using TerminalServer.Server.Session;
 
-namespace TerminalServer.Server.CLI.Control
+namespace TerminalServer.Server.Messaging
 {
     public class CreateTerminalRequestHandler : IObserver<RequestBase>, IObservable<EventBase>
     {
         readonly CliSessionAbstractFactory _factory;
-        readonly CliControl _control;
+        readonly CliSessions _sessions;
         readonly List<IObserver<EventBase>> _subscriptions;
         readonly ILogger _log;
 
-        public CreateTerminalRequestHandler(CliControl control, CliSessionAbstractFactory factory, ILogger log)
+        public CreateTerminalRequestHandler(CliSessions sessions, CliSessionAbstractFactory factory, ILogger log)
         {
             _factory = factory;
-            _control = control;
+            _sessions = sessions;
             _log = log;
             _subscriptions = new List<IObserver<EventBase>>();
         }
@@ -41,7 +42,7 @@ namespace TerminalServer.Server.CLI.Control
 
             var cte = (CreateTerminalRequest)req;
             var cli = _factory.Create(cte.Type);
-            _control.AddSession(cli);
+            _sessions.AddSession(cli);
             foreach (var subscription in _subscriptions)
                 subscription.OnNext(new CreatedTerminalEvent(cli.Id, cli.Type, cte.CorrelationId));
         }

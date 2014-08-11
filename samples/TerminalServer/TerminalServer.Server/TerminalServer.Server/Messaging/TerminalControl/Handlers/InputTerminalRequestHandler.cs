@@ -1,23 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TerminalServer.Server.Infrastructure;
-using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl;
-using TerminalServer.Server.Messaging.TerminalControl.Events;
-using TerminalServer.Server.Messaging.TerminalControl.Requests;
+using TerminalServer.Server.Session;
 
-namespace TerminalServer.Server.CLI.Control
+namespace TerminalServer.Server.Messaging
 {
     public class InputTerminalRequestHandler : IObserver<RequestBase>
     {
-        readonly CliControl _control;
+        readonly CliSessions _sessions;
         readonly ILogger _log;
-        public InputTerminalRequestHandler(CliControl control, ILogger log)
+        public InputTerminalRequestHandler(CliSessions sessions, ILogger log)
         {
-            _control = control;
+            _sessions = sessions;
             _log = log;
         }
         public void OnCompleted()
@@ -34,7 +27,7 @@ namespace TerminalServer.Server.CLI.Control
             var ti = req as TerminalInputRequest;
             if (ti != null)
             {
-                var cli = _control.GetSession(ti.TerminalId);
+                var cli = _sessions.GetSession(ti.TerminalId);
                 if(cli != null)
                     cli.OnNext(ti);
             }

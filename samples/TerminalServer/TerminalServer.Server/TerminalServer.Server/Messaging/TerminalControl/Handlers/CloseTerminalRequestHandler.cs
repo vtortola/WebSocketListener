@@ -1,24 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TerminalServer.Server.Infrastructure;
-using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl;
-using TerminalServer.Server.Messaging.TerminalControl.Events;
-using TerminalServer.Server.Messaging.TerminalControl.Requests;
+using TerminalServer.Server.Session;
 
-namespace TerminalServer.Server.CLI.Control
+namespace TerminalServer.Server.Messaging
 {
     public class CloseTerminalRequestHandler : IObserver<RequestBase>, IObservable<EventBase>
     {
-        readonly CliControl _control;
+        readonly CliSessions _sessions;
         readonly List<IObserver<EventBase>> _subscriptions;
         readonly ILogger _log;
-        public CloseTerminalRequestHandler(CliControl control, ILogger log)
+        public CloseTerminalRequestHandler(CliSessions sessions, ILogger log)
         {
-            _control = control;
+            _sessions = sessions;
             _log = log;
             _subscriptions = new List<IObserver<EventBase>>();
         }
@@ -39,8 +33,8 @@ namespace TerminalServer.Server.CLI.Control
                 return;
 
             var cte = (CloseTerminalRequest)req;
-            var cli =_control.GetSession(cte.TerminalId);
-            _control.Deattach(cli);
+            var cli =_sessions.GetSession(cte.TerminalId);
+            _sessions.Deattach(cli);
             cli.OnCompleted();
             foreach (var subscription in _subscriptions)
                 subscription.OnNext(new ClosedTerminalEvent(cli.Id));

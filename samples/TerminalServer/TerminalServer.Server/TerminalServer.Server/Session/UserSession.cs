@@ -1,32 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using TerminalServer.Server.CLI;
-using TerminalServer.Server.CLI.Control;
 using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl;
-using vtortola.WebSockets;
 
-namespace TerminalServer.Server
+namespace TerminalServer.Server.Session
 {
     public class UserSession:IDisposable
     {
         readonly IMessageBus _bus;
         readonly List<IDisposable> _subscriptions;
-        readonly CliControl _control;
+        readonly CliSessions _sessions;
         readonly List<EventBase> _init;
         readonly ILogger _log;
         public String SessionId { get; private set; }
         public Boolean IsConnected { get { return _bus.IsConnected; } }
 
-        public UserSession(String sessionId, CliControl control, IMessageBus bus, IObserver<RequestBase>[] observers, ILogger log)
+        public UserSession(String sessionId, CliSessions sessions, IMessageBus bus, IObserver<RequestBase>[] observers, ILogger log)
         {
             _subscriptions = new List<IDisposable>();
-            _control = control;
+            _sessions = sessions;
             _bus = bus;
             _log = log;
             _init = new List<EventBase>();
@@ -47,10 +40,10 @@ namespace TerminalServer.Server
             foreach (var sub in _subscriptions)
                 sub.Dispose();
 
-            foreach (var cli in _control.Sessions.ToList())
+            foreach (var cli in _sessions.Sessions.ToList())
             {
-                _control.Deattach(cli);
-                session._control.AddSession(cli);
+                _sessions.Deattach(cli);
+                session._sessions.AddSession(cli);
                 session._init.Add(new CreatedTerminalEvent(cli.Id, cli.Type, null));
             }
         }
@@ -59,7 +52,7 @@ namespace TerminalServer.Server
             _log.Debug("UserSession disposed: {0}",SessionId);
             Console.WriteLine();
             _bus.Dispose();
-            _control.Dispose();
+            _sessions.Dispose();
             foreach (var subscription in _subscriptions)
                 subscription.Dispose();
         }

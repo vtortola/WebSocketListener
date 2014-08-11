@@ -1,22 +1,12 @@
 ﻿using Ninject;
-using Ninject.Activation;
-using Ninject.Modules;
-using Ninject.Parameters;
-using Ninject.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.Server.CLI;
-using TerminalServer.Server.CLI.Control;
-using TerminalServer.Server.Infrastructure;
-using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.Serialization;
 using Ninject.Extensions.NamedScope;
-using log4net;
+using Ninject.Modules;
+using System;
+using TerminalServer.Server.CLI;
+using TerminalServer.Server.Messaging;
+using TerminalServer.Server.Session;
 
-namespace TerminalServer.Server
+namespace TerminalServer.Server.Infrastructure
 {
     public class TerminalServerInjection:StandardKernel
     {
@@ -40,7 +30,7 @@ namespace TerminalServer.Server
                 this.Bind<SessionManager>().ToConstant(_sessionManager);
                 this.Bind<ISystemInfo>().To<SystemInfo>().InSingletonScope();
 
-                this.Bind<CliControl>().ToSelf().InCallScope();
+                this.Bind<CliSessions>().ToSelf().InCallScope();
                 this.Bind<CliSessionAbstractFactory>().ToSelf().InSingletonScope();
 
                 this.Bind<IMessageBus>().To<WebSocketMessageBus>().InCallScope();

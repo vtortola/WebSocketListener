@@ -1,15 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.Server.CLI;
+using TerminalServer.Server.Infrastructure;
 using TerminalServer.Server.Messaging;
-using TerminalServer.Server.Messaging.TerminalControl;
-using TerminalServer.Server.Messaging.TerminalControl.Events;
-using TerminalServer.Server.Messaging.TerminalControl.Requests;
 
-namespace TerminalServer.Server.Infrastructure
+namespace TerminalServer.Server.CLI
 {
     public class CliAdapter : IObservable<EventBase>, IObserver<RequestBase>
     {
