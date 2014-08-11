@@ -7,9 +7,8 @@ using TerminalServer.Server.Messaging;
 
 namespace TerminalServer.Server.CLI
 {
-    public interface ICliSession:IObserver<String>, IObservable<EventBase>, IDisposable
+    public interface ICliSession:IObserver<String>, IObservable<String>
     {
-        String Id { get; }
         String Type { get; }
     }
 }

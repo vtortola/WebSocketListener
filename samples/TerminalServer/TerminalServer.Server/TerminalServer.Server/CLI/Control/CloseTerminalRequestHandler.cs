@@ -41,7 +41,7 @@ namespace TerminalServer.Server.CLI.Control
             var cte = (CloseTerminalRequest)req;
             var cli =_control.GetSession(cte.TerminalId);
             _control.Deattach(cli);
-            cli.Dispose();
+            cli.OnCompleted();
             foreach (var subscription in _subscriptions)
                 subscription.OnNext(new ClosedTerminalEvent(cli.Id));
         }

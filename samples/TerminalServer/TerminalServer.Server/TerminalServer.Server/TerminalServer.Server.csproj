@@ -70,11 +70,13 @@
     <Compile Include="CLI\_ICliSessionFactory.cs" />
     <Compile Include="CLI\PowerShellSession.cs" />
     <Compile Include="CLI\_ICliSession.cs" />
+    <Compile Include="Infrastructure\CliAdapter.cs" />
     <Compile Include="Infrastructure\ILogger.cs" />
     <Compile Include="Infrastructure\Log4NetLogger.cs" />
+    <Compile Include="Infrastructure\SubscriptionManager.cs" />
     <Compile Include="Messaging\IMessageBus.cs" />
     <Compile Include="Messaging\Serialization\DefaultEventSerializator.cs" />
-    <Compile Include="Messaging\Subscription.cs" />
+    <Compile Include="Infrastructure\Subscription.cs" />
     <Compile Include="Messaging\TerminalControl\Events\ClosedTerminalEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\CreatedTerminalEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\TerminalOutputEvent.cs" />

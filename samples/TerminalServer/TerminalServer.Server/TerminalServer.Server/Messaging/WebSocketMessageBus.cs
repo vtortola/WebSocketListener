@@ -20,7 +20,7 @@ namespace TerminalServer.Server.Messaging
         readonly IEventSerializator _serializator;
         Task _readTask, _sendTask;
         readonly BufferBlock<EventBase> _sendBuffer;
-        readonly List<IObserver<RequestBase>> _subscribers;
+        readonly SubscriptionManager<RequestBase> _subscribers;
         readonly ILogger _log;
 
         public bool IsConnected { get { return _websocket.IsConnected; } }
@@ -31,7 +31,7 @@ namespace TerminalServer.Server.Messaging
             _cancel = new CancellationTokenSource();
             _serializator = serializator;
             _sendBuffer = new BufferBlock<EventBase>();
-            _subscribers = new List<IObserver<RequestBase>>();
+            _subscribers = new SubscriptionManager<RequestBase>(this);
             _log = log;
         }
         public void Start()
@@ -60,8 +60,7 @@ namespace TerminalServer.Server.Messaging
                             if (e == null)
                                 continue;
 
-                            foreach (var subscriber in _subscribers)
-                                subscriber.OnNext(e);
+                            _subscribers.OnNext(e);
                         }
                         catch (Exception error)
                         {
@@ -72,13 +71,12 @@ namespace TerminalServer.Server.Messaging
             }
             catch (Exception fatal)
             {
-                _log.Fatal("WebSocketMessageBus", fatal);
+                _subscribers.OnError(fatal);
             }
             finally
             {
                 _websocket.Close();
-                foreach (var subs in _subscribers.ToList())
-                    subs.OnCompleted();
+                _subscribers.OnCompleted();
             }
         }
         private async Task SendAsync()
@@ -100,14 +98,12 @@ namespace TerminalServer.Server.Messaging
             if (evts != null)
                 observable = evts.Subscribe(this);
 
-            _subscribers.Add(observer);
-            return new Subscription(() =>
-            {
-                if (observable != null)
-                    observable.Dispose();
-
-                _subscribers.Remove(observer);
-            });
+            return _subscribers.Subscribe(observer,
+                                          () =>
+                                          {
+                                              if(observable!=null)
+                                                observable.Dispose();
+                                          });
         }
         public void OnCompleted()
         {
@@ -127,7 +123,7 @@ namespace TerminalServer.Server.Messaging
             _log.Debug(this.GetType().Name + " dispose");
             OnCompleted();
             Task.WaitAll(_readTask, _sendTask);
-            _subscribers.Clear();
+            _subscribers.Dispose();
             _websocket.Dispose();
         }
 

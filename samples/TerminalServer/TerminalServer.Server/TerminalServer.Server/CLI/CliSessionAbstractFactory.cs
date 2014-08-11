@@ -19,12 +19,15 @@ namespace TerminalServer.Server.CLI
             _factories = factories;
             _sysInfo = sysInfo;
         }
-        public ICliSession Create(String type)
+        public CliAdapter Create(String type)
         {
             foreach (var factory in _factories)
             {
                 if (factory.Type == type)
-                    return factory.Create(_sysInfo.Guid().ToString());
+                {
+                    var adapter = new CliAdapter(_sysInfo.Guid().ToString(), factory.Create());
+                    return adapter;
+                }
             }
             throw new ArgumentException("There is not such CLI factory");
         }

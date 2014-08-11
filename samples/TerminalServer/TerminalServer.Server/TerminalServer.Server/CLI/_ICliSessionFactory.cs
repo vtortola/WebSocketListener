@@ -11,6 +11,6 @@ namespace TerminalServer.Server.CLI
     public interface ICliSessionFactory
     {
         String Type { get; }
-        ICliSession Create(String id);
+        ICliSession Create();
     }
 }

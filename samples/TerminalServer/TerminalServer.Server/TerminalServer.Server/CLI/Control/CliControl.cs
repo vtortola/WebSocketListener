@@ -18,11 +18,11 @@ namespace TerminalServer.Server.CLI
         readonly ILogger _log;
         readonly Dictionary<String, SessionState> _sessions;
 
-        public IEnumerable<ICliSession> Sessions { get { return _sessions.Values.Select(x=>x.Session); } }
+        public IEnumerable<CliAdapter> Sessions { get { return _sessions.Values.Select(x=>x.Session); } }
 
         class SessionState
         {
-            public ICliSession Session;
+            public CliAdapter Session;
             public IDisposable Subscription;
         }
         public CliControl(IMessageBus bus, ILogger log)
@@ -31,13 +31,13 @@ namespace TerminalServer.Server.CLI
             _log = log;
             _sessions = new Dictionary<String, SessionState>();
         }
-        public void AddSession(ICliSession session)
+        public void AddSession(CliAdapter session)
         {
             var state = new SessionState() { Session = session };
             _sessions.Add(session.Id, state );
             state.Subscription = state.Session.Subscribe(_bus);
         }
-        public void Deattach(ICliSession session)
+        public void Deattach(CliAdapter session)
         {
             SessionState s;
             if (_sessions.TryGetValue(session.Id, out s))
@@ -46,7 +46,7 @@ namespace TerminalServer.Server.CLI
                 _sessions.Remove(session.Id);
             }
         }
-        public ICliSession GetSession(String id)
+        public CliAdapter GetSession(String id)
         {
             SessionState s;
             if (_sessions.TryGetValue(id, out s))
@@ -59,7 +59,7 @@ namespace TerminalServer.Server.CLI
             _log.Debug(this.GetType().Name + " dispose");
             foreach (var cli in _sessions.Values)
             {
-                cli.Session.Dispose();
+                cli.Session.OnCompleted();
                 cli.Subscription.Dispose();
             }
             _sessions.Clear();

@@ -36,7 +36,7 @@ namespace TerminalServer.Server.CLI.Control
             {
                 var cli = _control.GetSession(ti.TerminalId);
                 if(cli != null)
-                    cli.OnNext(ti.Input);
+                    cli.OnNext(ti);
             }
         }
 

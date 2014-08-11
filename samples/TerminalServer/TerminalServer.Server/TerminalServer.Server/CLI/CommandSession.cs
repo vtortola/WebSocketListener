@@ -26,27 +26,26 @@ namespace TerminalServer.Server.CLI
             _log = log;
         }
 
-        public ICliSession Create(String id)
+        public ICliSession Create()
         {
-            return new ConsoleSession(id,_log);
+            return new ConsoleSession(_log);
         }
     }
 
     public class ConsoleSession : ICliSession
     {
         readonly Process _proc;
-        readonly List<IObserver<EventBase>> _subscriptors;
+        readonly SubscriptionManager<String> _subscriptors;
         readonly CancellationTokenSource _cancel;
         readonly ILogger _log;
-        public String Id { get; private set; }
+
         public String Type { get { return ConsoleSessionFactory.TypeName; } }
-        public ConsoleSession(String id, ILogger log)
+        public ConsoleSession(ILogger log)
         {
             _log = log;
             _cancel = new CancellationTokenSource();
-            _subscriptors = new List<IObserver<EventBase>>();
+            _subscriptors = new SubscriptionManager<String>(this);
 
-            Id = id;
             _proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -74,11 +73,16 @@ namespace TerminalServer.Server.CLI
                 {
                     var rline = await _proc.StandardOutput.ReadLineAsync().ConfigureAwait(false);
                     if (rline != null)
-                        Propagate(new TerminalOutputEvent(Id,rline));
+                        _subscriptors.OnNext(rline);
                 }
-                catch(Exception ex)
+                catch (TaskCanceledException)
                 {
+                }
+                catch (Exception ex)
+                {
+                    _cancel.Cancel();
                     _log.Error("cmd.exe session error", ex);
+                    _subscriptors.OnError(ex);
                 }
             }
         }
@@ -90,42 +94,39 @@ namespace TerminalServer.Server.CLI
                 {
                     var rline = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
                     if (rline != null)
-                        Propagate(new TerminalOutputEvent(Id, rline));
+                        _subscriptors.OnNext(rline);
+                }
+                catch (TaskCanceledException)
+                {
                 }
                 catch (Exception ex)
                 {
+                    _cancel.Cancel();
                     _log.Error("cmd.exe session error", ex);
+                    _subscriptors.OnError(ex);
                 }
-            }
-        }
-        private void Propagate(EventBase output)
-        {
-            foreach (var subscriptor in _subscriptors)
-            {
-                subscriptor.OnNext(output);
             }
         }
         public void OnCompleted()
         {
+            _cancel.Cancel();
+            _proc.Dispose();
+            _log.Debug(this.GetType().Name + " OnCompleted");
         }
         public void OnError(Exception error)
         {
+            _cancel.Cancel();
+            _proc.Dispose();
+            _log.Debug(this.GetType().Name + " OnError");
         }
         public void OnNext(String value)
         {
             _proc.StandardInput.WriteLine(value);
         }
 
-        public IDisposable Subscribe(IObserver<EventBase> observer)
+        public IDisposable Subscribe(IObserver<String> observer)
         {
-            _subscriptors.Add(observer);
-            return new Subscription(() => _subscriptors.Remove(observer));
-        }
-        public void Dispose()
-        {
-            _proc.Dispose();
-            _cancel.Cancel();
-            _log.Debug(this.GetType().Name + " dispose");
+            return _subscriptors.Subscribe(observer);
         }
 
        ~ConsoleSession()
