@@ -1,70 +1,114 @@
-﻿html {
-    height:100%;
-}
-body{
-    background-color:#dedede;
-    height:100%;
-}
-
-#content{
-    height:100%;
-    width:1280px;
-    margin:auto auto;
-    background-color:#fff;
-}
-
-#header{
+﻿#header{
     font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
-    text-align:right;
-    background-color:#3EAA76;
-    margin:10px 20px;
-    height:80px;
-    vertical-align:middle;
-    position:relative;
+    background-color:#333;
+    height:40px;
+    width:100%;
+    position:fixed;
     color:#fff;
+    top:0px;
+    z-index:200;
+    border-bottom:1px solid #dedede;
 }
-
 #header h1{
     position:absolute;
-    bottom:0;
-    right:0;
-    padding-right:50px;
+    font-size:18px;
+    margin:10px;
 }
 
-#terminals {
-    width:1000px;
-    display:inline-block;
-}
-
-#sidebar{
+#sidebar {
     width:200px;
-    display: inline-block;
-    vertical-align: top;
-    text-align:center;
+    padding:40px 5px 5px 5px;
+    position:fixed;
+    top:40px;
+    min-height:800px;
+    background: #ededed; /* Old browsers */
+    background: -moz-linear-gradient(top,  #ededed 0%, #f6f6f6 89%, #ffffff 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ededed), color-stop(89%,#f6f6f6), color-stop(100%,#ffffff)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #ededed 0%,#f6f6f6 89%,#ffffff 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #ededed 0%,#f6f6f6 89%,#ffffff 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #ededed 0%,#f6f6f6 89%,#ffffff 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #ededed 0%,#f6f6f6 89%,#ffffff 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ededed', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
 }
-
-.transparent{
+#sidebar div{
+    margin-left:20px;
+}
+#content{
+    margin-top:40px;
+    margin-left:200px;
+    background-color:#fff;
+    padding:20px 5px 5px 2px;
+}
+.transparent {
     color:transparent;
 }
+.transparent:hover {
+    color:transparent;
+}
+.glyphicon-off{
+    color:red;
+}
+.glyphicon:hover{
+    text-decoration:none;
+}
+#header .glyphicon{
+    color:white;
+    height:28px;
+    width:28px;
+    font-size:28px;
+    float:right;
+    margin-top:6px;
+    margin-right:20px;
+}
+.nav li > a{
+    border: 1px solid rgba(150, 150, 150, 0.16);
+}
+.nav .active > a{
+    background: #ededed; /* Old browsers */
+    background: -moz-linear-gradient(top,  #ededed 0%, #f6f6f6 53%, #ffffff 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ededed), color-stop(53%,#f6f6f6), color-stop(100%,#ffffff)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ededed', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+    border-bottom-color: #FFF !important;
+}
 
-.terminal-container{
-    margin: 0 10px 10px 10px;
+.terminal-tab-heading{
+    margin-right:10px;
 }
-.terminal-container .terminal {
-    background:none;
-    background-color:#000;
-    box-shadow:none;
-    border-radius:0px;
+.terminal-container {
+    margin: 10px 0 0 0;
 }
-.terminal-container .terminal-viewport{
-    margin:0;
-    padding:10px;
-    overflow-y:scroll;
-    height:100%;
+.terminal-line{
+    color:#fff;
 }
-
-.tab-content{
+.tab-content {
     border-bottom: 1px solid #DDD;
     border-right: 1px solid #DDD;
     border-left: 1px solid #DDD;
+    margin-left:5px;
+}
+.btn-group-vertical{
+    display:block;
+}
+.alert {
+    margin-left:20px;
+}
+.command-exe{
+    background-image:url(../images/command.png);
+    padding-left:40px !important;
+    background-position:10px 8px;
+    background-size:20px;
+    background-repeat:no-repeat;
+    text-align:left;
+}
+.powershell-exe{
+    background-image:url(../images/powershell.png);
+    padding-left:40px !important;
+    background-position:10px 8px;
+    background-size:20px;
+    background-repeat:no-repeat;
+    text-align:left;
 }

@@ -32,7 +32,7 @@ namespace TerminalServer.Server.Session
         {
             while (true)
             {
-                await Task.Delay(5000).ConfigureAwait(false);
+                await Task.Delay(10000).ConfigureAwait(false);
 
                 UserSession disconnected = _sessions.Values.FirstOrDefault(v=> !v.IsConnected);
                 while (disconnected != null)

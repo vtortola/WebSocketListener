@@ -8,6 +8,9 @@
         var me = {};
         var listeners = [];
         var oneListeners = [];
+
+        me.isConnected = false;
+
         oneListeners.removeOne = function (listener) {
             var index = oneListeners.indexOf(listener);
             if(index!=-1)
@@ -45,6 +48,7 @@
         var onopen = function () {
             console.log('onopen');
             $rootScope.websocketAvailable = true;
+            me.isConnected = true;
             $rootScope.$$phase || $rootScope.$apply();
             if ($rootScope.queuedMessages) {
                 for (var i = 0; i < $rootScope.queuedMessages.length; i++) {
@@ -57,11 +61,14 @@
 
         var onclose = function () {
             console.log('onclose');
+            me.isConnected = false;
             $rootScope.websocketAvailable = false;
             $rootScope.$$phase || $rootScope.$apply();
             $rootScope.queuedMessages = $rootScope.queuedMessages || [];
             
-            //ws = connect();
+            setTimeout(function () {
+                ws = connect();
+            }, 5000);
         };
 
         var onmessage = function (msg) {
@@ -121,11 +128,29 @@
     return connection();
 }])
 
-.controller("mainController", ["$scope", "$connection", function ($scope, $connection) {
+.controller("mainController", ["$scope", "$connection","$rootScope", function ($scope, $connection, $rootScope) {
+
+    $rootScope.alerts = [];
+    $rootScope.closeAlert = function (index) {
+        $rootScope.alerts.splice(index, 1);
+    };
+    $rootScope.addAlert = function (message) {
+        $rootScope.alerts.push(message);
+    }
+    $rootScope.checkConnection = function () {
+        if (!$connection.isConnected) {
+            $rootScope.addAlert({ msg: "WebSocket is not connected.", type: "danger" });
+            return false;
+        }
+        return true;
+    };
 
     $scope.terminals = [];
 
     $scope.createConsole = function (type) {
+        if (!$rootScope.checkConnection()) {
+            return;
+        }
         var crrId = $connection.nextCorrelationId();
         $connection.listenOnce(function (msg) { msg.correlationId && msg.correlationId == crrId; })
                    .then(function (msg) {
@@ -160,13 +185,14 @@
     });
 }])
 
-.controller("consoleController", ["$scope", "$connection", function ($scope, $connection) {
+.controller("consoleController", ["$scope", "$connection", "$rootScope", function ($scope, $connection, $rootScope) {
 
     $scope.terminalId = "empty";
     var terminal = null;
 
     $scope.init = function (t) {
         terminal = t;
+        terminal.type = t.currentPath;
         $scope.terminalId = t.id;
         setTimeout(function () {
             $scope.$broadcast('terminal-command', {
@@ -191,6 +217,7 @@
                 command: "change-prompt",
                 prompt: { path: msg.currentPath }
             });
+            terminal.type = msg.currentPath;
 
             $scope.$$phase || $scope.$apply();
         }
@@ -209,6 +236,8 @@
     };
 
     $scope.send = function (cmd) {
+        if (!$rootScope.checkConnection())
+            return;
         $connection.send({
             label: "terminal-control-request",
             command: "terminal-input",
