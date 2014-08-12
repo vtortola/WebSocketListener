@@ -62,7 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CLI\CliSessionAbstractFactory.cs" />
-    <Compile Include="Session\CliSessions.cs" />
+    <Compile Include="Session\SessionHub.cs" />
     <Compile Include="CLI\CommandSession.cs" />
     <Compile Include="Messaging\TerminalControl\Handlers\CloseTerminalRequestHandler.cs" />
     <Compile Include="Messaging\TerminalControl\Handlers\CreateTerminalRequestHandler.cs" />

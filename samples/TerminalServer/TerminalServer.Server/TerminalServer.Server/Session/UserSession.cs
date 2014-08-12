@@ -6,17 +6,17 @@ using TerminalServer.Server.Messaging;
 
 namespace TerminalServer.Server.Session
 {
-    public class UserSession:IDisposable
+    public class UserSession: IDisposable
     {
         readonly IMessageBus _bus;
         readonly List<IDisposable> _subscriptions;
-        readonly CliSessions _sessions;
+        readonly SessionHub _sessions;
         readonly List<EventBase> _init;
         readonly ILogger _log;
         public String SessionId { get; private set; }
         public Boolean IsConnected { get { return _bus.IsConnected; } }
 
-        public UserSession(String sessionId, CliSessions sessions, IMessageBus bus, IObserver<RequestBase>[] observers, ILogger log)
+        public UserSession(String sessionId, SessionHub sessions, IMessageBus bus, IObserver<RequestBase>[] observers, ILogger log)
         {
             _subscriptions = new List<IDisposable>();
             _sessions = sessions;
@@ -32,7 +32,7 @@ namespace TerminalServer.Server.Session
         {
             _bus.Start();
             foreach (var e in _init)
-                _bus.OnNext(e);
+                _bus.Send(e);
             _init.Clear();
         }
         public void TransferTo(UserSession session)
@@ -44,7 +44,7 @@ namespace TerminalServer.Server.Session
             {
                 _sessions.Deattach(cli);
                 session._sessions.AddSession(cli);
-                session._init.Add(new CreatedTerminalEvent(cli.Id, cli.Type, null));
+                session._init.Add(new CreatedTerminalEvent(cli.Id, cli.Type, cli.CurrentPath, null));
             }
         }
         public void Dispose()

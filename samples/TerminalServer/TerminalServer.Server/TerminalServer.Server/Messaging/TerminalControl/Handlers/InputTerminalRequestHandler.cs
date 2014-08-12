@@ -6,9 +6,9 @@ namespace TerminalServer.Server.Messaging
 {
     public class InputTerminalRequestHandler : IObserver<RequestBase>
     {
-        readonly CliSessions _sessions;
+        readonly SessionHub _sessions;
         readonly ILogger _log;
-        public InputTerminalRequestHandler(CliSessions sessions, ILogger log)
+        public InputTerminalRequestHandler(SessionHub sessions, ILogger log)
         {
             _sessions = sessions;
             _log = log;
@@ -29,7 +29,7 @@ namespace TerminalServer.Server.Messaging
             {
                 var cli = _sessions.GetSession(ti.TerminalId);
                 if(cli != null)
-                    cli.OnNext(ti);
+                    cli.Input(ti);
             }
         }
 

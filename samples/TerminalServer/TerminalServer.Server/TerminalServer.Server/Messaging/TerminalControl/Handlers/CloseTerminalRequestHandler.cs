@@ -5,21 +5,16 @@ using TerminalServer.Server.Session;
 
 namespace TerminalServer.Server.Messaging
 {
-    public class CloseTerminalRequestHandler : IObserver<RequestBase>, IObservable<EventBase>
+    public class CloseTerminalRequestHandler : IObserver<RequestBase>
     {
-        readonly CliSessions _sessions;
-        readonly List<IObserver<EventBase>> _subscriptions;
+        readonly SessionHub _sessions;
+        readonly IMessageBusWrite _bus;
         readonly ILogger _log;
-        public CloseTerminalRequestHandler(CliSessions sessions, ILogger log)
+        public CloseTerminalRequestHandler(SessionHub sessions, IMessageBusWrite bus, ILogger log)
         {
             _sessions = sessions;
+            _bus = bus;
             _log = log;
-            _subscriptions = new List<IObserver<EventBase>>();
-        }
-        public IDisposable Subscribe(IObserver<EventBase> observer)
-        {
-            _subscriptions.Add(observer);
-            return new Subscription(() => _subscriptions.Remove(observer));
         }
         public void OnCompleted()
         {
@@ -35,9 +30,8 @@ namespace TerminalServer.Server.Messaging
             var cte = (CloseTerminalRequest)req;
             var cli =_sessions.GetSession(cte.TerminalId);
             _sessions.Deattach(cli);
-            cli.OnCompleted();
-            foreach (var subscription in _subscriptions)
-                subscription.OnNext(new ClosedTerminalEvent(cli.Id));
+            cli.Dispose();
+            _bus.Send(new ClosedTerminalEvent(cli.Id));
         }
     }
 }

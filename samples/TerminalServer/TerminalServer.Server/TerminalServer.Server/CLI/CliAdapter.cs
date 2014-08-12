@@ -4,40 +4,28 @@ using TerminalServer.Server.Messaging;
 
 namespace TerminalServer.Server.CLI
 {
-    public class CliAdapter : IObservable<EventBase>, IObserver<RequestBase>
+    public class CliAdapter : IObservable<EventBase>, IDisposable
     {
         readonly ICliSession _inner;
         readonly IDisposable _innerSubscription;
         readonly SubscriptionManager<EventBase> _subscriptions;
         public String Id { get; private set; }
         public String Type { get { return _inner.Type; } }
+        public String CurrentPath { get { return _inner.CurrentPath; } }
   
         public CliAdapter(String id, ICliSession cli)
         {
             _inner = cli;
             Id = id;
             _subscriptions = new SubscriptionManager<EventBase>(this);
-            _innerSubscription = _inner.Subscribe(new Wrapper((s)=>_subscriptions.OnNext(new TerminalOutputEvent(Id,s,_inner.CurrentPath)), OnError,OnCompleted));
+            _innerSubscription = _inner.Subscribe(new Wrapper((s) => _subscriptions.OnNext(new TerminalOutputEvent(Id, s, _inner.CurrentPath)),
+                                                              (e) => { _subscriptions.OnNext(new ClosedTerminalEvent(Id)); _subscriptions.OnError(e); },
+                                                              ( ) => { _subscriptions.OnNext(new ClosedTerminalEvent(Id)); _subscriptions.OnCompleted(); }));
         }
-        public void OnCompleted()
+        public void Input(RequestBase value)
         {
-            _inner.OnCompleted();
-        }
-        public void OnError(Exception error)
-        {
-            _inner.OnError(error);
-        }
-        public void OnNext(RequestBase value)
-        {
-            if (value.Label != TerminalControlRequest.Label || value.Command != TerminalInputRequest.Command)
-                return;
-
             var tcr = (TerminalInputRequest)value;
-
-            if (tcr.TerminalId != Id)
-                return;
-
-            _inner.OnNext(tcr.Input);
+            _inner.Input(tcr.Input);
         }
         public IDisposable Subscribe(IObserver<EventBase> observer)
         {
@@ -59,16 +47,18 @@ namespace TerminalServer.Server.CLI
             {
                 _onCompleted();
             }
-
             public void OnError(Exception error)
             {
                 _onError(error);
             }
-
             public void OnNext(String value)
             {
                 _onNext(value);
             }
+        }
+        public void Dispose()
+        {
+            _inner.Dispose();
         }
     }
 

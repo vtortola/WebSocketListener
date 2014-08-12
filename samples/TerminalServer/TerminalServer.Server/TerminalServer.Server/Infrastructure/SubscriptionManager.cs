@@ -17,11 +17,6 @@ namespace TerminalServer.Server.Infrastructure
             _subscriptions.Add(observer);
             return new Subscription(() => _subscriptions.Remove(observer));
         }
-        public Subscription Subscribe(IObserver<T> observer, Action extra)
-        {
-            _subscriptions.Add(observer);
-            return new Subscription(() => { _subscriptions.Remove(observer); extra(); });
-        }
         public void Remove(IObserver<T> observer)
         {
             _subscriptions.Remove(observer);

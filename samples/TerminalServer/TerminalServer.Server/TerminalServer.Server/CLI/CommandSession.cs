@@ -85,18 +85,18 @@ namespace TerminalServer.Server.CLI
             {
                 try
                 {
-                    var rline = await _proc.StandardOutput.ReadLineAsync().ConfigureAwait(false);
-                    if (rline != null)
-                        Emit(rline);
+                    var line = await _proc.StandardOutput.ReadLineAsync().ConfigureAwait(false);
+                    if (line != null)
+                        Emit(line);
                 }
                 catch (TaskCanceledException)
                 {
                 }
                 catch (Exception ex)
                 {
-                    _cancel.Cancel();
                     _log.Error("cmd.exe session error", ex);
                     _subscriptors.OnError(ex);
+                    Finish(ex);
                 }
             }
         }
@@ -106,51 +106,48 @@ namespace TerminalServer.Server.CLI
             {
                 try
                 {
-                    var rline = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
-                    if (rline != null)
-                        Emit(rline);
+                    var line = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
+                    if (line != null)
+                        Emit(line);
                 }
                 catch (TaskCanceledException)
                 {
                 }
                 catch (Exception ex)
                 {
-                    _cancel.Cancel();
                     _log.Error("cmd.exe session error", ex);
-                    _subscriptors.OnError(ex);
+                    Finish(ex);
                 }
             }
         }
-        public void OnCompleted()
+        private void Finish(Exception error)
         {
+            _log.Debug(this.GetType().Name + " Finish");
             _cancel.Cancel();
             _proc.Dispose();
-            //_subscriptors.OnCompleted();
-            _log.Debug(this.GetType().Name + " OnCompleted");
+            if(error==null)
+                _subscriptors.OnCompleted();
+            else
+                _subscriptors.OnError(error);
         }
-        public void OnError(Exception error)
-        {
-            _cancel.Cancel();
-            _proc.Dispose();
-            _subscriptors.OnError(error);
-            _log.Debug(this.GetType().Name + " OnError");
-        }
-        public void OnNext(String value)
+        public void Input(String value)
         {
             if (value.ToLowerInvariant() == "exit")
-                OnCompleted();
+                Finish(null);
             else
             {
                 _lastCommand = value + " & echo " + _preCDID + "& cd";
                 _proc.StandardInput.WriteLine(_lastCommand);
             }
         }
-
         public IDisposable Subscribe(IObserver<String> observer)
         {
             return _subscriptors.Subscribe(observer);
         }
-
+        public void Dispose()
+        {
+            Finish(null);
+        }
        ~ConsoleSession()
        {
            _log.Debug(this.GetType().Name + " destroy");

@@ -7,34 +7,46 @@ using TerminalServer.Server.Messaging;
 
 namespace TerminalServer.Server.Session
 {
-    public class CliSessions:IDisposable
+    public class SessionHub:IObserver<EventBase>, IDisposable
     {
-        readonly IMessageBus _bus;
+        readonly IMessageBusWrite _bus;
         readonly ILogger _log;
-        readonly Dictionary<String, SessionState> _sessions;
+        readonly Dictionary<String, CliSessionSubscription> _sessions;
 
-        public IEnumerable<CliAdapter> Sessions { get { return _sessions.Values.Select(x=>x.Session); } }
-
-        class SessionState
+        class CliSessionSubscription
         {
-            public CliAdapter Session;
-            public IDisposable Subscription;
+            internal CliAdapter Adapter;
+            internal IDisposable Subscription;
         }
-        public CliSessions(IMessageBus bus, ILogger log)
+
+        public IEnumerable<CliAdapter> Sessions { get { return _sessions.Values.Select(x=>x.Adapter); } }
+
+        public SessionHub(IMessageBusWrite bus, ILogger log)
         {
             _bus = bus;
             _log = log;
-            _sessions = new Dictionary<String, SessionState>();
+            _sessions = new Dictionary<String, CliSessionSubscription>();
+        }
+        public void OnCompleted()
+        {
+        }
+        public void OnError(Exception error)
+        {
+        }
+        public void OnNext(EventBase value)
+        {
+            _bus.Send(value);
         }
         public void AddSession(CliAdapter session)
         {
-            var state = new SessionState() { Session = session };
-            _sessions.Add(session.Id, state );
-            state.Subscription = state.Session.Subscribe(_bus);
+            var s = new CliSessionSubscription();
+            s.Adapter = session;
+            _sessions.Add(session.Id, s );
+            s.Subscription = session.Subscribe(this);
         }
         public void Deattach(CliAdapter session)
         {
-            SessionState s;
+            CliSessionSubscription s;
             if (_sessions.TryGetValue(session.Id, out s))
             {
                 s.Subscription.Dispose();
@@ -43,9 +55,9 @@ namespace TerminalServer.Server.Session
         }
         public CliAdapter GetSession(String id)
         {
-            SessionState s;
+            CliSessionSubscription s;
             if (_sessions.TryGetValue(id, out s))
-                return s.Session;
+                return s.Adapter;
 
             return null;
         }
@@ -53,14 +65,11 @@ namespace TerminalServer.Server.Session
         {
             _log.Debug(this.GetType().Name + " dispose");
             foreach (var cli in _sessions.Values)
-            {
-                cli.Session.OnCompleted();
                 cli.Subscription.Dispose();
-            }
             _sessions.Clear();
         }
 
-        ~CliSessions()
+        ~SessionHub()
         {
             _log.Debug(this.GetType().Name + " destroy");
         }

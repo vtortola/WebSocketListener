@@ -12,7 +12,6 @@ namespace TerminalServer.Server.Messaging
         readonly WebSocket _websocket;
         readonly CancellationTokenSource _cancel;
         readonly IEventSerializator _serializator;
-        Task _readTask, _sendTask;
         readonly BufferBlock<EventBase> _sendBuffer;
         readonly SubscriptionManager<RequestBase> _subscribers;
         readonly ILogger _log;
@@ -30,8 +29,8 @@ namespace TerminalServer.Server.Messaging
         }
         public void Start()
         {
-            _readTask = Task.Run((Func<Task>)ListAsync);
-            _sendTask = Task.Run((Func<Task>)SendAsync);
+            Task.Run((Func<Task>)ListAsync);
+            Task.Run((Func<Task>)SendAsync);
         }
         private async Task ListAsync()
         {
@@ -87,40 +86,19 @@ namespace TerminalServer.Server.Messaging
         }
         public IDisposable Subscribe(IObserver<RequestBase> observer)
         {
-            IObservable<EventBase> evts = observer as IObservable<EventBase>;
-            IDisposable observable = null;
-            if (evts != null)
-                observable = evts.Subscribe(this);
-
-            return _subscribers.Subscribe(observer,
-                                          () =>
-                                          {
-                                              if(observable!=null)
-                                                observable.Dispose();
-                                          });
+            return _subscribers.Subscribe(observer);
         }
-        public void OnCompleted()
-        {
-            _cancel.Cancel();
-            _sendBuffer.Complete();
-        }
-        public void OnError(Exception error)
-        {
-            _log.Error("WebSocketMessageBus", error);
-        }
-        public void OnNext(EventBase value)
+        public void Send(EventBase value)
         {
             _sendBuffer.Post(value);
         }
         public void Dispose()
         {
+            _cancel.Cancel();
             _log.Debug(this.GetType().Name + " dispose");
-            OnCompleted();
-            Task.WaitAll(_readTask, _sendTask);
             _subscribers.Dispose();
             _websocket.Dispose();
         }
-
         ~WebSocketMessageBus()
         {
             _log.Debug(this.GetType().Name + " destroy");

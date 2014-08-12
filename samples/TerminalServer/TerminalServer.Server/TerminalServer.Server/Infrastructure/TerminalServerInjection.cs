@@ -30,15 +30,17 @@ namespace TerminalServer.Server.Infrastructure
                 this.Bind<SessionManager>().ToConstant(_sessionManager);
                 this.Bind<ISystemInfo>().To<SystemInfo>().InSingletonScope();
 
-                this.Bind<CliSessions>().ToSelf().InCallScope();
+                this.Bind<SessionHub>().ToSelf().InCallScope();
                 this.Bind<CliSessionAbstractFactory>().ToSelf().InSingletonScope();
 
-                this.Bind<IMessageBus>().To<WebSocketMessageBus>().InCallScope();
+                this.Bind(typeof(IMessageBusWrite),typeof(IMessageBusReceive),typeof(IMessageBus))
+                    .To<WebSocketMessageBus>().InCallScope();
+
                 this.Bind<IEventSerializator>().To<DefaultEventSerializator>().InCallScope();
 
                 this.Bind<ICliSessionFactory>().To<ConsoleSessionFactory>().InCallScope();
                 //this.Bind<ICliSessionFactory>().To<PowerShellSessionFactory>().InScope(Scope);
-
+               
                 this.Bind<IObserver<RequestBase>>().To<CreateTerminalRequestHandler>().InCallScope();
                 this.Bind<IObserver<RequestBase>>().To<InputTerminalRequestHandler>().InCallScope();
                 this.Bind<IObserver<RequestBase>>().To<CloseTerminalRequestHandler>().InCallScope();

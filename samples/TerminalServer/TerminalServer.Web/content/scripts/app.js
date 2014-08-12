@@ -147,7 +147,8 @@
         if (msg.command == "terminal-created-event") {
             var terminal = {
                 type: msg.type,
-                id: msg.terminalId
+                id: msg.terminalId,
+                currentPath:msg.currentPath
             };
             terminal.remove=function () {
                 var index = $scope.terminals.indexOf(terminal);
@@ -167,6 +168,12 @@
     $scope.init = function (t) {
         terminal = t;
         $scope.terminalId = t.id;
+        setTimeout(function () {
+            $scope.$broadcast('terminal-command', {
+                command: "change-prompt",
+                prompt: { path: t.currentPath }
+            });
+        }, 100);
     };
 
     $connection.listen(function (msg) { return true; }, function (msg) {
