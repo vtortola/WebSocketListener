@@ -46,6 +46,7 @@ namespace TerminalServer.Server
             Console.ReadKey(true);
             _log.Info("Server stoping");
             cancellation.Cancel();
+            _sessionManager.Dispose();
             task.Wait();
             Console.ReadKey(true);
         }

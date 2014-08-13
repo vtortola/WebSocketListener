@@ -15,10 +15,12 @@ namespace TerminalServer.Server.Messaging
         readonly BufferBlock<EventBase> _sendBuffer;
         readonly SubscriptionManager<RequestBase> _subscribers;
         readonly ILogger _log;
+        readonly ISystemInfo _sysInfo;
 
         public bool IsConnected { get { return _websocket.IsConnected; } }
+        public DateTime? DisconnectionTimestamp { get; private set; }
 
-        public WebSocketMessageBus(WebSocket websocket, IEventSerializator serializator, ILogger log)
+        public WebSocketMessageBus(WebSocket websocket, IEventSerializator serializator, ILogger log, ISystemInfo sysInfo)
         {
             _websocket = websocket;
             _cancel = new CancellationTokenSource();
@@ -26,6 +28,7 @@ namespace TerminalServer.Server.Messaging
             _sendBuffer = new BufferBlock<EventBase>();
             _subscribers = new SubscriptionManager<RequestBase>(this);
             _log = log;
+            _sysInfo = sysInfo;
         }
         public void Start()
         {
@@ -68,20 +71,20 @@ namespace TerminalServer.Server.Messaging
             }
             finally
             {
+                DisconnectionTimestamp = _sysInfo.Now();
+                _sendBuffer.Complete();
                 _websocket.Close();
                 _subscribers.OnCompleted();
             }
         }
         private async Task SendAsync()
         {
-            while (await _sendBuffer.OutputAvailableAsync().ConfigureAwait(false) && !_cancel.IsCancellationRequested)
+            while (await _sendBuffer.OutputAvailableAsync(_cancel.Token).ConfigureAwait(false) 
+                   && !_cancel.IsCancellationRequested)
             {
                 var evt = _sendBuffer.Receive();
                 using (var msg = _websocket.CreateMessageWriter(WebSocketMessageType.Text))
-                {
                     _serializator.Serialize(evt, msg);
-                    msg.Flush();
-                }
             }
         }
         public IDisposable Subscribe(IObserver<RequestBase> observer)

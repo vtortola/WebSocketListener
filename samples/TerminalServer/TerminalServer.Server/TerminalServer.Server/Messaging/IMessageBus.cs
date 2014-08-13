@@ -5,7 +5,7 @@ namespace TerminalServer.Server.Messaging
     public interface IMessageBus : IMessageBusWrite, IMessageBusReceive , IDisposable
     {
         Boolean IsConnected { get; }
-        void Send(EventBase e);
+        DateTime? DisconnectionTimestamp { get; }
         void Start();
     }
 

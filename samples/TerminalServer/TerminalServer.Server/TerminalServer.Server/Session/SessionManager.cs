@@ -4,13 +4,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using TerminalServer.Server.Infrastructure;
 using vtortola.WebSockets;
 
 namespace TerminalServer.Server.Session
 {
-    public class SessionManager
+    public class SessionManager:IDisposable
     {
         public static readonly String CookieName = "TerminalSessionID";
 
@@ -18,6 +19,8 @@ namespace TerminalServer.Server.Session
         readonly TerminalServerInjection _injector;
         readonly ISystemInfo _systemInfo;
         readonly ILogger _log;
+        readonly CancellationTokenSource _cancel;
+        readonly Object _transferLock;
         public ILogger Log { get { return _log; } }
         public SessionManager()
         {
@@ -25,26 +28,43 @@ namespace TerminalServer.Server.Session
             _injector = new TerminalServerInjection(this);
             _systemInfo = _injector.Get<ISystemInfo>();
             _log = _injector.Get<ILogger>();
+            _cancel = new CancellationTokenSource();
             Task.Run((Func<Task>)WatchSessionsAsync);
         }
 
         private async Task WatchSessionsAsync()
         {
-            while (true)
+            while (!_cancel.IsCancellationRequested)
             {
-                await Task.Delay(10000).ConfigureAwait(false);
+                await Task.Delay(10000,_cancel.Token).ConfigureAwait(false);
 
-                UserSession disconnected = _sessions.Values.FirstOrDefault(v=> !v.IsConnected);
-                while (disconnected != null)
+                var disconnectedSessions = _sessions.Values.Where(v=> !v.IsConnected);
+                foreach (var disconnected in disconnectedSessions)
                 {
-                    if (_sessions.TryRemove(disconnected.SessionId, out disconnected))
+                    if (!disconnected.DisconnectionTimeStamp.HasValue)
                     {
-                        _log.Info("Disconnecting: " + disconnected.SessionId);
-                        disconnected.Dispose();
+                        _log.Warn("Disconnected session without disconnecting timestamp");
+                        continue;
                     }
-                    disconnected = _sessions.Values.FirstOrDefault(v => !v.IsConnected);
+                    else if (_systemInfo.Now().Subtract(disconnected.DisconnectionTimeStamp.Value).TotalSeconds < 10)
+                        continue;
+
+                    UserSession d;
+                    if (_sessions.TryRemove(disconnected.SessionId, out d))
+                    {
+                        if (disconnected != d)
+                        {
+                            _log.Info("Aborting Disconnection: " + d.SessionId);
+                            _sessions.TryAdd(d.SessionId, d);
+                            continue;
+                        }
+
+                        _log.Info("Disconnecting: " + d.SessionId);
+                        d.Dispose();
+                    }
                 }
 
+                // TODO : remove
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
             }
@@ -92,6 +112,11 @@ namespace TerminalServer.Server.Session
             _log.Info("Session Start '{0}'", session.SessionId);
             session.Start();
             
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 }

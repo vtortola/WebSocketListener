@@ -15,7 +15,7 @@ namespace TerminalServer.Server.Session
         readonly ILogger _log;
         public String SessionId { get; private set; }
         public Boolean IsConnected { get { return _bus.IsConnected; } }
-
+        public DateTime? DisconnectionTimeStamp { get { return _bus.DisconnectionTimestamp; } }
         public UserSession(String sessionId, SessionHub sessions, IMessageBus bus, IObserver<RequestBase>[] observers, ILogger log)
         {
             _subscriptions = new List<IDisposable>();

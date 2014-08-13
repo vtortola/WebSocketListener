@@ -175,11 +175,15 @@
                 id: msg.terminalId,
                 currentPath:msg.currentPath
             };
-            terminal.remove=function () {
-                var index = $scope.terminals.indexOf(terminal);
-                $scope.terminals.splice(index, 1);
-            };
             $scope.terminals.push(terminal);
+            terminal.remove = function () {
+                var index = $scope.terminals.indexOf(terminal);
+                return function () {
+                    $scope.terminals.splice(index, 1);
+                    $scope.$$phase || $scope.$apply();
+                };
+            }();
+            
             $scope.$$phase || $scope.$apply();
         }
     });
@@ -201,10 +205,17 @@
             });
         }, 100);
     };
-
+    
     $connection.listen(function (msg) { return true; }, function (msg) {
-        if (msg.command && msg.command == 'terminal-output' && msg.terminalId && msg.terminalId == $scope.terminalId) {
-            
+
+        if (!msg.terminalId || msg.terminalId != $scope.terminalId)
+            return;
+
+        if (msg.command && msg.command == "terminal-closed") {
+            terminal.remove();
+        }
+        else if (msg.command && msg.command == 'terminal-output') {
+
             if (!$scope.selected)
                 $scope.pendingOutput = true;
 
