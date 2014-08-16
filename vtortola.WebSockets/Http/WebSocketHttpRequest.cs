@@ -16,6 +16,7 @@ namespace vtortola.WebSockets
         public HttpHeadersCollection Headers { get; private set; }
         public UInt16 WebSocketVersion { get { return Headers.WebSocketVersion; } }
         public IReadOnlyList<WebSocketExtension> WebSocketExtensions { get; private set; }
+        public IDictionary<String, Object> Items { get; private set; }
         internal void SetExtensions(List<WebSocketExtension> extensions)
         {
             WebSocketExtensions = new ReadOnlyCollection<WebSocketExtension>(extensions);
@@ -24,6 +25,7 @@ namespace vtortola.WebSockets
         {
             Headers = new HttpHeadersCollection();
             Cookies = new CookieCollection();
+            Items = new Dictionary<String, Object>();
         }
     }
 }

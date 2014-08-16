@@ -46,6 +46,9 @@
     color:transparent;
 }
 .glyphicon-off{
+    color:#dedede;
+}
+.glyphicon-off:hover{
     color:red;
 }
 .glyphicon:hover{

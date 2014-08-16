@@ -78,6 +78,9 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
+            if (!Connection.IsConnected)
+                throw new WebSocketException("The connection is closed");
+
             Connection.BeginWritting();
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);
 

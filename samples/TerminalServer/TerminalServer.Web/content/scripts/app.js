@@ -154,12 +154,11 @@
         var crrId = $connection.nextCorrelationId();
         $connection.listenOnce(function (msg) { msg.correlationId && msg.correlationId == crrId; })
                    .then(function (msg) {
-                       
+                       alert("Console created");
                    });
         $connection.send({
-            label: "terminal-control-request",
-            command: "create-terminal",
-            type: "cmd.exe",
+            type:"CreateTerminalRequest",
+            terminalType: "cmd.exe",
             correlationId: crrId
         });
     };
@@ -169,7 +168,7 @@
     });
 
     $connection.listen(function (msg) { return true; }, function (msg) {
-        if (msg.command == "terminal-created-event") {
+        if (msg.type == "CreatedTerminalEvent") {
             var terminal = {
                 type: msg.type,
                 id: msg.terminalId,
@@ -211,10 +210,10 @@
         if (!msg.terminalId || msg.terminalId != $scope.terminalId)
             return;
 
-        if (msg.command && msg.command == "terminal-closed") {
+        if (msg.type && msg.type == "ClosedTerminalEvent") {
             terminal.remove();
         }
-        else if (msg.command && msg.command == 'terminal-output') {
+        else if (msg.type && msg.type == "TerminalOutputEvent") {
 
             if (!$scope.selected)
                 $scope.pendingOutput = true;
@@ -250,8 +249,7 @@
         if (!$rootScope.checkConnection())
             return;
         $connection.send({
-            label: "terminal-control-request",
-            command: "terminal-input",
+            type: "TerminalInputRequest",
             input: cmd,
             terminalId: $scope.terminalId
         });
@@ -259,8 +257,7 @@
 
     $scope.close = function () {
         $connection.send({
-            label: "terminal-control-request",
-            command: "terminal-close",
+            type: "CloseTerminalRequest",
             terminalId: $scope.terminalId
         });
        terminal.remove();
