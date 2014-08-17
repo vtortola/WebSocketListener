@@ -71,6 +71,7 @@
     <Compile Include="Messaging\IMessageBus.cs" />
     <Compile Include="Messaging\TerminalControl\Events\ClosedTerminalEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\CreatedTerminalEvent.cs" />
+    <Compile Include="Messaging\TerminalControl\Events\SessionStateEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\TerminalOutputEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Events\_ITerminalEvent.cs" />
     <Compile Include="Messaging\TerminalControl\Handlers\CloseTerminalRequestHandler.cs" />
@@ -86,8 +87,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Messaging\WebSocketQueueServer.cs" />
-    <Compile Include="Session\SessionManager.cs" />
-    <Compile Include="Session\UserSession.cs" />
+    <Compile Include="Session\ConnectionManager.cs" />
+    <Compile Include="Session\UserConnection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

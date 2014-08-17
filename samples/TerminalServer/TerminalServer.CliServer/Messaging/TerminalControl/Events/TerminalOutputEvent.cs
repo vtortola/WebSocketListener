@@ -8,6 +8,5 @@ namespace TerminalServer.CliServer.Messaging
         public String CurrentPath { get; set; }
         public Guid TerminalId { get; set; }
         public Guid ConnectionId { get; set; }
-        public Guid SessionId { get; set; }
     }
 }

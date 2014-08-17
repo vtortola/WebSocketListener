@@ -16,6 +16,7 @@ namespace TerminalServer.CliServer.Messaging
 
             var json= JObject.FromObject(eventObject, serializer);
             json.Add("type", new JValue(eventObject.GetType().Name));
+            json.Remove("connectionId");
             
             using (var writer = new StreamWriter(output, Encoding.UTF8,4096,true))
             using( var jwriter = new JsonTextWriter(writer))

@@ -8,11 +8,11 @@ namespace TerminalServer.CliServer.Messaging
 {
     public class CloseTerminalRequestHandler : IRequestHandler<CloseTerminalRequest>
     {
-        readonly SessionManager _sessionManager;
+        readonly ConnectionManager _connectionManager;
         readonly ILogger _log;
-        public CloseTerminalRequestHandler(SessionManager sessions, ILogger log)
+        public CloseTerminalRequestHandler(ConnectionManager sessions, ILogger log)
         {
-            _sessionManager = sessions;
+            _connectionManager = sessions;
             _log = log;
         }
         public bool Accept(CloseTerminalRequest message)
@@ -22,9 +22,9 @@ namespace TerminalServer.CliServer.Messaging
 
         public void Consume(CloseTerminalRequest message)
         {
-            var session = _sessionManager.GetUserSession(message.SessionId);
-            session.Close(message.TerminalId);
-            session.Push(new ClosedTerminalEvent() { TerminalId = message.TerminalId });
+            var connection = _connectionManager.GetConnection(message.ConnectionId);
+            connection.Close(message.TerminalId);
+            connection.Push(new ClosedTerminalEvent() { TerminalId = message.TerminalId });
         }
     }
 }

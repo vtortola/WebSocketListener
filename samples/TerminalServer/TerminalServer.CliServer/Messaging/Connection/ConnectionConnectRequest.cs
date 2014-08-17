@@ -11,11 +11,11 @@ namespace TerminalServer.CliServer.Messaging
     {
         public Guid CorrelationId { get; set; }
         public Guid ConnectionId { get; private set; }
-        public Guid SessionId { get; set; }
-        public ConnectionConnectRequest(Guid connectionId, Guid sessionId)
+        public Guid UserId { get; set; }
+        public ConnectionConnectRequest(Guid connectionId, Guid userId)
         {
             ConnectionId = connectionId;
-            SessionId = sessionId;
+            UserId = userId;
         }
     }
 
@@ -23,13 +23,32 @@ namespace TerminalServer.CliServer.Messaging
     {
         public Guid CorrelationId { get; set; }
         public Guid ConnectionId { get; private set; }
-        public Guid SessionId { get; private set; }
-        public ConnectionConnectResponse(Guid connectionId, Guid sessionId)
+        public Guid UserId { get; private set; }
+        public ConnectionConnectResponse(Guid connectionId, Guid userId)
         {
             ConnectionId = connectionId;
-            SessionId = sessionId;
-        }
+            UserId = userId;
+        } 
+    }
 
-        
+    public class ConnectionDisconnectedRequest 
+    {
+        public Guid ConnectionId { get; private set; }
+        public Guid UserId { get; private set; }
+        public ConnectionDisconnectedRequest(Guid connectionId, Guid userId)
+        {
+            ConnectionId = connectionId;
+            UserId = userId;
+        }
+    }
+    public class UserConnectionEvent
+    {
+        public Guid UserId { get; private set; }
+        public Guid ConnectionId { get; private set; }
+        public UserConnectionEvent(Guid connectionId, Guid userId)
+        {
+            UserId = userId;
+            ConnectionId = connectionId;
+        }
     }
 }

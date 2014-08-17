@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TerminalServer.CliServer.Infrastructure;
 using TerminalServer.CliServer.Messaging;
+using TerminalServer.CliServer.Messaging.TerminalControl.Events;
 using TerminalServer.CliServer.Session;
 using vtortola.WebSockets;
 
@@ -20,12 +21,13 @@ namespace TerminalServer.CliServer
 
         readonly ILogger _log;
         readonly ISystemInfo _sysInfo;
-        readonly WebSocketListener _server;
+        readonly WebSocketListener _wsServer;
         readonly CancellationTokenSource _cancellation;
         readonly IEventSerializator _serializator;
+        Action<IMessageBus> _onConnect;
         public IServiceBus Queue { get; private set; }
 
-        public WebSocketQueueServer(ISystemInfo sysinfo, ILogger log)
+        public WebSocketQueueServer(IPEndPoint endpoint, ISystemInfo sysinfo, ILogger log)
         {
             _log = log;
             _sysInfo = sysinfo;
@@ -34,36 +36,59 @@ namespace TerminalServer.CliServer
 
             Queue = ServiceBusFactory.New(sbc => sbc.ReceiveFrom("loopback://localhost/queue"));
 
-            var endpoint = new IPEndPoint(IPAddress.Any, 8009);
-            _server = new WebSocketListener(endpoint, new WebSocketListenerOptions()
+            _wsServer = new WebSocketListener(endpoint, new WebSocketListenerOptions()
             {
                 PingTimeout = Timeout.InfiniteTimeSpan,
                 OnHttpNegotiation = HttpNegotiation
             });
-            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(_server);
-            _server.Standards.RegisterStandard(rfc6455);
+            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(_wsServer);
+            _wsServer.Standards.RegisterStandard(rfc6455);
         }
         private void HttpNegotiation(WebSocketHttpRequest request, WebSocketHttpResponse response)
         {
-            Guid connectionId = _sysInfo.Guid(), sessionId;
-            if (request.Cookies[SessionManager.SessionIdCookieName] == null)
+            Guid connectionId = Guid.Empty;
+            if (request.RequestUri == null || request.RequestUri.OriginalString.Length < 1 || !Guid.TryParse(request.RequestUri.OriginalString.Substring(1), out connectionId))
             {
-                sessionId = _sysInfo.Guid();
-                response.Cookies.Add(new Cookie(SessionManager.SessionIdCookieName, sessionId.ToString()));
-                _log.Info("Session created: {0}", sessionId);
+                connectionId = _sysInfo.Guid();
+                _log.Info("Connection Id created: {0}", connectionId);
+            }
+            else
+                _log.Info("Connection Id from url: {0}", connectionId);
+            request.Items.Add(ConnectionIdKey, connectionId);
+
+            Guid userId;
+            if (request.Cookies[ConnectionManager.UserSessionCookieName] == null)
+            {
+                userId = _sysInfo.Guid();
+                _log.Info("User ID created: {0}", userId);
             }
             else
             {
-                sessionId = Guid.Parse(request.Cookies[SessionManager.SessionIdCookieName].Value);
-                _log.Info("Session ID found in cookie: {0}", sessionId );
+                userId = Guid.Parse(request.Cookies[ConnectionManager.UserSessionCookieName].Value);
+                _log.Info("User ID found in cookie: {0}", userId);
             }
-            request.Items.Add(ConnectionIdKey, connectionId);
+            
+           Queue.PublishRequest(new ConnectionConnectRequest(connectionId, userId), ctx =>
+            {
+                ctx.HandleFault(f =>
+                {
+                    response.Status = HttpStatusCode.InternalServerError;
+                });
+                ctx.HandleTimeout(TimeSpan.FromSeconds(5), () =>
+                {
+                    response.Status = HttpStatusCode.RequestTimeout;
+                });
+                ctx.Handle<ConnectionConnectResponse>(res =>
+                {
+                    response.Cookies.Add(new Cookie(ConnectionManager.UserSessionCookieName, res.UserId.ToString()));
+                });
+            });
         }
         public void Start()
         {
-            _server.Start();
+            _wsServer.Start();
             _log.Info("Echo Server started");
-            Task.Run(() => AcceptWebSocketClientsAsync(_server));
+            Task.Run(() => AcceptWebSocketClientsAsync(_wsServer));
         }
         async Task AcceptWebSocketClientsAsync(WebSocketListener server)
         {
@@ -85,7 +110,7 @@ namespace TerminalServer.CliServer
             }
             _log.Info("Server Stop accepting clients");
         }
-        private UnsubscribeAction SubscribeEvents<T>(WebSocket ws, Guid sessionId, Guid connectionId) where T:class,IConnectionEvent
+        private UnsubscribeAction SubscribeEvents<T>(WebSocket ws, Guid connectionId) where T:class,IConnectionEvent
         {
             return Queue.SubscribeHandler<T>(msg =>
             {
@@ -100,30 +125,18 @@ namespace TerminalServer.CliServer
         private async Task HandleConnectionAsync(WebSocket ws)
         {
             List<UnsubscribeAction> unsubs = new List<UnsubscribeAction>();
+            var connectionId = GetConnectionId(ws);
+            var sessionId = GetSessionId(ws);
             try
             {
-                var connectionId = GetConnectionId(ws);
-                var sessionId = GetSessionId(ws);
+                _log.Info("Starting session '{0}' at connection '{1}'",sessionId, connectionId);
+                unsubs.Add(SubscribeEvents<CreatedTerminalEvent>(ws, connectionId));
+                unsubs.Add(SubscribeEvents<TerminalOutputEvent>(ws, connectionId));
+                unsubs.Add(SubscribeEvents<ClosedTerminalEvent>(ws, connectionId));
+                unsubs.Add(SubscribeEvents<SessionStateEvent>(ws, connectionId));
+
+                Queue.Publish(new UserConnectionEvent(connectionId, sessionId));
                 
-                _log.Info("Starting session '{0}' at connection '{1}'", sessionId, connectionId);
-                unsubs.Add(SubscribeEvents<CreatedTerminalEvent>(ws, sessionId, connectionId));
-                unsubs.Add(SubscribeEvents<TerminalOutputEvent>(ws, sessionId, connectionId));
-                unsubs.Add(SubscribeEvents<ClosedTerminalEvent>(ws, sessionId, connectionId));
-
-                Queue.PublishRequest(new ConnectionConnectRequest(connectionId, sessionId), ctx =>
-                {
-                    ctx.HandleFault(f =>
-                    {
-                    });
-                    ctx.HandleTimeout(TimeSpan.FromSeconds(5), () =>
-                    {
-                    });
-                    ctx.Handle<ConnectionConnectResponse>(res =>
-                    {
-                        
-                    });
-                });
-
                 while (ws.IsConnected && !_cancellation.IsCancellationRequested)
                 {
                     var msg = await ws.ReadMessageAsync(_cancellation.Token).ConfigureAwait(false);
@@ -131,7 +144,6 @@ namespace TerminalServer.CliServer
                     {
                         Type type;
                         var queueRequest = _serializator.Deserialize(msg, out type);
-                        queueRequest.SessionId = sessionId;
                         queueRequest.ConnectionId = connectionId;
                         Queue.Publish(queueRequest, type);
                     }
@@ -145,9 +157,11 @@ namespace TerminalServer.CliServer
             }
             finally
             {
+                _log.Debug("Session '{0}' with connection '{1}' disconnected", sessionId, connectionId);
                 foreach (var unsub in unsubs)
                     unsub();
                 ws.Dispose();
+                Queue.Publish(new ConnectionDisconnectedRequest(connectionId, sessionId));
             }
         }
         static Guid GetConnectionId(WebSocket ws)
@@ -157,7 +171,7 @@ namespace TerminalServer.CliServer
         static Guid GetSessionId(WebSocket ws)
         {
             Guid sessionId = Guid.Empty;
-            Cookie cookie = ws.HttpRequest.Cookies[SessionManager.SessionIdCookieName] ?? ws.HttpResponse.Cookies[SessionManager.SessionIdCookieName];
+            Cookie cookie = ws.HttpRequest.Cookies[ConnectionManager.UserSessionCookieName] ?? ws.HttpResponse.Cookies[ConnectionManager.UserSessionCookieName];
             if (cookie != null && Guid.TryParse(cookie.Value, out sessionId))
                 return sessionId;
             else
@@ -165,7 +179,7 @@ namespace TerminalServer.CliServer
         }
         public void Dispose()
         {
-            _server.Dispose();
+            _wsServer.Dispose();
         }
     }
 }

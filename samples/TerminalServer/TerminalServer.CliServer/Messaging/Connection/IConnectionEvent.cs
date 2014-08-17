@@ -9,6 +9,5 @@ namespace TerminalServer.CliServer.Messaging
     public interface IConnectionEvent
     {
         Guid ConnectionId { get; set; }
-        Guid SessionId { get; set; }
     }
 }

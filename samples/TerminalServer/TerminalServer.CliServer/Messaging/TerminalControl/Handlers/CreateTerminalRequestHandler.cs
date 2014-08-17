@@ -14,14 +14,14 @@ namespace TerminalServer.CliServer.Messaging
     public class CreateTerminalRequestHandler : IRequestHandler<CreateTerminalRequest>
     {
         readonly ICliSessionFactory[] _factories;
-        readonly SessionManager _sessions;
+        readonly ConnectionManager _connections;
         readonly ILogger _log;
         readonly ISystemInfo _sysinfo;
 
-        public CreateTerminalRequestHandler(SessionManager sessions, ICliSessionFactory[] factories, ILogger log, ISystemInfo sysinfo)
+        public CreateTerminalRequestHandler(ConnectionManager sessions, ICliSessionFactory[] factories, ILogger log, ISystemInfo sysinfo)
         {
             _factories = factories;
-            _sessions = sessions;
+            _connections = sessions;
             _log = log;
             _sysinfo = sysinfo;
         }
@@ -40,11 +40,13 @@ namespace TerminalServer.CliServer.Messaging
             if (factory == null)
                 throw new ArgumentException("There is no factory for this type");
 
-            UserSession session = _sessions.GetUserSession(message.SessionId);
+            UserConnection connection = _connections.GetConnection(message.ConnectionId);
+            if (connection == null)
+                throw new ArgumentException("The connection does not exists");
             var id = _sysinfo.Guid();
             var cli = factory.Create();
-            session.Append(id, cli);
-            session.Push(new CreatedTerminalEvent() 
+            connection.Append(id, cli);
+            connection.Push(new CreatedTerminalEvent() 
             { 
                 TerminalId = id,
                 TerminalType = message.TerminalType,

@@ -1,6 +1,35 @@
 ﻿angular.module("terminalServer", ['ui.bootstrap','vtortola.ng-terminal'])
 
-.value("websocketUrl", "ws://localhost:8009")
+.service("guid", function () {
+    var guid = (function () {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000)
+                       .toString(16)
+                       .substring(1);
+        }
+        return function () {
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                   s4() + '-' + s4() + s4() + s4();
+        };
+    })();
+    return guid;
+})
+
+.factory("websocketUrl",["guid", function (guid) {
+    
+    var url = "ws://localhost:8005/" + guid();
+    if (window.sessionStorage) {
+        var stored = window.sessionStorage.getItem("websocketUrl");
+        if (stored) {
+            console.log("Using stored connection: " + stored);
+            return stored;
+        }
+        else
+            window.sessionStorage.setItem("websocketUrl",url);
+    }
+    console.log("Using new connection: " + url);
+    return url;
+}])
 
 .service('$connection', ["$q", "$timeout", "websocketUrl", "$rootScope", function ($q, $timeout, websocketUrl, $rootScope) {
     var connection = function () {
@@ -167,25 +196,50 @@
         console.log(JSON.stringify(msg));
     });
 
-    $connection.listen(function (msg) { return true; }, function (msg) {
-        if (msg.type == "CreatedTerminalEvent") {
-            var terminal = {
-                type: msg.type,
-                id: msg.terminalId,
-                currentPath:msg.currentPath
+    var addTerminal = function (descriptor) {
+        var terminal = {
+            type: descriptor.type,
+            id: descriptor.terminalId,
+            currentPath: descriptor.currentPath
+        };
+        $scope.terminals.push(terminal);
+        terminal.remove = function () {
+            var index = $scope.terminals.indexOf(terminal);
+            return function () {
+                $scope.terminals.splice(index, 1);
+                $scope.$$phase || $scope.$apply();
             };
-            $scope.terminals.push(terminal);
-            terminal.remove = function () {
-                var index = $scope.terminals.indexOf(terminal);
-                return function () {
-                    $scope.terminals.splice(index, 1);
-                    $scope.$$phase || $scope.$apply();
-                };
-            }();
-            
+        }();
+    }
+
+    $connection.listen(function (msg) { return msg.type == "CreatedTerminalEvent"; }, 
+        function (msg) {
+            addTerminal(msg);
             $scope.$$phase || $scope.$apply();
-        }
-    });
+        });
+    $connection.listen(function (msg) { return msg.type == "SessionStateEvent"; },
+        function (msg) {
+
+            var disconnected = $scope.terminals.filter(function (item) {
+                return !msg.terminals || !msg.terminals.some(function (item2) {
+                    return item2.terminalId == item.terminalId;
+                });
+            });
+            if (disconnected.length) {
+                disconnected.forEach(function (item) {
+                    var index = $scope.terminals.indexOf(item);
+                    $scope.terminals.splice(index, 1);
+                });
+                $rootScope.addAlert({ msg: "Some terminals have been removed because your session expired.", type: "info" });
+            }
+            
+            if (msg.terminals) {
+                msg.terminals.forEach(function (item) {
+                    addTerminal(item);
+                });
+            }
+            $scope.$$phase || $scope.$apply();
+        });
 }])
 
 .controller("consoleController", ["$scope", "$connection", "$rootScope", function ($scope, $connection, $rootScope) {

@@ -6,6 +6,5 @@ namespace TerminalServer.CliServer.Messaging
     {
         public Guid TerminalId { get; set; }
         public Guid ConnectionId { get; set; }
-        public Guid SessionId { get; set; }
     }
 }

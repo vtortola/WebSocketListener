@@ -7,11 +7,11 @@ namespace TerminalServer.CliServer.Messaging
 {
     public class InputTerminalRequestHandler : IRequestHandler<TerminalInputRequest>
     {
-        readonly SessionManager _sessions;
+        readonly ConnectionManager _connections;
         readonly ILogger _log;
-        public InputTerminalRequestHandler(SessionManager sessions, ILogger log)
+        public InputTerminalRequestHandler(ConnectionManager sessions, ILogger log)
         {
-            _sessions = sessions;
+            _connections = sessions;
             _log = log;
         }
         public bool Accept(TerminalInputRequest message)
@@ -21,10 +21,13 @@ namespace TerminalServer.CliServer.Messaging
 
         public void Consume(TerminalInputRequest message)
         {
-            UserSession session = _sessions.GetUserSession(message.SessionId);
-            ICliSession cli = session.GetTerminalSession(message.TerminalId);
-            if (cli != null)
-                cli.Input(message.Input);
+            UserConnection connection = _connections.GetConnection(message.ConnectionId);
+            if (connection == null)
+                throw new ArgumentException("Connection does not exist");
+            ICliSession cli = connection.GetTerminalSession(message.TerminalId);
+            if (cli == null)
+                throw new ArgumentException("CLI does not exist");
+            cli.Input(message.Input);
         }
         ~InputTerminalRequestHandler()
         {

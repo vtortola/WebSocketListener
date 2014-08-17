@@ -6,36 +6,38 @@ using System.Threading.Tasks;
 using TerminalServer.CliServer.CLI;
 using TerminalServer.CliServer.Infrastructure;
 using TerminalServer.CliServer.Messaging;
+using TerminalServer.CliServer.Messaging.TerminalControl.Events;
 
 namespace TerminalServer.CliServer.Session
 {
-    public class UserSession:IDisposable
+    public class UserConnection:IDisposable
     {
         readonly IDictionary<Guid, ICliSession> _cliSessions;
         readonly IMessageBus _bus;
-        public Guid SessionId { get; private set; }
+        readonly ILogger _log;
+        public Guid UserId { get; private set; }
         public Guid ConnectionId { get; private set; }
-        public UserSession(Guid connectionId, Guid sessionId, IMessageBus bus)
+        public Boolean IsConnected { get; set; }
+        public UserConnection(Guid connectionId, Guid sessionId, IMessageBus bus, ILogger log)
         {
             _bus = bus;
+            _log = log;
             ConnectionId = connectionId;
-            SessionId = sessionId;
+            UserId = sessionId;
+            IsConnected = true;
             _cliSessions = new Dictionary<Guid, ICliSession>();
         }
-        public void AttachToConnection(Guid connectionId)
+        public void Init()
         {
-            ConnectionId = connectionId;
-            Console.WriteLine("Reattached");
-            foreach (var cli in _cliSessions)
+            Push(new SessionStateEvent()
             {
-                Push(new CreatedTerminalEvent()
+                Terminals = _cliSessions.Select(kv => new TerminalDescriptor()
                 {
-                    ConnectionId = connectionId,
-                    SessionId = SessionId,
-                    CurrentPath = cli.Value.CurrentPath,
-                    TerminalId = cli.Key
-                });
-            }
+                    TerminalId = kv.Key,
+                    Type = kv.Value.Type,
+                    CurrentPath = kv.Value.CurrentPath
+                }).ToArray()
+            });
         }
         public void Append(Guid id, ICliSession cliSession)
         {
@@ -45,7 +47,6 @@ namespace TerminalServer.CliServer.Session
                 TerminalId= id, 
                 Output= s, 
                 CurrentPath = cliSession.CurrentPath,
-                SessionId = SessionId,
                 ConnectionId = ConnectionId
             });
         }
@@ -63,7 +64,6 @@ namespace TerminalServer.CliServer.Session
                 Push(new ClosedTerminalEvent()
                 {
                     ConnectionId = ConnectionId,
-                    SessionId = SessionId,
                     TerminalId = id
                 });
             }
@@ -71,12 +71,17 @@ namespace TerminalServer.CliServer.Session
         public void Push(IConnectionEvent evt)
         {
             evt.ConnectionId = this.ConnectionId;
-            evt.SessionId = this.SessionId;
             _bus.Queue.Publish(evt, evt.GetType());
         }
         public void Dispose()
         {
-            
+            _log.Debug("UserSession '{0}' disposed", this.UserId);
+            foreach (var cli in _cliSessions)
+                cli.Value.Dispose();
+        }
+        ~UserConnection()
+        {
+            _log.Debug("UserSession '{0}' destroyed", this.UserId);
         }
     }
 }

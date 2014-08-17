@@ -8,6 +8,7 @@ using TerminalServer.CliServer.Messaging;
 using TerminalServer.CliServer.Session;
 using MassTransit;
 using TerminalServer.CliServer.CLI;
+using System.Net;
 
 namespace TerminalServer.CliServer
 {
@@ -17,8 +18,10 @@ namespace TerminalServer.CliServer
         {
             var logger = new Log4NetLogger();
             var sysinfo = new SystemInfo();
-            WebSocketQueueServer server = new WebSocketQueueServer(sysinfo, logger);
-            SessionManager manager = new SessionManager(server, logger, sysinfo);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
+
+            WebSocketQueueServer server = new WebSocketQueueServer(endpoint,sysinfo, logger);
+            ConnectionManager manager = new ConnectionManager(server, logger, sysinfo);
 
             server.Queue.SubscribeInstance(new CreateTerminalRequestHandler(manager, new[] { new CommandSessionFactory(logger) }, logger, sysinfo));
             server.Queue.SubscribeInstance(new CloseTerminalRequestHandler(manager, logger));

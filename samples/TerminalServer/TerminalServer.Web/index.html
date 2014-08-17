@@ -19,17 +19,18 @@
         <a class="glyphicon glyphicon-exclamation-sign" title="No websocket connection" ng-show="!websocketAvailable"></a>
     </section>
     <section id="sidebar">
-        <div class="btn-group" dropdown is-open="status.isopen">
+        
+    </section>
+    <section id="content">
+        <div id="creation-button" class="btn-group" dropdown is-open="status.isopen">
             <button type="button" class="btn btn-primary dropdown-toggle" ng-disabled="disabled">
                 Create console <span class="caret"></span>
             </button>
-            <ul class="dropdown-menu" role="menu">
+            <ul class="dropdown-menu dropdown-menu-right" role="menu">
                 <li><a class="command-exe" ng-click="createConsole()">CMD</a></li>
                 <li><a class="powershell-exe" ng-click="createConsole()">PowerShell</a></li>
             </ul>
         </div>
-    </section>
-    <section id="content">
         <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
         <section id="terminals">
             <tabset>

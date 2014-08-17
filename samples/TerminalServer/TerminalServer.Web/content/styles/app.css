@@ -39,6 +39,11 @@
     background-color:#fff;
     padding:20px 5px 5px 2px;
 }
+#creation-button{
+    position:absolute;
+    right:0px;
+    margin-right:10px;
+}
 .transparent {
     color:transparent;
 }
@@ -98,6 +103,7 @@
 }
 .alert {
     margin-left:20px;
+    margin-top: 50px;
 }
 .command-exe{
     background-image:url(../images/command.png);
