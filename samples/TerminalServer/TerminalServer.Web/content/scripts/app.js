@@ -69,9 +69,11 @@
                     oneListeners.removeOne(listener);
                 }, timeout);
             }
-            return deferred.promise.then(function () {
+            var promise = deferred.promise;
+            promise.then(function (data) {
                 deferred.done = true;
             });
+            return promise;
         };
 
         var onopen = function () {
@@ -107,21 +109,19 @@
                 var listener = listeners[i];
                 if (listener.p(obj))
                     listener.h(obj);
-
             }
-            var one = [];
+            var remove = [];
             for (var i = 0; i < oneListeners.length; i++) {
                 var listener = oneListeners[i];
-                if (listener.p(obj))
-                    one.push(listener);
+                if (listener.p(obj)) {
+                    var o = obj;
+                    listener.d.resolve(o);
+                    remove.push(listener);
+                }
             }
-
-            for (var i = 0; i < one.length; i++) {
-                var listener = one[i];
-                listener.q.resolve(obj);
-                oneListeners.removeOne(listener);
+            for (var i = 0; i < remove.length; i++) {
+                oneListeners.removeOne(remove[i]);
             }
-            
         };
 
         var onerror = function () {
@@ -181,10 +181,11 @@
             return;
         }
         var crrId = $connection.nextCorrelationId();
-        $connection.listenOnce(function (msg) { msg.correlationId && msg.correlationId == crrId; })
-                   .then(function (msg) {
-                       alert("Console created");
-                   });
+        $connection.listenOnce(function (data) {
+            return data.correlationId && data.correlationId == crrId;
+        }).then(function (data) {
+            $rootScope.addAlert({ msg: "Console " + data.terminalType + " created", type: "success" });
+        });
         $connection.send({
             type:"CreateTerminalRequest",
             terminalType: "cmd.exe",

@@ -102,8 +102,13 @@
     display:block;
 }
 .alert {
-    margin-left:20px;
-    margin-top: 50px;
+position: absolute;
+bottom: 0;
+right: 10px;
+z-index: 100;
+width: 400px;
+border:1px solid #555;
+box-shadow:2px 2px 5px #555;
 }
 .command-exe{
     background-image:url(../images/command.png);
