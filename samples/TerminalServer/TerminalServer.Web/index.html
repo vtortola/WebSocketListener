@@ -19,21 +19,21 @@
         <a class="glyphicon glyphicon-exclamation-sign" title="No websocket connection" ng-show="!websocketAvailable"></a>
     </section>
     <section id="sidebar">
-   
+        <button class="console-button command-exe" ng-click="createConsole()"></button>
+        <button class="console-button powershell-exe" ng-click="createConsole()"></button>
     </section>
     <section id="content">
-        <div id="creation-button" class="btn-group" dropdown is-open="status.isopen">
-            <button type="button" class="btn btn-primary dropdown-toggle" ng-disabled="disabled">
-                Create console <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                <li><a class="command-exe" ng-click="createConsole()">CMD</a></li>
-                <li><a class="powershell-exe" ng-click="createConsole()">PowerShell</a></li>
-            </ul>
-        </div>
         <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
         <section id="terminals">
             <tabset>
+                <tab>
+                    <tab-heading>
+                        <span class="terminal-tab-heading">Start</span>
+                    </tab-heading>
+                    <div class="start">
+                        <p>Fix tab</p>
+                    </div>
+                </tab>
                 <tab ng-repeat="terminal in terminals" ng-controller="consoleController" ng-init="init(terminal)" 
                      select="select()" deselect="deselect()">
                     <tab-heading>

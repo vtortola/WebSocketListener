@@ -1,4 +1,14 @@
-﻿#header{
+﻿html{
+    height:100%;
+    margin:0px;
+    padding:0px;
+}
+body {
+    margin:0px;
+    padding:0px;
+    background-color:#555;
+}
+#header{
     font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
     background-color:#333;
     height:40px;
@@ -7,28 +17,20 @@
     color:#fff;
     top:0px;
     z-index:200;
-    border-bottom:1px solid #dedede;
 }
 #header h1{
     position:absolute;
     font-size:18px;
     margin:10px;
 }
-
 #sidebar {
-    width:200px;
-    padding:40px 5px 5px 5px;
     position:fixed;
-    top:40px;
-    min-height:800px;
-    background: #cccccc; /* Old browsers */
-    background: -moz-linear-gradient(top,  #cccccc 74%, #ffffff 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(74%,#cccccc), color-stop(100%,#ffffff)); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  #cccccc 74%,#ffffff 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  #cccccc 74%,#ffffff 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  #cccccc 74%,#ffffff 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  #cccccc 74%,#ffffff 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cccccc', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+    top:0;
+    left:0;
+    width:200px;
+    padding:50px 5px 5px 5px;
+    height:100%;
+    background-color:#333;
 }
 #sidebar div{
     margin-left:20px;
@@ -36,7 +38,6 @@
 #content{
     margin-top:40px;
     margin-left:200px;
-    background-color:#fff;
     padding:20px 5px 5px 2px;
 }
 #creation-button{
@@ -69,34 +70,33 @@
     margin-right:20px;
 }
 .nav li > a{
-    border: 1px solid rgba(150, 150, 150, 0.16);
+    border: 1px solid #dedede;
 }
-.nav .active > a{
-    background: #ededed; /* Old browsers */
-    background: -moz-linear-gradient(top,  #ededed 0%, #f6f6f6 53%, #ffffff 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ededed), color-stop(53%,#f6f6f6), color-stop(100%,#ffffff)); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  #ededed 0%,#f6f6f6 53%,#ffffff 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ededed', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
-    border-bottom-color: #FFF !important;
+.nav .active > a, .nav-tabs>li.active>a{
+    background-color:#000;
+}
+.nav>li>a:hover ,.nav-tabs>li.active>a:hover{
+    background-color:#000;
 }
 
 .terminal-tab-heading{
     margin-right:10px;
+    color:#fff;
 }
-.terminal-container {
-    margin: 10px 0 0 0;
+.terminal-container, .start {
+    height:500px;
+    border-bottom:1px solid #fff;
+}
+.start{
+    padding:100px;
+    color:#fff;
 }
 .terminal-line{
     color:#fff;
 }
 .tab-content {
-    border-bottom: 1px solid #DDD;
-    border-right: 1px solid #DDD;
-    border-left: 1px solid #DDD;
-    margin-left:5px;
+    border:none;
+    background-color:#000;
 }
 .btn-group-vertical{
     display:block;
@@ -110,19 +110,25 @@ width: 400px;
 border:1px solid #555;
 box-shadow:2px 2px 5px #555;
 }
+.console-button{
+    margin:20px 0 0 30px;
+    border-radius:5px;
+    height:80px;
+    width:120px;
+    padding:10px;
+    background-color:transparent;
+    background-size:80px;
+    background-position:center center;
+    border-width:1px;
+}
+.console-button:hover{
+    background-color:#555;
+}
 .command-exe{
     background-image:url(../images/command.png);
-    padding-left:40px !important;
-    background-position:10px 8px;
-    background-size:20px;
     background-repeat:no-repeat;
-    text-align:left;
 }
 .powershell-exe{
     background-image:url(../images/powershell.png);
-    padding-left:40px !important;
-    background-position:10px 8px;
-    background-size:20px;
     background-repeat:no-repeat;
-    text-align:left;
 }
