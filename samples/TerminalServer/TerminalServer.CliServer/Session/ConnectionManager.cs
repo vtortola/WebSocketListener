@@ -46,7 +46,6 @@ namespace TerminalServer.CliServer.Session
             List<UserConnection> disconnectedConnections = new List<UserConnection>();
             while (!_cancel.IsCancellationRequested)
             {
-                _log.Debug("Checking disconnected connections");
                 foreach (var disconnected in disconnectedConnections)
                 {
                     if (disconnected.IsConnected)
