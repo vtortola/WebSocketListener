@@ -6,6 +6,7 @@ using TerminalServer.CliServer.Infrastructure;
 using TerminalServer.CliServer.Messaging;
 using MassTransit;
 using System.Collections.Generic;
+using System.Text;
 
 namespace TerminalServer.CliServer.CLI
 {
@@ -38,6 +39,7 @@ namespace TerminalServer.CliServer.CLI
         readonly Process _proc;
         readonly CancellationTokenSource _cancel;
         readonly ILogger _log;
+        readonly List<String> _errorBuffer;
         String _lastCommand = null;
         Boolean _nextIsPath = false;
 
@@ -48,7 +50,7 @@ namespace TerminalServer.CliServer.CLI
         {
             _log = log;
             _cancel = new CancellationTokenSource();
-
+            _errorBuffer = new List<String>();
             _proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -69,6 +71,7 @@ namespace TerminalServer.CliServer.CLI
         }
         private void Emit(String line)
         {
+            Console.WriteLine(line);
             if (_nextIsPath)
             {
                 CurrentPath = line;
@@ -78,8 +81,14 @@ namespace TerminalServer.CliServer.CLI
                 _nextIsPath = true;
             else if (line == _postCDID)
             {
-                Output(String.Empty,_commandCorrelationId, true);
+                Output(String.Empty, _commandCorrelationId, _errorBuffer.Count == 0);
                 _lastCommand = null;
+                if (_errorBuffer.Count != 0)
+                {
+                    for (int i = 0; i < _errorBuffer.Count; i++)
+                        Output(_errorBuffer[i], _commandCorrelationId, i == _errorBuffer.Count-1);
+                    _errorBuffer.Clear();
+                }
             }
             else if (_lastCommand != null && line.EndsWith(_lastCommand))
             {
@@ -116,8 +125,7 @@ namespace TerminalServer.CliServer.CLI
                 try
                 {
                     var line = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
-                    if (line != null)
-                        Emit(line);
+                    _errorBuffer.Add(line);
                 }
                 catch (TaskCanceledException)
                 {

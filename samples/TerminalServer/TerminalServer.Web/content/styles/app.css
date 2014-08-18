@@ -58,7 +58,7 @@ body {
     color:#dedede;
 }
 .glyphicon-off:hover{
-    color:red;
+    color:#6c0000;
 }
 .glyphicon:hover{
     text-decoration:none;
@@ -73,7 +73,7 @@ body {
     margin-right:20px;
 }
 .nav-tabs {
-    border-bottom: 1px solid #165dbd;
+    border-bottom: 1px solid #c45a0f;
 }
 .nav li > a{
     border-top: 1px solid #222 !important;
@@ -84,11 +84,11 @@ body {
     padding: 2px 10px 2px 10px;
 }
 .nav .active > a, .nav-tabs>li.active>a{
-    background-color:#165dbd;
-    border-bottom: 1px solid #165dbd;
+    background-color:#c45a0f;
+    border-bottom: 1px solid #c45a0f;
 }
 .nav>li>a:hover ,.nav-tabs>li.active>a:hover{
-    background-color:#165dbd;
+    background-color:#c5743a;
     border-bottom:none;
 }
 
