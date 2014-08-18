@@ -42,12 +42,14 @@ namespace TerminalServer.CliServer.Session
         public void Append(Guid id, ICliSession cliSession)
         {
             _cliSessions.Add(id, cliSession);
-            cliSession.Output = s => this.Push(new TerminalOutputEvent()
+            cliSession.Output = (s,c,e) => this.Push(new TerminalOutputEvent()
             {  
                 TerminalId= id, 
                 Output= s, 
                 CurrentPath = cliSession.CurrentPath,
-                ConnectionId = ConnectionId
+                ConnectionId = ConnectionId,
+                CorrelationId = c,
+                EndOfCommand = e
             });
         }
         public ICliSession GetTerminalSession(Guid id)

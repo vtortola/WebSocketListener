@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using TerminalServer.CliServer.Infrastructure;
 using TerminalServer.CliServer.Messaging;
 using MassTransit;
+using System.Collections.Generic;
 
 namespace TerminalServer.CliServer.CLI
 {
@@ -32,6 +33,7 @@ namespace TerminalServer.CliServer.CLI
     public class ConsoleSession : ICliSession
     {
         static readonly String _preCDID = "xx_vtortola_xx";
+        static readonly String _postCDID = "yy_vtortola_yy";
 
         readonly Process _proc;
         readonly CancellationTokenSource _cancel;
@@ -41,7 +43,7 @@ namespace TerminalServer.CliServer.CLI
 
         public String Type { get { return CommandSessionFactory.TypeName; } }
         public String CurrentPath { get; private set; }
-        public Action<String> Output { get; set; }
+        public Action<String, Int32, Boolean> Output { get; set; }
         public ConsoleSession(ILogger log)
         {
             _log = log;
@@ -74,10 +76,17 @@ namespace TerminalServer.CliServer.CLI
             }
             else if (line == _preCDID)
                 _nextIsPath = true;
+            else if (line == _postCDID)
+            {
+                Output(String.Empty,_commandCorrelationId, true);
+                _lastCommand = null;
+            }
             else if (_lastCommand != null && line.EndsWith(_lastCommand))
-                return;
-            else if (Output != null)
-                Output(line);
+            {
+
+            }
+            else if (Output != null && !String.IsNullOrWhiteSpace(line))
+                Output(line, _commandCorrelationId, _lastCommand == null);
         }
 
         private async Task ReadAsync()
@@ -120,14 +129,16 @@ namespace TerminalServer.CliServer.CLI
                 }
             }
         }
-        
-        public void Input(String value)
+
+        Int32 _commandCorrelationId;
+        public void Input(String value, Int32 commandCorrelationId)
         {
             if (value.ToLowerInvariant() == "exit")
                 Finish(null);
             else
             {
-                _lastCommand = value + " & echo " + _preCDID + "& cd";
+                _commandCorrelationId = commandCorrelationId;
+                _lastCommand = value + " & echo " + _preCDID + "& cd & echo " + _postCDID;
                 _proc.StandardInput.WriteLine(_lastCommand);
             }
         }

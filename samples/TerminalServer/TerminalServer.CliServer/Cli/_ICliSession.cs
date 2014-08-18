@@ -8,7 +8,7 @@ namespace TerminalServer.CliServer.CLI
     {
         String Type { get; }
         String CurrentPath { get; }
-        void Input(String value);
-        Action<String> Output { get; set; }
+        void Input(String value, Int32 commandCorrelationId);
+        Action<String,Int32,Boolean> Output { get; set; }
     }
 }

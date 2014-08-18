@@ -50,7 +50,8 @@ namespace TerminalServer.CliServer.Messaging
                     return new TerminalInputRequest()
                     {
                         TerminalId = Guid.Parse(json.Property("terminalId").Value.ToString()),
-                        Input = json.Property("input").Value.ToString()
+                        Input = json.Property("input").Value.ToString(),
+                        CorrelationId = Int32.Parse(json.Property("correlationId").Value.ToString())
                     };
                 case "CloseTerminalRequest":
                     type = typeof(CloseTerminalRequest);

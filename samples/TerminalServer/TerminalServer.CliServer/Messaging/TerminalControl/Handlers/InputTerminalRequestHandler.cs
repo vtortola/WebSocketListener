@@ -27,7 +27,7 @@ namespace TerminalServer.CliServer.Messaging
             ICliSession cli = connection.GetTerminalSession(message.TerminalId);
             if (cli == null)
                 throw new ArgumentException("CLI does not exist");
-            cli.Input(message.Input);
+            cli.Input(message.Input, message.CorrelationId);
         }
         ~InputTerminalRequestHandler()
         {

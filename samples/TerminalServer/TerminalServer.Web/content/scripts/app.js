@@ -46,7 +46,7 @@
                 oneListeners.splice(index, 1);
         };
 
-        var correlationId = 0;
+        var correlationId = 1;
         me.nextCorrelationId = function () {
             return correlationId++;
         };
@@ -247,7 +247,7 @@
 
     $scope.terminalId = "empty";
     var terminal = null;
-
+    var timer = null;
     $scope.init = function (t) {
         terminal = t;
         terminal.type = t.currentPath;
@@ -259,7 +259,8 @@
             });
         }, 100);
     };
-    
+    var currentCommandResult = 0;
+    var showPrompt = true;
     $connection.listen(function (msg) { return true; }, function (msg) {
 
         if (!msg.terminalId || msg.terminalId != $scope.terminalId)
@@ -284,6 +285,14 @@
             });
             terminal.type = msg.currentPath;
 
+            if (msg.correlationId > currentCommandResult) {
+                currentCommandResult = msg.correlationId;
+                showPrompt = msg.endOfCommand;
+            }
+            else if (msg.endOfCommand) {
+                showPrompt = true;
+            }
+            $scope.showPrompt = showPrompt;
             $scope.$$phase || $scope.$apply();
         }
     });
@@ -303,10 +312,12 @@
     $scope.send = function (cmd) {
         if (!$rootScope.checkConnection())
             return;
+
         $connection.send({
             type: "TerminalInputRequest",
             input: cmd,
-            terminalId: $scope.terminalId
+            terminalId: $scope.terminalId,
+            correlationId: $connection.nextCorrelationId()
         });
     };
 
@@ -319,6 +330,7 @@
     };
 
     $scope.$on('terminal-input', function (e, consoleInput) {
+        
         var cmd = consoleInput[0]
         $scope.send(cmd.command);
     });
