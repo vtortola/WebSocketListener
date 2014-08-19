@@ -14,7 +14,7 @@ namespace TerminalServer.CliServer.Messaging.TerminalControl.Events
 
     public class TerminalDescriptor
     {
-        public String Type { get; set; }
+        public String TerminalType { get; set; }
         public Guid TerminalId { get; set; }
         public String CurrentPath { get; set; }
     }

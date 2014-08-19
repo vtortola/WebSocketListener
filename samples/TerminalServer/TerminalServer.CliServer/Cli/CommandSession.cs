@@ -71,7 +71,6 @@ namespace TerminalServer.CliServer.CLI
         }
         private void Emit(String line)
         {
-            Console.WriteLine(line);
             if (_nextIsPath)
             {
                 CurrentPath = line;
@@ -143,6 +142,10 @@ namespace TerminalServer.CliServer.CLI
         {
             if (value.ToLowerInvariant() == "exit")
                 Finish(null);
+            else if (_lastCommand != null)
+            {
+                _proc.StandardInput.WriteLine(value);
+            }
             else
             {
                 _commandCorrelationId = commandCorrelationId;

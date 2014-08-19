@@ -34,7 +34,7 @@ namespace TerminalServer.CliServer.Session
                 Terminals = _cliSessions.Select(kv => new TerminalDescriptor()
                 {
                     TerminalId = kv.Key,
-                    Type = kv.Value.Type,
+                    TerminalType = kv.Value.Type,
                     CurrentPath = kv.Value.CurrentPath
                 }).ToArray()
             });

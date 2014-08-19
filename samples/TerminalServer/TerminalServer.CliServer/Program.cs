@@ -18,12 +18,12 @@ namespace TerminalServer.CliServer
         {
             var logger = new Log4NetLogger();
             var sysinfo = new SystemInfo();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
 
             WebSocketQueueServer server = new WebSocketQueueServer(endpoint,sysinfo, logger);
             ConnectionManager manager = new ConnectionManager(server, logger, sysinfo);
 
-            server.Queue.SubscribeInstance(new CreateTerminalRequestHandler(manager, new[] { new CommandSessionFactory(logger) }, logger, sysinfo));
+            server.Queue.SubscribeInstance(new CreateTerminalRequestHandler(manager, new ICliSessionFactory[] { new CommandSessionFactory(logger), new PowerShellFactory(logger) }, logger, sysinfo));
             server.Queue.SubscribeInstance(new CloseTerminalRequestHandler(manager, logger));
             server.Queue.SubscribeInstance(new InputTerminalRequestHandler(manager, logger));
 

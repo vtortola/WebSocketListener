@@ -20,8 +20,8 @@
         <a class="glyphicon glyphicon-exclamation-sign" title="No websocket connection" ng-show="!websocketAvailable"></a>
     </section>
     <section id="sidebar">
-        <button class="console-button command-exe" ng-click="createConsole()"></button>
-        <button class="console-button powershell-exe" ng-click="createConsole()"></button>
+        <button class="console-button command-exe" ng-click="createConsole('cmd.exe')"></button>
+        <button class="console-button powershell-exe" ng-click="createConsole('powershell')"></button>
     </section>
     <section id="content">
         <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
@@ -38,7 +38,7 @@
                 <tab ng-repeat="terminal in terminals" ng-controller="consoleController" ng-init="init(terminal)" 
                      select="select()" deselect="deselect()">
                     <tab-heading>
-                        <span class="terminal-tab-heading">{{terminal.type}}</span>
+                        <span class="terminal-tab-heading">{{tabHeader}}</span>
                         
                         <a class="glyphicon glyphicon-download-alt" href="#" ng-class="{transparent: !pendingOutput}"></a>
                         <a class="glyphicon glyphicon-off" href="#" ng-click="close()"></a>

@@ -17,7 +17,7 @@
 
 .factory("websocketUrl",["guid", function (guid) {
     
-    var url = "ws://localhost:8005/" + guid();
+    var url = "ws://localhost:8006/" + guid();
     if (window.sessionStorage) {
         var stored = window.sessionStorage.getItem("websocketUrl");
         if (stored) {
@@ -188,7 +188,7 @@
         });
         $connection.send({
             type:"CreateTerminalRequest",
-            terminalType: "cmd.exe",
+            terminalType: type,
             correlationId: crrId
         });
     };
@@ -199,7 +199,7 @@
 
     var addTerminal = function (descriptor) {
         var terminal = {
-            type: descriptor.type,
+            terminalType: descriptor.terminalType,
             id: descriptor.terminalId,
             currentPath: descriptor.currentPath
         };
@@ -249,9 +249,11 @@
     var terminal = null;
     var timer = null;
     $scope.init = function (t) {
+        console.log(t);
         terminal = t;
-        terminal.type = t.currentPath;
+        terminal.type = t.terminalType;
         $scope.terminalId = t.id;
+        $scope.tabHeader = terminal.type;
         setTimeout(function () {
             $scope.$broadcast('terminal-command', {
                 command: "change-prompt",
@@ -283,7 +285,7 @@
                 command: "change-prompt",
                 prompt: { path: msg.currentPath }
             });
-            terminal.type = msg.currentPath;
+            $scope.tabHeader = terminal.type +  " ["+msg.currentPath.substr(0,20)+"]";
 
             if (msg.correlationId > currentCommandResult) {
                 currentCommandResult = msg.correlationId;
