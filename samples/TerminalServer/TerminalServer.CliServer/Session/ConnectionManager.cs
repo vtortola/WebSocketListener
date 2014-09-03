@@ -45,8 +45,10 @@ namespace TerminalServer.CliServer
                 foreach (var disconnected in disconnectedConnections)
                 {
                     if (disconnected.IsConnected)
+                    {
+                        _log.Debug("Reconnected: '{0}'", disconnected.ConnectionId);
                         continue;
-
+                    }
                     UserConnection s;
                     if (_connections.TryRemove(disconnected.ConnectionId, out s))
                     {
@@ -54,9 +56,13 @@ namespace TerminalServer.CliServer
                         s.Dispose();
                     }
                 }
-                await Task.Delay(5000).ConfigureAwait(false);
+                
                 disconnectedConnections.Clear();
                 disconnectedConnections.AddRange(_connections.Values.Where(s => !s.IsConnected));
+                foreach (var disconnected in disconnectedConnections)
+                    _log.Debug("Ready for disconnection: '{0}'", disconnected.ConnectionId);
+
+                await Task.Delay(5000).ConfigureAwait(false);
             }
         }
         private void HandleDisconnectionRequest(ConnectionDisconnectedRequest disconnect)

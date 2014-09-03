@@ -21,9 +21,16 @@
         <a class="glyphicon glyphicon-exclamation-sign" title="No websocket connection" ng-show="!websocketAvailable"></a>
     </section>
     <section id="sidebar">
-        <button class="console-button command-exe" ng-click="createConsole('cmd.exe')"></button>
-        <button class="console-button powershell-exe" ng-click="createConsole('powershell')"></button>
     </section>
+    <div class="btn-group create-terminal-menu" dropdown is-open="status.isopen">
+        <button type="button" class="btn btn-primary dropdown-toggle" ng-disabled="disabled">
+            Create terminal <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-right" role="menu">
+            <li><a href="#" ng-click="createConsole('cmd.exe')">Cmd.exe</a></li>
+            <li><a href="#" ng-click="createConsole('powershell')">Powershell</a></li>
+        </ul>
+    </div>
     <section id="content">
         <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
         <section id="terminals">
@@ -37,11 +44,11 @@
                         <p>This is an example of <a href="http://vtortola.github.io/WebSocketListener/" target="_blank">WebSocketListener</a> as backend of a Websocket based Single Page Application.</p>
                         <p>The project <a href="http://vtortola.github.io/ng-terminal-emulator/" target="_blank">ng-terminal-emulator</a> is being used for the Javascript terminals.</p>
                         <br/>
-                        <p>Use the buttons in the left to create a "cmd.exe" or "powershell" command session.</p>
+                        <p>You can create a "cmd.exe" or "powershell" command session with the buttons on the right.</p>
                         <br/>
-                        <p>Browser tabs are identified as the same user.</p>
-                        <p>But each tab can have a different set of command sessions.</p>
-                        <p>If a tab is refreshed, the state of the sessions is recovered after the refresh.</p>
+                        <p>A cookie maintains a user ID that is the same across tabs.</p>
+                        <p>A websocket connection parameter maintains the connection ID that is the same across tab refreshes.</p>
+                        <p>Different tabs have different connection ID but same user ID.</p>
                     </div>
                 </tab>
                 <tab ng-repeat="terminal in terminals" ng-controller="consoleController" ng-init="init(terminal)" 

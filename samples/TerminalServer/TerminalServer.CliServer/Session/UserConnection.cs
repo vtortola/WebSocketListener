@@ -78,10 +78,7 @@ namespace TerminalServer.CliServer
             _log.Debug("UserSession '{0}' disposed", this.UserId);
             foreach (var cli in _cliSessions)
                 cli.Value.Dispose();
-        }
-        ~UserConnection()
-        {
-            _log.Debug("UserSession '{0}' destroyed", this.UserId);
+            _cliSessions.Clear();
         }
     }
 }

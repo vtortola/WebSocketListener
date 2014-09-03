@@ -8,37 +8,45 @@ body {
     padding:0px;
     background-color:#555;
 }
+a,a:visited,a:hover{
+    color:#c5743a;
+}
 #header{
     font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
     background-color:#333;
-    height:40px;
+    height:50px;
     width:100%;
     position:fixed;
     color:#fff;
     top:0px;
+    left:99px;
     z-index:200;
+    border-bottom:1px solid #c5743a;
 }
 #header h1{
     position:absolute;
-    font-size:18px;
-    margin:10px;
+    font-size:20px;
+    left:-80px;
+    top:15px;
+    margin:0px;
 }
 #sidebar {
     position:fixed;
     top:0;
     left:0;
-    width:200px;
-    padding:90px 5px 5px 5px;
+    width:100px;
+    padding:110px 5px 5px 5px;
     height:100%;
     background-color:#333;
+    border-right:1px solid #C45A0F;
 }
 #sidebar div{
     margin-left:20px;
 }
 #content{
-    margin-top:40px;
-    margin-left:200px;
-    padding:20px 5px 5px 2px;
+    margin-top:70px;
+    margin-left:100px;
+    padding:20px 0 0 0;
 }
 #creation-button{
     position:absolute;
@@ -46,7 +54,7 @@ body {
     margin-right:10px;
 }
 .terminal{
-    background-color:#222;
+    background-color:#333;
 }
 .transparent {
     color:transparent;
@@ -55,17 +63,17 @@ body {
     color:transparent;
 }
 .glyphicon-off{
-    color:#dedede;
+    color:#dedede !important;
 }
 .glyphicon-off:hover{
-    color:#6c0000;
+    color:#6c0000 !important;
 }
 .glyphicon:hover{
     text-decoration:none;
 }
 .user-info {
     position:fixed;
-    right:100px;
+    right:50px;
     top:20px;
     font-size:15px;
     line-height:15px;
@@ -87,8 +95,8 @@ body {
     border-top: 1px solid #222 !important;
     border-right: 1px solid #222 !important;
     border-left: 1px solid #222 !important;
-    height: 25px;
-    line-height: 20px;
+    height: 35px;
+    line-height: 30px;
     padding: 2px 10px 2px 10px;
 }
 .nav .active > a, .nav-tabs>li.active>a{
@@ -118,8 +126,10 @@ body {
     color:#fff;
 }
 .tab-content {
+    position:relative;
+    left:-1px;
     border:none;
-    background-color:#222;
+    background-color:#333;
     border-bottom:1px solid #c5743a;
 }
 .btn-group-vertical{
@@ -134,25 +144,7 @@ body {
     border:1px solid #165dbd;
     box-shadow:0px 0px 10px #165dbd;
 }
-.console-button{
-    margin:20px 0 0 50px;
-    padding:10px;
-    border-radius:5px;
-    height:80px;
-    width:100px;
-    background-color:transparent;
-    background-size:80px;
-    background-position:center center;
-    border-width:0px;
-}
-.console-button:hover{
-    background-color:#555;
-}
-.command-exe{
-    background-image:url(../images/command.png);
-    background-repeat:no-repeat;
-}
-.powershell-exe{
-    background-image:url(../images/powershell.png);
-    background-repeat:no-repeat;
+.create-terminal-menu{
+    float:right;
+    margin:10px;
 }

@@ -202,11 +202,15 @@
         };
         $scope.terminals.push(terminal);
         terminal.remove = function () {
-            var index = $scope.terminals.indexOf(terminal);
-            return function () {
-                $scope.terminals.splice(index, 1);
-                $scope.$$phase || $scope.$apply();
-            };
+            return function (t) {
+                return function () {
+                    var index = $scope.terminals.indexOf(t);
+                    if (index == -1)
+                        return;
+                    $scope.terminals.splice(index, 1);
+                    $scope.$$phase || $scope.$apply();
+                };
+            }(terminal);
         }();
     }
 
