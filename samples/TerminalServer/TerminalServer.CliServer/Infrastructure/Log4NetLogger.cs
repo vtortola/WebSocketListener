@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace TerminalServer.CliServer.Infrastructure
+namespace TerminalServer.CliServer
 {
     public class Log4NetLogger:ILogger
     {

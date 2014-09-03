@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
+    [Serializable]
     public class CloseTerminalRequest : ITerminalRequest
     {
         public Guid TerminalId { get; set; }

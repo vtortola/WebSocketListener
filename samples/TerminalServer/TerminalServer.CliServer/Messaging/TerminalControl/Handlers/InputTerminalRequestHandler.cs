@@ -1,9 +1,6 @@
 ﻿using System;
-using TerminalServer.CliServer.CLI;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Session;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public class InputTerminalRequestHandler : IRequestHandler<TerminalInputRequest>
     {
@@ -18,7 +15,6 @@ namespace TerminalServer.CliServer.Messaging
         {
             return true;
         }
-
         public void Consume(TerminalInputRequest message)
         {
             UserConnection connection = _connections.GetConnection(message.ConnectionId);
@@ -28,10 +24,6 @@ namespace TerminalServer.CliServer.Messaging
             if (cli == null)
                 throw new ArgumentException("CLI does not exist");
             cli.Input(message.Input, message.CorrelationId);
-        }
-        ~InputTerminalRequestHandler()
-        {
-            _log.Debug(this.GetType().Name + " destroy");
         }
     }
 }

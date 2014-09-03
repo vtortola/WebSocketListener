@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.Infrastructure
+namespace TerminalServer.CliServer
 {
     public class SystemInfo:ISystemInfo
     {

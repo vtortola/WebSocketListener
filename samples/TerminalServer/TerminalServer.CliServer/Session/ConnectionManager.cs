@@ -3,14 +3,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Messaging;
-using vtortola.WebSockets;
 
-namespace TerminalServer.CliServer.Session
+namespace TerminalServer.CliServer
 {
     public class ConnectionManager : IDisposable
     {
@@ -61,9 +57,6 @@ namespace TerminalServer.CliServer.Session
                 await Task.Delay(5000).ConfigureAwait(false);
                 disconnectedConnections.Clear();
                 disconnectedConnections.AddRange(_connections.Values.Where(s => !s.IsConnected));
-
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
             }
         }
         private void HandleDisconnectionRequest(ConnectionDisconnectedRequest disconnect)

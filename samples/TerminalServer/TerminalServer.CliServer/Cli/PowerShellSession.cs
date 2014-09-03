@@ -2,10 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.CliServer.CLI;
-using TerminalServer.CliServer.Infrastructure;
 
 namespace TerminalServer.CliServer
 {
@@ -44,6 +40,9 @@ namespace TerminalServer.CliServer
             _proc = PowerShell.Create();
             _log = log;
             _proc.Commands.Clear();
+            _proc.AddCommand("cd\\");
+            _proc.Invoke();
+            _proc.Commands.Clear();
             _proc.AddCommand("Get-Location");
             _proc.AddCommand("Out-String");
             CurrentPath = _proc.Invoke()
@@ -81,9 +80,19 @@ namespace TerminalServer.CliServer
                     Output(line, commandCorrelationId, line == lines.Last());
             }
         }
+        private void Dispose(Boolean disposing)
+        {
+            if (disposing)
+                GC.SuppressFinalize(this);
+            _proc.Dispose();
+        }
         public void Dispose()
         {
-            _proc.Dispose();
+            Dispose(true);   
+        }
+        ~PowerShellSession()
+        {
+            Dispose(false);
         }
     }
  }

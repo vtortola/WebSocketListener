@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Messaging;
-using TerminalServer.CliServer.Session;
 using MassTransit;
-using TerminalServer.CliServer.CLI;
 using System.Net;
 
 namespace TerminalServer.CliServer
@@ -20,14 +13,23 @@ namespace TerminalServer.CliServer
             var sysinfo = new SystemInfo();
             var endpoint = new IPEndPoint(IPAddress.Any, 8006);
 
-            WebSocketQueueServer server = new WebSocketQueueServer(endpoint,sysinfo, logger);
+            WebSocketQueueServer server = new WebSocketQueueServer(endpoint, sysinfo, logger);
             ConnectionManager manager = new ConnectionManager(server, logger, sysinfo);
 
-            server.Queue.SubscribeInstance(new CreateTerminalRequestHandler(manager, new ICliSessionFactory[] { new CommandSessionFactory(logger), new PowerShellFactory(logger) }, logger, sysinfo));
+            var cliFactories = new ICliSessionFactory[] 
+            { 
+                // creates cmd.exe sessions
+                new CommandSessionFactory(logger), 
+
+                // creates powershell sessions
+                new PowerShellFactory(logger) 
+            };
+
+            server.Queue.SubscribeInstance(new CreateTerminalRequestHandler(manager, cliFactories, logger, sysinfo));
             server.Queue.SubscribeInstance(new CloseTerminalRequestHandler(manager, logger));
             server.Queue.SubscribeInstance(new InputTerminalRequestHandler(manager, logger));
 
-            server.Start();
+            Task.Run(()=>server.StartAsync());
 
             Console.ReadKey(true);
             server.Dispose();

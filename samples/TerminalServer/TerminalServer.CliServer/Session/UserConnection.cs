@@ -3,12 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TerminalServer.CliServer.CLI;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Messaging;
-using TerminalServer.CliServer.Messaging.TerminalControl.Events;
 
-namespace TerminalServer.CliServer.Session
+namespace TerminalServer.CliServer
 {
     public class UserConnection:IDisposable
     {
@@ -31,6 +27,8 @@ namespace TerminalServer.CliServer.Session
         {
             Push(new SessionStateEvent()
             {
+                ConnectionId =  this.ConnectionId,
+                UserId = this.UserId,
                 Terminals = _cliSessions.Select(kv => new TerminalDescriptor()
                 {
                     TerminalId = kv.Key,

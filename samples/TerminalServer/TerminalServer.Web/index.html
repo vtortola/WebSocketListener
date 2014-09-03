@@ -16,6 +16,7 @@
 <body ng-app="terminalServer" ng-controller="mainController">
     <section id="header">
         <h1>WebSocketListener: Terminal Server</h1>
+        <span class="user-info" ng-show="websocketAvailable">UserId:  {{userId}}</span>
         <a class="glyphicon glyphicon-signal" title="Websocket connected" ng-show="websocketAvailable"></a>
         <a class="glyphicon glyphicon-exclamation-sign" title="No websocket connection" ng-show="!websocketAvailable"></a>
     </section>
@@ -32,14 +33,21 @@
                         <span class="terminal-tab-heading">Start</span>
                     </tab-heading>
                     <div class="start">
-                        <p>Fix tab</p>
+                        <h3>Terminal server example</h3>
+                        <p>This is an example of <a href="http://vtortola.github.io/WebSocketListener/" target="_blank">WebSocketListener</a> as backend of a Websocket based Single Page Application.</p>
+                        <p>The project <a href="http://vtortola.github.io/ng-terminal-emulator/" target="_blank">ng-terminal-emulator</a> is being used for the Javascript terminals.</p>
+                        <br/>
+                        <p>Use the buttons in the left to create a "cmd.exe" or "powershell" command session.</p>
+                        <br/>
+                        <p>Browser tabs are identified as the same user.</p>
+                        <p>But each tab can have a different set of command sessions.</p>
+                        <p>If a tab is refreshed, the state of the sessions is recovered after the refresh.</p>
                     </div>
                 </tab>
                 <tab ng-repeat="terminal in terminals" ng-controller="consoleController" ng-init="init(terminal)" 
                      select="select()" deselect="deselect()">
                     <tab-heading>
                         <span class="terminal-tab-heading">{{tabHeader}}</span>
-                        
                         <a class="glyphicon glyphicon-download-alt" href="#" ng-class="{transparent: !pendingOutput}"></a>
                         <a class="glyphicon glyphicon-off" href="#" ng-click="close()"></a>
                     </tab-heading>

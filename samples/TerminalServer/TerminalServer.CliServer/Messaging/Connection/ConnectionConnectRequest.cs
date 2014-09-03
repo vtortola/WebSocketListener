@@ -5,8 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
+    [Serializable]
     public class ConnectionConnectRequest:CorrelatedBy<Guid>
     {
         public Guid CorrelationId { get; set; }
@@ -18,7 +19,7 @@ namespace TerminalServer.CliServer.Messaging
             UserId = userId;
         }
     }
-
+    [Serializable]
     public class ConnectionConnectResponse : CorrelatedBy<Guid>
     {
         public Guid CorrelationId { get; set; }
@@ -30,7 +31,7 @@ namespace TerminalServer.CliServer.Messaging
             UserId = userId;
         } 
     }
-
+    [Serializable]
     public class ConnectionDisconnectedRequest 
     {
         public Guid ConnectionId { get; private set; }
@@ -41,6 +42,7 @@ namespace TerminalServer.CliServer.Messaging
             UserId = userId;
         }
     }
+    [Serializable]
     public class UserConnectionEvent
     {
         public Guid UserId { get; private set; }

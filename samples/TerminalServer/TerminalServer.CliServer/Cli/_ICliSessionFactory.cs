@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.CLI
+namespace TerminalServer.CliServer
 {
     public interface ICliSessionFactory
     {

@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
+    [Serializable]
     public class CreatedTerminalEvent : ITerminalEvent
     {
         public String CorrelationId { get; set; }

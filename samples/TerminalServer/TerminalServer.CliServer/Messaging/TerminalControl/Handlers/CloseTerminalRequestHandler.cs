@@ -1,10 +1,5 @@
-﻿using MassTransit;
-using System;
-using System.Collections.Generic;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Session;
-
-namespace TerminalServer.CliServer.Messaging
+﻿
+namespace TerminalServer.CliServer
 {
     public class CloseTerminalRequestHandler : IRequestHandler<CloseTerminalRequest>
     {

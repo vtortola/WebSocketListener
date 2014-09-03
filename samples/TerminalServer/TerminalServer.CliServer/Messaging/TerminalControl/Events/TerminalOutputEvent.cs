@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
+    [Serializable]
     public class TerminalOutputEvent : ITerminalEvent
     {
         public String Output { get; set; }

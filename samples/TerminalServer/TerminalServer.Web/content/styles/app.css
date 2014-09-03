@@ -28,7 +28,7 @@ body {
     top:0;
     left:0;
     width:200px;
-    padding:50px 5px 5px 5px;
+    padding:90px 5px 5px 5px;
     height:100%;
     background-color:#333;
 }
@@ -63,14 +63,22 @@ body {
 .glyphicon:hover{
     text-decoration:none;
 }
+.user-info {
+    position:fixed;
+    right:100px;
+    top:20px;
+    font-size:15px;
+    line-height:15px;
+    font-family:Consolas;
+}
 #header .glyphicon{
     color:white;
     height:28px;
     width:28px;
     font-size:28px;
-    float:right;
-    margin-top:6px;
-    margin-right:20px;
+    position:fixed;
+    top:10px;
+    right:10px;
 }
 .nav-tabs {
     border-bottom: 1px solid #c45a0f;
@@ -101,8 +109,10 @@ body {
     padding:10px;
 }
 .start{
-    padding:100px;
+    padding:50px;
     color:#fff;
+    font-size:1.2em;
+    font-family:Verdana;
 }
 .terminal-line{
     color:#fff;
@@ -110,7 +120,7 @@ body {
 .tab-content {
     border:none;
     background-color:#222;
-    border-bottom:1px solid #555;
+    border-bottom:1px solid #c5743a;
 }
 .btn-group-vertical{
     display:block;

@@ -77,7 +77,6 @@
         };
 
         var onopen = function () {
-            console.log('onopen');
             $rootScope.websocketAvailable = true;
             me.isConnected = true;
             $rootScope.$$phase || $rootScope.$apply();
@@ -91,7 +90,6 @@
         };
 
         var onclose = function () {
-            console.log('onclose');
             me.isConnected = false;
             $rootScope.websocketAvailable = false;
             $rootScope.$$phase || $rootScope.$apply();
@@ -103,7 +101,6 @@
         };
 
         var onmessage = function (msg) {
-            console.log('onmessage');
             var obj = JSON.parse(msg.data);
             for (var i = 0; i < listeners.length; i++) {
                 var listener = listeners[i];
@@ -220,7 +217,8 @@
         });
     $connection.listen(function (msg) { return msg.type == "SessionStateEvent"; },
         function (msg) {
-
+            $rootScope.userId = msg.userId;
+            $rootScope.connectionId = msg.connectionId;
             var disconnected = $scope.terminals.filter(function (item) {
                 return !msg.terminals || !msg.terminals.some(function (item2) {
                     return item2.terminalId == item.terminalId;

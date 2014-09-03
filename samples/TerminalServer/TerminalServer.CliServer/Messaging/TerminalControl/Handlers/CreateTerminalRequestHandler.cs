@@ -1,15 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerminalServer.CliServer.CLI;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Messaging;
-using TerminalServer.CliServer.Session;
-using MassTransit;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public class CreateTerminalRequestHandler : IRequestHandler<CreateTerminalRequest>
     {
@@ -25,15 +17,10 @@ namespace TerminalServer.CliServer.Messaging
             _log = log;
             _sysinfo = sysinfo;
         }
-        ~CreateTerminalRequestHandler()
-        {
-            _log.Debug(this.GetType().Name + " destroy");
-        }
         public bool Accept(CreateTerminalRequest message)
         {
             return true;
         }
-
         public void Consume(CreateTerminalRequest message)
         {
             var factory = _factories.SingleOrDefault(f => f.Type == message.TerminalType);

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public interface ITerminalEvent : IConnectionEvent
     {

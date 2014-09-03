@@ -1,8 +1,7 @@
 ﻿using MassTransit;
 using System;
-using TerminalServer.CliServer.Messaging;
 
-namespace TerminalServer.CliServer.CLI
+namespace TerminalServer.CliServer
 {
     public interface ICliSession:IDisposable
     {

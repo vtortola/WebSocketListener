@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public class DefaultEventSerializator : IEventSerializator
     {

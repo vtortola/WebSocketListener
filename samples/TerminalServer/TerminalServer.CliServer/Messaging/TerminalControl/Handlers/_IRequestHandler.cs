@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public interface IRequestHandler<T> : Consumes<T>.Selected where T:class, IConnectionRequest
     {

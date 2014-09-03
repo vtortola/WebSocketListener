@@ -1,11 +1,12 @@
 ﻿using MassTransit;
 using System;
+using System.Threading.Tasks;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public interface IMessageBus 
     {
         IServiceBus Queue { get; }
-        void Start();
+        Task StartAsync();
     }
 }

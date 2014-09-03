@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
     public interface IEventSerializator
     {

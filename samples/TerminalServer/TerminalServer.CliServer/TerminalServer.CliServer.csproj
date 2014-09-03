@@ -94,6 +94,7 @@
     <Compile Include="Messaging\WebSocketQueueServer.cs" />
     <Compile Include="Session\ConnectionManager.cs" />
     <Compile Include="Session\UserConnection.cs" />
+    <Compile Include="Messaging\WebSocketHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

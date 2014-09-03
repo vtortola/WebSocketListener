@@ -1,7 +1,8 @@
 ﻿using System;
 
-namespace TerminalServer.CliServer.Messaging
+namespace TerminalServer.CliServer
 {
+    [Serializable]
     public class CreateTerminalRequest : IConnectionRequest
     {
         public String TerminalType { get; set; }

@@ -1,30 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using TerminalServer.CliServer.Infrastructure;
-using TerminalServer.CliServer.Messaging;
-using MassTransit;
-using System.Collections.Generic;
-using System.Text;
 
-namespace TerminalServer.CliServer.CLI
+namespace TerminalServer.CliServer
 {
     public class CommandSessionFactory : ICliSessionFactory
     {
-        public static readonly String TypeName = "cmd.exe";
-
         readonly ILogger _log;
-        public string Type
-        {
-            get { return CommandSessionFactory.TypeName; }
-        }
-
+        public String Type { get { return ConsoleSession.TypeName; } }
         public CommandSessionFactory(ILogger log)
         {
             _log = log;
         }
-
         public ICliSession Create()
         {
             return new ConsoleSession(_log);
@@ -35,15 +24,17 @@ namespace TerminalServer.CliServer.CLI
     {
         static readonly String _preCDID = "xx_vtortola_xx";
         static readonly String _postCDID = "yy_vtortola_yy";
+        public static readonly String TypeName = "cmd.exe";
 
         readonly Process _proc;
         readonly CancellationTokenSource _cancel;
         readonly ILogger _log;
         readonly List<String> _errorBuffer;
-        String _lastCommand = null;
-        Boolean _nextIsPath = false;
+        String _lastCommand;
+        Boolean _nextIsPath;
+        Int32 _commandCorrelationId;
 
-        public String Type { get { return CommandSessionFactory.TypeName; } }
+        public String Type { get { return ConsoleSession.TypeName; } }
         public String CurrentPath { get; private set; }
         public Action<String, Int32, Boolean> Output { get; set; }
         public ConsoleSession(ILogger log)
@@ -69,7 +60,7 @@ namespace TerminalServer.CliServer.CLI
             Task.Run((Func<Task>)ReadAsync);
             Task.Run((Func<Task>)ReadErrorAsync);
         }
-        private void Emit(String line)
+        private void Push(String line)
         {
             if (_nextIsPath)
             {
@@ -96,7 +87,6 @@ namespace TerminalServer.CliServer.CLI
             else if (Output != null && !String.IsNullOrWhiteSpace(line))
                 Output(line, _commandCorrelationId, _lastCommand == null);
         }
-
         private async Task ReadAsync()
         {
             while (!_cancel.IsCancellationRequested && !_proc.HasExited)
@@ -105,15 +95,13 @@ namespace TerminalServer.CliServer.CLI
                 {
                     var line = await _proc.StandardOutput.ReadLineAsync().ConfigureAwait(false);
                     if (line != null)
-                        Emit(line);
+                        Push(line);
                 }
-                catch (TaskCanceledException)
-                {
-                }
+                catch (TaskCanceledException){}
                 catch (Exception ex)
                 {
                     _log.Error("cmd.exe session error", ex);
-                    Finish(ex);
+                    _cancel.Cancel();
                 }
             }
         }
@@ -126,22 +114,20 @@ namespace TerminalServer.CliServer.CLI
                     var line = await _proc.StandardError.ReadLineAsync().ConfigureAwait(false);
                     _errorBuffer.Add(line);
                 }
-                catch (TaskCanceledException)
-                {
-                }
+                catch (TaskCanceledException){}
                 catch (Exception ex)
                 {
                     _log.Error("cmd.exe session error", ex);
-                    Finish(ex);
+                    _cancel.Cancel();
                 }
             }
         }
-
-        Int32 _commandCorrelationId;
         public void Input(String value, Int32 commandCorrelationId)
         {
             if (value.ToLowerInvariant() == "exit")
-                Finish(null);
+            {
+                _cancel.Cancel();
+            }
             else if (_lastCommand != null)
             {
                 _proc.StandardInput.WriteLine(value);
@@ -153,22 +139,21 @@ namespace TerminalServer.CliServer.CLI
                 _proc.StandardInput.WriteLine(_lastCommand);
             }
         }
-        private void Finish(Exception error)
+        private void Dispose(Boolean disposing)
         {
-            _log.Debug(this.GetType().Name + " Finish");
-            _cancel.Cancel();
+            if (disposing)
+                GC.SuppressFinalize(this);
+
             _proc.Dispose();
+            _cancel.Cancel();
         }
         public void Dispose()
         {
-            Finish(null);
+            Dispose(true);
         }
        ~ConsoleSession()
        {
-           _log.Debug(this.GetType().Name + " destroy");
+           Dispose(false);
        }
-
-
-       
     }
 }
