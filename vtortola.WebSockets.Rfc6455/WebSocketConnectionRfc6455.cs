@@ -21,7 +21,8 @@ namespace vtortola.WebSockets.Rfc6455
         readonly Stream _clientStream;
         readonly WebSocketListenerOptions _options;
         
-        Boolean _isClosed,_ongoingMessageWrite,_ongoingMessageAwaiting, _isDisposed;
+        Boolean _isClosed, _isDisposed;
+        Int32 _ongoingMessageWrite, _ongoingMessageAwaiting;
         readonly TimeSpan _pingInterval, _pingTimeout;
         DateTime _lastPong;
         Boolean _pingFail, _pingStarted;
@@ -172,13 +173,12 @@ namespace vtortola.WebSockets.Rfc6455
         }
         internal void EndWritting()
         {
-            _ongoingMessageWrite = false;
+            _ongoingMessageWrite = 0;
         }
         internal void BeginWritting()
         {
-            if (_ongoingMessageWrite)
+            if(Interlocked.CompareExchange(ref _ongoingMessageWrite, 1 , 0) == 1)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
-            _ongoingMessageWrite = true;
         }
         internal void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags)
         {
@@ -228,7 +228,7 @@ namespace vtortola.WebSockets.Rfc6455
                 CurrentHeader = null;
             }
             else
-                _ongoingMessageAwaiting = false;
+                _ongoingMessageAwaiting = 0;
         }
         private Boolean TryReadHeaderUntil(ref Int32 readed, Int32 until)
         {
@@ -246,11 +246,9 @@ namespace vtortola.WebSockets.Rfc6455
         }
         private void CheckForDoubleRead()
         {
-            if (_ongoingMessageAwaiting)
+            if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting,1,0) == 1)
                 throw new WebSocketException("There is an ongoing message await from somewhere else. Only a single write is allowed at the time.");
-            
-            _ongoingMessageAwaiting = true;
-            
+                       
             if (CurrentHeader != null)
                 throw new WebSocketException("There is an ongoing message that is being readed from somewhere else");
         }
