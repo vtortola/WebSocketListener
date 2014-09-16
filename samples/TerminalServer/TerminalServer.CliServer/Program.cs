@@ -29,10 +29,21 @@ namespace TerminalServer.CliServer
             server.Queue.SubscribeInstance(new CloseTerminalRequestHandler(manager, logger));
             server.Queue.SubscribeInstance(new InputTerminalRequestHandler(manager, logger));
 
-            Task.Run(()=>server.StartAsync());
+            try
+            {
+                server.StartAsync();
+                Console.ReadKey(true);
+                server.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex);
+                Console.ResetColor();
+            }
 
+            Console.WriteLine("End.");
             Console.ReadKey(true);
-            server.Dispose();
         }
     }
 }

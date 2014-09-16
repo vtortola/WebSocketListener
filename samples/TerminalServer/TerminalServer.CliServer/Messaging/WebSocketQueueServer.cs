@@ -96,10 +96,11 @@ namespace TerminalServer.CliServer
                     if (ws != null)
                     {
                         var handler = new WebSocketHandler(Queue, ws, _serializator, _log);
-                        Task.Run(()=>handler.HandleConnectionAsync(_cancellation.Token));
+                        Task.Run(() => handler.HandleConnectionAsync(_cancellation.Token));
                     }
                 }
                 catch (TaskCanceledException) { }
+                catch (InvalidOperationException) { }
                 catch (Exception aex)
                 {
                     _log.Error("Error Accepting clients", aex.GetBaseException());
