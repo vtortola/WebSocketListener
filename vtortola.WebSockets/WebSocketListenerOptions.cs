@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
         public String[] SubProtocols { get; set; }
         public BufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
-        public Boolean UseNagle { get; set; }
+        public Boolean UseNagleAlgorithm { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
@@ -37,7 +37,7 @@ namespace vtortola.WebSockets
             SendBufferSize = 8192;
             SubProtocols = _noSubProtocols;
             OnHttpNegotiation = null;
-            UseNagle = true;
+            UseNagleAlgorithm = true;
         }
 
         public WebSocketListenerOptions Clone()
@@ -54,7 +54,7 @@ namespace vtortola.WebSockets
                 SubProtocols = this.SubProtocols??_noSubProtocols,
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
-                UseNagle = this.UseNagle
+                UseNagleAlgorithm = this.UseNagleAlgorithm
             };
         }
 
