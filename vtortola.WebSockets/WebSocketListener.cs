@@ -89,7 +89,8 @@ namespace vtortola.WebSockets
         }
         private void ConfigureSocket(Socket client)
         {
-            client.NoDelay = !_options.UseNagleAlgorithm;
+            if(_options.UseNagleAlgorithm.HasValue)
+                client.NoDelay = !_options.UseNagleAlgorithm.Value;
             client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
             client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
         }

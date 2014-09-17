@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
         public String[] SubProtocols { get; set; }
         public BufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
-        public Boolean UseNagleAlgorithm { get; set; }
+        public Boolean? UseNagleAlgorithm { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
