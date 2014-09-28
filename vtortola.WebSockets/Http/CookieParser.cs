@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace vtortola.WebSockets
 {
@@ -26,7 +27,7 @@ namespace vtortola.WebSockets
                 }
                 else if (c == ';' && !String.IsNullOrWhiteSpace(name))
                 {
-                    yield return new Cookie(name.Trim(), part.Trim());
+                    yield return CreateCookie(name, part);
                     name = String.Empty;
                     part = String.Empty;
                     continue;
@@ -35,8 +36,12 @@ namespace vtortola.WebSockets
             }
             if (!String.IsNullOrWhiteSpace(name) && !String.IsNullOrWhiteSpace(part))
             {
-                yield return new Cookie(name.Trim(), part.Trim());
+                yield return CreateCookie(name, part);
             }
+        }
+        private Cookie CreateCookie(String key, String value)
+        {
+            return new Cookie(key.Trim(), HttpUtility.UrlDecode(value.Trim()));
         }
     }
 }

@@ -763,6 +763,40 @@ namespace WebSocketListenerTests.UnitTests
                     Assert.AreEqual(sb.ToString(), s);
                 }
             }
+        }
+
+        [TestMethod]
+        public void WebSocketHandshaker_CanUnderstandEncodedCookies()
+        {
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
+                new WebSocketListenerOptions()
+                {
+                    
+                });
+
+            using (var ms = new MemoryStream())
+            {
+                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                {
+                    sw.WriteLine(@"GET /chat HTTP/1.1");
+                    sw.WriteLine(@"Host: server.example.com");
+                    sw.WriteLine(@"Upgrade: websocket");
+                    sw.WriteLine(@"Connection: Upgrade");
+                    sw.WriteLine(@"Cookie: key=This%20is%20encoded.");
+                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
+                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
+                    sw.WriteLine(@"Origin: http://example.com");
+                }
+
+                var position = ms.Position;
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(ms).Result;
+                Assert.IsNotNull(result);
+                Assert.IsTrue(result.IsValid);
+                Assert.AreEqual(1, result.Request.Cookies.Count);
+                Assert.AreEqual("This is encoded.", result.Request.Cookies[0].Value);
+            }
 
         }
 
