@@ -29,7 +29,7 @@ namespace vtortola.WebSockets
         public async Task<Stream> ExtendConnectionAsync(Stream stream)
         {
             var ssl = new SslStream(stream, false);
-            await ssl.AuthenticateAsServerAsync(_certificate, false, SslProtocols.Default, false);
+            await ssl.AuthenticateAsServerAsync(_certificate, false, SslProtocols.Default, false).ConfigureAwait(false);
             return ssl;
         }
     }
