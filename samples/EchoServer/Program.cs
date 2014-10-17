@@ -115,6 +115,9 @@ namespace WebSocketListenerTests.Echo
                 while (ws.IsConnected && !cancellation.IsCancellationRequested)
                 {
                     String msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
+                    if (msg == null)
+                        continue;
+
                     PerformanceCounters.MessagesIn.Increment();
 
                     ws.WriteString(msg);
