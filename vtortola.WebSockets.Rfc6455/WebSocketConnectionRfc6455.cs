@@ -28,7 +28,7 @@ namespace vtortola.WebSockets.Rfc6455
         Boolean _pingFail, _pingStarted;
 
         internal Boolean IsConnected { get { return !_isClosed; } }
-        internal WebSocketFrameHeader CurrentHeader { get; set; }
+        internal WebSocketFrameHeader CurrentHeader { get; private set; }
         public TimeSpan Latency { get; private set; }
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
         {
@@ -127,15 +127,17 @@ namespace vtortola.WebSockets.Rfc6455
                 Close(WebSocketCloseReasons.ProtocolError);
             }
         }
+        internal void DisposeCurrentHeaderIfFinished()
+        {
+            if (CurrentHeader != null && CurrentHeader.RemainingBytes == 0)
+                CurrentHeader = null;
+        }
         internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
         {
             try
             {
                 var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
-
                 CurrentHeader.DecodeBytes(buffer, offset, readed);
-                if (CurrentHeader.RemainingBytes == 0)
-                    CurrentHeader = null;
                 return readed;
             }
             catch (InvalidOperationException)
@@ -154,10 +156,7 @@ namespace vtortola.WebSockets.Rfc6455
             try
             {
                 var readed = _clientStream.Read(buffer, offset, count);
-
                 CurrentHeader.DecodeBytes(buffer, offset, readed);
-                if (CurrentHeader.RemainingBytes == 0)
-                    CurrentHeader = null;
                 return readed;
             }
             catch (InvalidOperationException)

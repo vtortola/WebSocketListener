@@ -132,6 +132,66 @@ namespace WebSocketListenerTests.UnitTests
         }
 
         [TestMethod]
+        public void With_WebSocket_CanReadEmptyMessage()
+        {
+            var handshake = GenerateSimpleHandshake();
+            using (var ms = new MemoryStream())
+            using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            {
+                ms.Write(new Byte[] { 129, 128, 166, 124, 106, 65 }, 0, 6);
+                ms.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var reader = ws.ReadMessageAsync(CancellationToken.None).Result;
+                Assert.IsNotNull(reader);
+                using (var sr = new StreamReader(reader, Encoding.UTF8, true, 1024, true))
+                {
+                    String s = sr.ReadToEnd();
+                    Assert.AreEqual(String.Empty, s);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void With_WebSocket_CanReadEmptyMessagesFollowedWithNonEmptyMessage()
+        {
+            var handshake = GenerateSimpleHandshake();
+            using (var ms = new MemoryStream())
+            using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            {
+                ms.Write(new Byte[] { 129, 128, 166, 124, 106, 65 }, 0, 6);
+                ms.Write(new Byte[] { 129, 128, 166, 124, 106, 65 }, 0, 6);
+                ms.Write(new Byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var reader = ws.ReadMessageAsync(CancellationToken.None).Result;
+                Assert.IsNotNull(reader);
+                using (var sr = new StreamReader(reader, Encoding.UTF8, true, 1024, true))
+                {
+                    String s = sr.ReadToEnd();
+                    Assert.AreEqual(String.Empty, s);
+                }
+
+                reader = ws.ReadMessageAsync(CancellationToken.None).Result;
+                Assert.IsNotNull(reader);
+                using (var sr = new StreamReader(reader, Encoding.UTF8, true, 1024, true))
+                {
+                    String s = sr.ReadToEnd();
+                    Assert.AreEqual(String.Empty, s);
+                }
+
+                reader = ws.ReadMessageAsync(CancellationToken.None).Result;
+                Assert.IsNotNull(reader);
+                using (var sr = new StreamReader(reader, Encoding.UTF8, true, 1024, true))
+                {
+                    String s = sr.ReadToEnd();
+                    Assert.AreEqual("Hi", s);
+                }
+            }
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(WebSocketException))]
         public void With_WebSocket_FailsWithDoubleMessageAwait()
         {

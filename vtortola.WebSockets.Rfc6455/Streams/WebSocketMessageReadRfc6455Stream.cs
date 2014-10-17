@@ -61,18 +61,22 @@ namespace vtortola.WebSockets.Rfc6455
             do
             {
                 if (!_webSocket.IsConnected)
-                    return 0;
+                    break;
 
                 var checkedcount = CheckBoundaries(buffer, offset, count);
 
                 if (checkedcount == 0 && !_hasPendingFrames)
-                    return 0;
+                {
+                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
+                    break;
+                }
                 else if (checkedcount == 0 && _hasPendingFrames)
                     LoadNewHeader();
                 else
                 {
                     readed = _webSocket.Connection.ReadInternal(buffer, offset, checkedcount);
-                    if (_webSocket.Connection.CurrentHeader == null)
+                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
+                    if (_webSocket.Connection.CurrentHeader == null && _hasPendingFrames)
                         LoadNewHeader();
                 }
             } while (readed == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0);
@@ -86,18 +90,22 @@ namespace vtortola.WebSockets.Rfc6455
             do
             {
                 if (!_webSocket.IsConnected || cancellationToken.IsCancellationRequested)
-                    return 0;
+                    break;
 
                 var checkedcount = CheckBoundaries(buffer, offset, count);
 
-                if(checkedcount == 0 && !_hasPendingFrames)
-                    return 0;
+                if (checkedcount == 0 && !_hasPendingFrames)
+                {
+                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
+                    break;
+                }
                 else if (checkedcount == 0 && _hasPendingFrames)
                     await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
                 else
                 {
                     readed = await _webSocket.Connection.ReadInternalAsync(buffer, offset, checkedcount, cancellationToken).ConfigureAwait(false);
-                    if (_webSocket.Connection.CurrentHeader == null)
+                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
+                    if (_webSocket.Connection.CurrentHeader == null && _hasPendingFrames)
                         await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
                 }
             } while (readed == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0);
@@ -107,19 +115,13 @@ namespace vtortola.WebSockets.Rfc6455
 
         private void LoadNewHeader()
         {
-            if (_hasPendingFrames)
-            {
-                _webSocket.Connection.AwaitHeader();
-                _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
-            }
+            _webSocket.Connection.AwaitHeader();
+            _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
         }
         private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
         {
-            if (_hasPendingFrames)
-            {
-                await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
-                _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
-            }
+            await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
+            _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
         }
     }
 
