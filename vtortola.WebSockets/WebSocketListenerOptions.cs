@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.ServiceModel.Channels;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
@@ -38,6 +39,33 @@ namespace vtortola.WebSockets
             SubProtocols = _noSubProtocols;
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
+        }
+
+        public void CheckCoherence()
+        {
+            if (PingTimeout == TimeSpan.Zero)
+                PingTimeout = Timeout.InfiniteTimeSpan;
+
+            if (NegotiationQueueCapacity < 0)
+                throw new WebSocketException("NegotiationQueueCapacity must be 0 or more");
+
+            if (TcpBacklog.HasValue && TcpBacklog.Value < 1)
+                throw new WebSocketException("TcpBacklog value must be bigger than 0");
+
+            if (ParallelNegotiations < 1)
+                throw new WebSocketException("ParallelNegotiations cannot be less than 1");
+
+            if (NegotiationTimeout == TimeSpan.Zero)
+                NegotiationTimeout = Timeout.InfiniteTimeSpan;
+            
+            if (WebSocketSendTimeout == TimeSpan.Zero)
+                WebSocketSendTimeout = Timeout.InfiniteTimeSpan;
+
+            if (WebSocketReceiveTimeout == TimeSpan.Zero)
+                WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
+
+            if(SendBufferSize <= 0)
+                throw new WebSocketException("SendBufferSize must be bigger than 0.");
         }
 
         public WebSocketListenerOptions Clone()

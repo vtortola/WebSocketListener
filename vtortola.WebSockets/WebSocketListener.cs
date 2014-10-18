@@ -35,7 +35,8 @@ namespace vtortola.WebSockets
 
             if (endpoint == null)
                 throw new ArgumentNullException("endpoint");
-
+            
+            options.CheckCoherence();
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
             _listener = new TcpListener(endpoint);
