@@ -39,8 +39,11 @@ namespace vtortola.WebSockets
             options.CheckCoherence();
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
+
             _listener = new TcpListener(endpoint);
-            
+            if(_options.UseNagleAlgorithm.HasValue)
+                _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
+
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
             Standards = new WebSocketFactoryCollection(this);
             Func<Socket, Task<WebSocketNegotiationResult>> negotiate = NegotiateWebSocket;
