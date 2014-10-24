@@ -39,13 +39,10 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <blockquote>
-<p><a href="//github.com/vtortola/WebSocketListener/wiki/Changes-from-version-1-to-2">Changes from version 1.x to 2.0</a>.</p>
-</blockquote>
 
 <p>The <strong>WebSocketListener</strong> class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener with an API very similar to the <code>System.Net.TcpListener</code> class.</p>
 
-<p>It <strong>does not use</strong> the Microsoft's <code>System.Net.WebSockets</code> namespace. It should work in any operating system running <em>Microsoft.NET/Mono v4.5</em>.</p>
+<p>It <strong>does not use</strong> the Microsoft's <code>System.Net.WebSockets</code> namespace. It should work in any operating system running <em>Microsoft.NET/Mono v4.5</em>.This class is perfect for (but not limited to) creating endpoints with <strong>WebSocket</strong> in <strong>Windows 2008</strong> or <strong>Windows 7</strong>, which are not supported by <code>System.Net.WebSockets</code>.</p>
 
 <p><strong>WebSocketListener</strong> has been designed to provide WebSocket connectivity to other applications, in the same way that <code>System.Net.TcpListener</code> provides TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber pattern or reliable messaging beyond TCP.</p>
 
