@@ -139,14 +139,21 @@ namespace vtortola.WebSockets
         }
         public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
         {
-            var result = await _negotiationQueue.ReceiveAsync(token).ConfigureAwait(false);
-            if (result.Error != null)
+            try
             {
-                result.Error.Throw();
+                var result = await _negotiationQueue.ReceiveAsync(token).ConfigureAwait(false);
+                if (result.Error != null)
+                {
+                    result.Error.Throw();
+                    return null;
+                }
+                else
+                    return result.Result;
+            }
+            catch (OperationCanceledException)
+            {
                 return null;
             }
-            else
-                return result.Result;
         }
         private void Dispose(Boolean disposing)
         {
