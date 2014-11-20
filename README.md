@@ -1,3 +1,4 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/qsy1wmwaool3mpce?svg=true)](https://ci.appveyor.com/project/vtortola/websocketlistener)
 WebSocketListener 
 =================
 
