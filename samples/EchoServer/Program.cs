@@ -69,7 +69,7 @@ namespace WebSocketListenerTests.Echo
 
             Console.ReadKey(true);
             Log("Server stoping");
-
+            server.Stop();
             cancellation.Cancel();
             acceptingTask.Wait();
 
@@ -87,13 +87,11 @@ namespace WebSocketListenerTests.Echo
             {
                 try
                 {
-                    var ws = await server.AcceptWebSocketAsync(token);
-                    if (ws != null)
-                        Task.Run(() => HandleConnectionAsync(ws, token));
-                }
-                catch (TaskCanceledException)
-                {
+                    var ws = await server.AcceptWebSocketAsync(token).ConfigureAwait(false);
+                    if (ws == null)
+                        continue;
 
+                    Task.Run(() => HandleConnectionAsync(ws, token));
                 }
                 catch (Exception aex)
                 {
