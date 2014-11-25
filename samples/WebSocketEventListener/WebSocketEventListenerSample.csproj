@@ -43,14 +43,17 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="vtortola.WebSockets">
-      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.1.0.0\lib\vtortola.WebSockets.dll</HintPath>
+    <Reference Include="vtortola.WebSockets, Version=2.1.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.1.3.0\lib\net45\vtortola.WebSockets.dll</HintPath>
     </Reference>
-    <Reference Include="vtortola.WebSockets.Deflate">
-      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.1.0.0\lib\vtortola.WebSockets.Deflate.dll</HintPath>
+    <Reference Include="vtortola.WebSockets.Deflate, Version=2.1.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.1.3.0\lib\net45\vtortola.WebSockets.Deflate.dll</HintPath>
     </Reference>
-    <Reference Include="vtortola.WebSockets.Rfc6455">
-      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.1.0.0\lib\vtortola.WebSockets.Rfc6455.dll</HintPath>
+    <Reference Include="vtortola.WebSockets.Rfc6455, Version=2.1.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2013\Projects\WebSockets\packages\vtortola.WebSocketListener.2.1.3.0\lib\net45\vtortola.WebSockets.Rfc6455.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
