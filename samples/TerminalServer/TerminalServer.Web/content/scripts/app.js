@@ -17,7 +17,7 @@
 
 .factory("websocketUrl",["guid", function (guid) {
     
-    var url = "ws://localhost:8006/" + guid();
+    var url = "ws://localhost:8009/" + guid();
     if (window.sessionStorage) {
         var stored = window.sessionStorage.getItem("websocketUrl");
         if (stored) {

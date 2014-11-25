@@ -11,7 +11,7 @@ namespace TerminalServer.CliServer
         {
             var logger = new Log4NetLogger();
             var sysinfo = new SystemInfo();
-            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8009);
 
             WebSocketQueueServer server = new WebSocketQueueServer(endpoint, sysinfo, logger);
             ConnectionManager manager = new ConnectionManager(server, logger, sysinfo);

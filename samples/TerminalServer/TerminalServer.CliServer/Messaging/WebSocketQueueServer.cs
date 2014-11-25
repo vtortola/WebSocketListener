@@ -110,6 +110,7 @@ namespace TerminalServer.CliServer
         }
         public void Dispose()
         {
+            _cancellation.Cancel();
             _wsServer.Dispose();
         }
     }
