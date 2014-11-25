@@ -360,7 +360,7 @@ namespace vtortola.WebSockets
                 }
                 catch (Exception ex)
                 {
-                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "'");
+                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "' because: " + ex.Message);
                 }
             }
         }
