@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{45AC3A8B-FEC2-4499-820E-5596B81DF98A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets", "vtortola.WebSockets\vtortola.WebSockets.csproj", "{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets.Deflate", "vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj", "{3BFDAE73-A6A9-40B9-9026-84DD005BBAC9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerTests.UnitTests", "tests\WebSocketListener.UnitTests\WebSocketListenerTests.UnitTests.csproj", "{760B2894-2A33-4DA7-AD94-101A41015172}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets.Rfc6455", "vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj", "{72114F0D-EC56-43D5-8C13-43FB013C0C1D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BFDAE73-A6A9-40B9-9026-84DD005BBAC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BFDAE73-A6A9-40B9-9026-84DD005BBAC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BFDAE73-A6A9-40B9-9026-84DD005BBAC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BFDAE73-A6A9-40B9-9026-84DD005BBAC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{760B2894-2A33-4DA7-AD94-101A41015172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{760B2894-2A33-4DA7-AD94-101A41015172}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{760B2894-2A33-4DA7-AD94-101A41015172}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{760B2894-2A33-4DA7-AD94-101A41015172}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72114F0D-EC56-43D5-8C13-43FB013C0C1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72114F0D-EC56-43D5-8C13-43FB013C0C1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72114F0D-EC56-43D5-8C13-43FB013C0C1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72114F0D-EC56-43D5-8C13-43FB013C0C1D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{760B2894-2A33-4DA7-AD94-101A41015172} = {45AC3A8B-FEC2-4499-820E-5596B81DF98A}
+	EndGlobalSection
+EndGlobal
