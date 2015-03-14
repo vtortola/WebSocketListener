@@ -27,9 +27,9 @@ namespace vtortola.WebSockets
             wrapper.Task.ContinueWith(t =>
             {
                 if (callback != null)
-                    callback(wrapper.Task);
+                    callback(wrapper);
             });
-            return wrapper.Task;
+            return wrapper;
         }
         public override sealed void EndWrite(IAsyncResult asyncResult)
         {
