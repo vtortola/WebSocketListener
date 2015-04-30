@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
@@ -17,11 +11,11 @@ namespace vtortola.WebSockets.Rfc6455
         public UInt64 RemainingBytes { get; private set; }
 
         readonly ArraySegment<Byte> _key;
-        Int32 cursor = 0;
+        Int32 _cursor;
 
         private WebSocketFrameHeader(ArraySegment<Byte> keySegment)
         {
-            if (keySegment.Count != 4)
+            if (keySegment.Count != BufferLen.Key)
                 throw new WebSocketException("The frame key must have a length of 4");
             _key = keySegment;
         }
@@ -39,27 +33,29 @@ namespace vtortola.WebSockets.Rfc6455
 
                 for (int i = bufferOffset; i < bufferOffset + readed; i++)
                 {
-                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + cursor++]);
-                    if (cursor >= 4)
-                        cursor = 0;
+                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + _cursor++]);
+                    if (_cursor >= 4)
+                        _cursor = 0;
                 }
             }
 
-            RemainingBytes-= (UInt64)readed;
+            RemainingBytes -= (UInt64)readed;
         }
 
         public void ToBytes(Byte[] segment, Int32 offset)
         {
-            this.Flags.ToBytes(this.ContentLength, segment, offset);
-            if (this.ContentLength <= 125)
-            { // header length is included in the 2b header
+            Flags.ToBytes(ContentLength, segment, offset);
+
+            if (ContentLength <= 125)
+            {
+                // header length is included in the 2b header
             }
-            else if (this.ContentLength < UInt16.MaxValue)
-                ((UInt16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
-            else if (this.ContentLength < UInt64.MaxValue)
-                this.ContentLength.ToBytesBackwards(segment, offset + 2);
+            else if (ContentLength < UInt16.MaxValue)
+                ((UInt16)ContentLength).ToBytesBackwards(segment, offset + 2);
+            else if (ContentLength < UInt64.MaxValue)
+                ContentLength.ToBytesBackwards(segment, offset + 2);
             else
-                throw new WebSocketException("Invalid frame header " + this.ContentLength);
+                throw new WebSocketException("Invalid frame header " + ContentLength);
         }
 
         public static Int32 GetHeaderLength(Byte[] frameStart, Int32 offset)
@@ -73,13 +69,14 @@ namespace vtortola.WebSockets.Rfc6455
 
             if (contentLength <= 125)
                 return isMasked ? 6 : 2;
-            else if (contentLength == 126)
+            if (contentLength == 126)
                 return (isMasked ? 6 : 2) + 2;
-            else if (contentLength == 127)
+            if (contentLength == 127)
                 return (isMasked ? 6 : 2) + 8;
-            else
-                throw new WebSocketException("Cannot understand a length field of " + contentLength);
+
+            throw new WebSocketException("Cannot understand a length field of " + contentLength);
         }
+
         public static Boolean TryParse(Byte[] frameStart, Int32 offset, Int32 headerLength, ArraySegment<Byte> keySegment, out WebSocketFrameHeader header)
         {
             header = null;
@@ -87,8 +84,8 @@ namespace vtortola.WebSockets.Rfc6455
             if (frameStart == null || frameStart.Length < 6 || frameStart.Length < (offset + headerLength))
                 return false;
 
-            Int32 value = frameStart[offset+1];
-            UInt64 contentLength = (UInt64)(value>=128?value - 128:value);
+            Int32 value = frameStart[offset + 1];
+            UInt64 contentLength = (UInt64)(value >= 128 ? value - 128 : value);
 
             if (contentLength <= 125)
             {
@@ -99,7 +96,7 @@ namespace vtortola.WebSockets.Rfc6455
                 if (frameStart.Length < headerLength)
                     return false;
 
-                if(BitConverter.IsLittleEndian)
+                if (BitConverter.IsLittleEndian)
                     frameStart.ReversePortion(offset + 2, 2);
                 contentLength = BitConverter.ToUInt16(frameStart, 2);
             }
@@ -110,7 +107,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (BitConverter.IsLittleEndian)
                     frameStart.ReversePortion(offset + 2, 8);
-                contentLength = (UInt64)BitConverter.ToUInt64(frameStart, 2);
+                contentLength = BitConverter.ToUInt64(frameStart, 2);
             }
             else
                 return false;
@@ -136,14 +133,15 @@ namespace vtortola.WebSockets.Rfc6455
                 return true;
             }
 
-            return false; 
+            return false;
         }
+
         public static WebSocketFrameHeader Create(Int32 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             var flags = new WebSocketFrameHeaderFlags(isComplete, headerSent ? WebSocketFrameOption.Continuation : option, extensionFlags);
 
             Int32 headerLength;
-                        
+
             if (count <= 125)
                 headerLength = 2;
             else if (count < UInt16.MaxValue)
@@ -152,7 +150,7 @@ namespace vtortola.WebSockets.Rfc6455
                 headerLength = 10;
             else
                 throw new WebSocketException("Cannot create a header with a length of " + count);
-            
+
             return new WebSocketFrameHeader()
             {
                 HeaderLength = headerLength,

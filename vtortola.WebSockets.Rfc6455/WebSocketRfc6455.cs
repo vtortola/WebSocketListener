@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,7 +20,7 @@ namespace vtortola.WebSockets.Rfc6455
         public TimeSpan Latency { get { return Connection.Latency; } }
 
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
-            :base(httpRequest, httpResponse)
+            : base(httpRequest, httpResponse)
         {
             if (clientStream == null)
                 throw new ArgumentNullException("clientStream");
@@ -48,9 +46,10 @@ namespace vtortola.WebSockets.Rfc6455
             Connection = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;
         }
+
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            using (token.Register(this.Close, false))
+            using (token.Register(Close, false))
             {
                 await Connection.AwaitHeaderAsync(token).ConfigureAwait(false);
 
@@ -59,11 +58,13 @@ namespace vtortola.WebSockets.Rfc6455
                     WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
                     foreach (var extension in _extensions)
                         reader = extension.ExtendReader(reader);
+
                     return reader;
                 }
                 return null;
             }
         }
+
         public override WebSocketMessageReadStream ReadMessage()
         {
             Connection.AwaitHeader();
@@ -78,6 +79,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             return null;
         }
+
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
             if (!Connection.IsConnected)
@@ -91,10 +93,12 @@ namespace vtortola.WebSockets.Rfc6455
 
             return writer;
         }
+
         public override void Close()
         {
             Connection.Close();
         }
+
         protected virtual void Dispose(Boolean disposing)
         {
             if (!_isDisposed)
@@ -105,10 +109,12 @@ namespace vtortola.WebSockets.Rfc6455
                 Connection.Dispose();
             }
         }
+
         public override void Dispose()
         {
             Dispose(true);
         }
+
         ~WebSocketRfc6455()
         {
             Dispose(false);

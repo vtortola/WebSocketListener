@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -59,49 +54,52 @@ namespace vtortola.WebSockets.Rfc6455
             if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))
                 return false;
 
-            headerFlags = new WebSocketFrameHeaderFlags(buffer[0],buffer[1],(WebSocketFrameOption)value); 
+            headerFlags = new WebSocketFrameHeaderFlags(buffer[0], buffer[1], (WebSocketFrameOption)value);
             return true;
         }
+
         private WebSocketFrameHeaderFlags(Byte byte1, Byte byte2, WebSocketFrameOption option)
         {
             _byte1 = byte1;
             _byte2 = byte2;
             Option = option;
         }
+
         public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
-            this.Option = option;
+            Option = option;
             _byte1 = new Byte();
             _byte2 = new Byte();
 
             SetBit(ref _byte1, 7, isComplete);
 
-            this.RSV1 = extensionFlags.Rsv1;
-            this.RSV2 = extensionFlags.Rsv2;
-            this.RSV3 = extensionFlags.Rsv3;
+            RSV1 = extensionFlags.Rsv1;
+            RSV2 = extensionFlags.Rsv2;
+            RSV3 = extensionFlags.Rsv3;
 
             switch (option)
             {
                 case WebSocketFrameOption.Text:
-                    this.OPT1 = true;
+                    OPT1 = true;
                     break;
                 case WebSocketFrameOption.Binary:
-                    this.OPT2 = true;
+                    OPT2 = true;
                     break;
                 case WebSocketFrameOption.ConnectionClose:
-                    this.OPT4 = true;
+                    OPT4 = true;
                     break;
                 case WebSocketFrameOption.Ping:
-                    this.OPT1 = this.OPT4 = true;
+                    OPT1 = OPT4 = true;
                     break;
                 case WebSocketFrameOption.Pong:
-                    this.OPT4 = this.OPT2 = true;
+                    OPT4 = OPT2 = true;
                     break;
                 case WebSocketFrameOption.Continuation:
-                    this.RSV1 = this.RSV2 = this.RSV3 = false;
+                    RSV1 = RSV2 = RSV3 = false;
                     break;
             }
         }
+
         public void ToBytes(UInt64 length, Byte[] buffer, Int32 offset)
         {
             Int32 headerLength;
@@ -109,13 +107,13 @@ namespace vtortola.WebSockets.Rfc6455
                 headerLength = (Int32)length;
             else if (length < UInt16.MaxValue)
                 headerLength = 126;
-            else if ((UInt64)length < UInt64.MaxValue)
+            else if (length < UInt64.MaxValue)
                 headerLength = 127;
             else
                 throw new WebSocketException("Cannot create a header with a length of " + length);
 
             buffer[offset] = _byte1;
-            buffer[offset+1] = (Byte)(_byte2 + headerLength);
+            buffer[offset + 1] = (Byte)(_byte2 + headerLength);
         }
     }
 }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace vtortola.WebSockets.Rfc6455
 {
     public enum WebSocketFrameOption
@@ -15,5 +10,4 @@ namespace vtortola.WebSockets.Rfc6455
         Ping = 9,
         Pong = 10
     }
-
 }

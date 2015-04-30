@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +15,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public WebSocketMessageReadRfc6455Stream(WebSocketRfc6455 webSocket)
         {
-            if(webSocket == null)
+            if (webSocket == null)
                 throw new ArgumentNullException("webSocket");
 
             _webSocket = webSocket;
@@ -31,11 +28,12 @@ namespace vtortola.WebSockets.Rfc6455
 
         private WebSocketExtensionFlags GetExtensionFlags(WebSocketFrameHeaderFlags webSocketFrameHeaderFlags)
         {
-            var flags = new WebSocketExtensionFlags();
-            flags.Rsv1 = webSocketFrameHeaderFlags.RSV1;
-            flags.Rsv2 = webSocketFrameHeaderFlags.RSV2;
-            flags.Rsv3 = webSocketFrameHeaderFlags.RSV3;
-            return flags;
+            return new WebSocketExtensionFlags
+            {
+                Rsv1 = webSocketFrameHeaderFlags.RSV1,
+                Rsv2 = webSocketFrameHeaderFlags.RSV2,
+                Rsv3 = webSocketFrameHeaderFlags.RSV3
+            };
         }
 
         private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
@@ -70,8 +68,11 @@ namespace vtortola.WebSockets.Rfc6455
                     _webSocket.Connection.DisposeCurrentHeaderIfFinished();
                     break;
                 }
-                else if (checkedcount == 0 && _hasPendingFrames)
+
+                if (checkedcount == 0 && _hasPendingFrames)
+                {
                     LoadNewHeader();
+                }
                 else
                 {
                     readed = _webSocket.Connection.ReadInternal(buffer, offset, checkedcount);
@@ -99,8 +100,11 @@ namespace vtortola.WebSockets.Rfc6455
                     _webSocket.Connection.DisposeCurrentHeaderIfFinished();
                     break;
                 }
-                else if (checkedcount == 0 && _hasPendingFrames)
+
+                if (checkedcount == 0 && _hasPendingFrames)
+                {
                     await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
+                }
                 else
                 {
                     readed = await _webSocket.Connection.ReadInternalAsync(buffer, offset, checkedcount, cancellationToken).ConfigureAwait(false);
@@ -118,11 +122,11 @@ namespace vtortola.WebSockets.Rfc6455
             _webSocket.Connection.AwaitHeader();
             _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
         }
+
         private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
         {
             await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
             _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
         }
     }
-
 }
