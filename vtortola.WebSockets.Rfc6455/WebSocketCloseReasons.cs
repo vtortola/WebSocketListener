@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public enum WebSocketCloseReasons : ushort
+    public enum WebSocketCloseReasons : short
     {
         NormalClose=1000,
         GoingAway=1001,

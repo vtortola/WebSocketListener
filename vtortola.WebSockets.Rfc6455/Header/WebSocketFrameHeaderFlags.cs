@@ -102,14 +102,14 @@ namespace vtortola.WebSockets.Rfc6455
                     break;
             }
         }
-        public void ToBytes(UInt64 length, Byte[] buffer, Int32 offset)
+        public void ToBytes(Int64 length, Byte[] buffer, Int32 offset)
         {
             Int32 headerLength;
             if (length <= 125)
                 headerLength = (Int32)length;
-            else if (length < UInt16.MaxValue)
+            else if (length < Int16.MaxValue)
                 headerLength = 126;
-            else if ((UInt64)length < UInt64.MaxValue)
+            else if ((Int64)length < Int64.MaxValue)
                 headerLength = 127;
             else
                 throw new WebSocketException("Cannot create a header with a length of " + length);

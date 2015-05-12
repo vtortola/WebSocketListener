@@ -12,11 +12,11 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketFactoryCollection : IReadOnlyCollection<WebSocketFactory>
     {
-        readonly Dictionary<UInt16, WebSocketFactory> _factories;
+        readonly Dictionary<Int16, WebSocketFactory> _factories;
         readonly WebSocketListener _listener;
         public WebSocketFactoryCollection()
         {
-            _factories = new Dictionary<UInt16, WebSocketFactory>();
+            _factories = new Dictionary<Int16, WebSocketFactory>();
         }
         public WebSocketFactoryCollection(WebSocketListener webSocketListener)
             : this()

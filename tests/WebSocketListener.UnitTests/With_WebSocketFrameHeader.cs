@@ -110,7 +110,7 @@ namespace WebSocketListener.UnitTests
             Assert.IsNotNull(header);
             Assert.IsTrue(header.Flags.FIN);
             Assert.IsFalse(header.Flags.MASK);
-            Assert.AreEqual((UInt64)101, header.ContentLength);
+            Assert.AreEqual((Int64)101, header.ContentLength);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketFactory
     {
-        public abstract UInt16 Version { get; }
+        public abstract Int16 Version { get; }
         public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
         public WebSocketFactory()
         {

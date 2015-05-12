@@ -11,10 +11,10 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public sealed class WebSocketFrameHeader
     {
-        public UInt64 ContentLength { get; private set; }
+        public Int64 ContentLength { get; private set; }
         public Int32 HeaderLength { get; private set; }
         public WebSocketFrameHeaderFlags Flags { get; private set; }
-        public UInt64 RemainingBytes { get; private set; }
+        public Int64 RemainingBytes { get; private set; }
 
         readonly ArraySegment<Byte> _key;
         Int32 cursor = 0;
@@ -45,7 +45,7 @@ namespace vtortola.WebSockets.Rfc6455
                 }
             }
 
-            RemainingBytes-= (UInt64)readed;
+            RemainingBytes-= (Int64)readed;
         }
 
         public void ToBytes(Byte[] segment, Int32 offset)
@@ -54,9 +54,9 @@ namespace vtortola.WebSockets.Rfc6455
             if (this.ContentLength <= 125)
             { // header length is included in the 2b header
             }
-            else if (this.ContentLength < UInt16.MaxValue)
-                ((UInt16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
-            else if (this.ContentLength < UInt64.MaxValue)
+            else if (this.ContentLength < Int16.MaxValue)
+                ((Int16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
+            else if (this.ContentLength < Int64.MaxValue)
                 this.ContentLength.ToBytesBackwards(segment, offset + 2);
             else
                 throw new WebSocketException("Invalid frame header " + this.ContentLength);
@@ -88,7 +88,7 @@ namespace vtortola.WebSockets.Rfc6455
                 return false;
 
             Int32 value = frameStart[offset+1];
-            UInt64 contentLength = (UInt64)(value>=128?value - 128:value);
+            Int64 contentLength = (Int64)(value>=128?value - 128:value);
 
             if (contentLength <= 125)
             {
@@ -101,7 +101,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if(BitConverter.IsLittleEndian)
                     frameStart.ReversePortion(offset + 2, 2);
-                contentLength = BitConverter.ToUInt16(frameStart, 2);
+                contentLength = BitConverter.ToInt16(frameStart, 2);
             }
             else if (contentLength == 127)
             {
@@ -110,7 +110,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (BitConverter.IsLittleEndian)
                     frameStart.ReversePortion(offset + 2, 8);
-                contentLength = (UInt64)BitConverter.ToUInt64(frameStart, 2);
+                contentLength = (Int64)BitConverter.ToInt64(frameStart, 2);
             }
             else
                 return false;
@@ -146,9 +146,9 @@ namespace vtortola.WebSockets.Rfc6455
                         
             if (count <= 125)
                 headerLength = 2;
-            else if (count < UInt16.MaxValue)
+            else if (count < Int16.MaxValue)
                 headerLength = 4;
-            else if ((UInt64)count < UInt64.MaxValue)
+            else if ((Int64)count < Int64.MaxValue)
                 headerLength = 10;
             else
                 throw new WebSocketException("Cannot create a header with a length of " + count);
@@ -156,9 +156,9 @@ namespace vtortola.WebSockets.Rfc6455
             return new WebSocketFrameHeader()
             {
                 HeaderLength = headerLength,
-                ContentLength = (UInt64)count,
+                ContentLength = (Int64)count,
                 Flags = flags,
-                RemainingBytes = (UInt64)count
+                RemainingBytes = (Int64)count
             };
         }
     }

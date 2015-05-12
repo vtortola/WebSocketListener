@@ -12,7 +12,7 @@ namespace vtortola.WebSockets
     {
         public Uri Origin { get; private set; }
         public String Host { get; private set; }
-        public UInt16 WebSocketVersion { get; internal set; }
+        public Int16 WebSocketVersion { get; internal set; }
         
         public String this[HttpRequestHeader header]
         {
@@ -36,7 +36,7 @@ namespace vtortola.WebSockets
                     Host = value;
                     break;
                 case "Sec-WebSocket-Version":
-                    WebSocketVersion = UInt16.Parse(value);
+                    WebSocketVersion = Int16.Parse(value);
                     break;
             }
         }

@@ -46,10 +46,10 @@ namespace vtortola.WebSockets.Rfc6455
             if (_webSocket.Connection.CurrentHeader == null)
                 return 0;
 
-            if (_webSocket.Connection.CurrentHeader.ContentLength < (UInt64)count)
+            if (_webSocket.Connection.CurrentHeader.ContentLength < (Int64)count)
                 count = (Int32)_webSocket.Connection.CurrentHeader.ContentLength;
 
-            if (_webSocket.Connection.CurrentHeader.RemainingBytes < (UInt64)count)
+            if (_webSocket.Connection.CurrentHeader.RemainingBytes < (Int64)count)
                 count = (Int32)_webSocket.Connection.CurrentHeader.RemainingBytes;
 
             return count;
