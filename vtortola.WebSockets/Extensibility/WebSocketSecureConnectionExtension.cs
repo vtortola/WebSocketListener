@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
@@ -22,7 +18,7 @@ namespace vtortola.WebSockets
         public Stream ExtendConnection(Stream stream)
         {
             var ssl = new SslStream(stream, false);
-            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default,false);
+            ssl.AuthenticateAsServer(_certificate, false, SslProtocols.Default, false);
             return ssl;
         }
 

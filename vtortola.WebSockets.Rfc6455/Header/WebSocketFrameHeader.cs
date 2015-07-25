@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
@@ -17,7 +11,7 @@ namespace vtortola.WebSockets.Rfc6455
         public Int64 RemainingBytes { get; private set; }
 
         readonly ArraySegment<Byte> _key;
-        Int32 cursor = 0;
+        Int32 _cursor = 0;
 
         private WebSocketFrameHeader(ArraySegment<Byte> keySegment)
         {
@@ -39,9 +33,9 @@ namespace vtortola.WebSockets.Rfc6455
 
                 for (int i = bufferOffset; i < bufferOffset + readed; i++)
                 {
-                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + cursor++]);
-                    if (cursor >= 4)
-                        cursor = 0;
+                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + _cursor++]);
+                    if (_cursor >= 4)
+                        _cursor = 0;
                 }
             }
 

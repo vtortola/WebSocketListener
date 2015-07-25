@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
@@ -40,7 +35,6 @@ namespace vtortola.WebSockets
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
         }
-
         public void CheckCoherence()
         {
             if (PingTimeout == TimeSpan.Zero)
@@ -67,7 +61,6 @@ namespace vtortola.WebSockets
             if(SendBufferSize <= 0)
                 throw new WebSocketException("SendBufferSize must be bigger than 0.");
         }
-
         public WebSocketListenerOptions Clone()
         {
             return new WebSocketListenerOptions()
@@ -85,7 +78,5 @@ namespace vtortola.WebSockets
                 UseNagleAlgorithm = this.UseNagleAlgorithm
             };
         }
-
-        
     }
 }

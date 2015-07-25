@@ -1,13 +1,9 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using vtortola.WebSockets.Http;
-using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
