@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,7 +37,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
         {
-            if (count < buffer.Length - offset)
+            if (count > buffer.Length - offset)
                 throw new ArgumentException("There is not space in the array for that length considering that offset.");
 
             if (_webSocket.Connection.CurrentHeader == null)
