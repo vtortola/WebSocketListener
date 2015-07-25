@@ -32,16 +32,16 @@ namespace WebSocketListenerTests.Echo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             // opening TLS certificate
-            X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadOnly);
-            store.Certificates.Count.ToString();
-            var certificate = store.Certificates[1];
-            store.Close();
+            //X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            //store.Open(OpenFlags.ReadOnly);
+            //store.Certificates.Count.ToString();
+            //var certificate = store.Certificates[1];
+            //store.Close();
             
             CancellationTokenSource cancellation = new CancellationTokenSource();
             
             // local endpoint
-            var endpoint = new IPEndPoint(IPAddress.Any, 8006);
+            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
             
             // starting the server
             WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() 
@@ -59,7 +59,7 @@ namespace WebSocketListenerTests.Echo
             rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
             server.Standards.RegisterStandard(rfc6455);
             // adding the WSS extension
-            server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
 
             server.Start();
 
