@@ -7,11 +7,13 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Common.WebSockets.Services;
 
 namespace vtortola.WebSockets
 {
     public class WebSocketHandshaker
     {
+        readonly IHttpServices _httpServices;
         readonly WebSocketListenerOptions _options;
         readonly WebSocketFactoryCollection _factories;
 
@@ -25,6 +27,7 @@ namespace vtortola.WebSockets
 
             _factories = factories;
             _options = options;
+            _httpServices = HttpServicesLocator.HttpServices;
         }
 
         public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream)
@@ -239,7 +242,7 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
-            writer.Write(HttpWorkerRequest.GetStatusDescription(intCode));
+            writer.Write(_httpServices.GetStatusDescription(intCode));
             writer.Write("\r\n\r\n");
         }
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)
