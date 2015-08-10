@@ -112,5 +112,61 @@ namespace WebSocketListener.UnitTests
             Assert.IsFalse(header.Flags.MASK);
             Assert.AreEqual((Int64)101, header.ContentLength);
         }
+
+        [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Can_ParseMediumHeader()
+        {
+            Byte[] buffer = new Byte[6];
+            buffer[0] = 129;
+            buffer[1] = 126;
+
+            UInt16 ilength = (UInt16)Int16.MaxValue + 1;
+            var length = BitConverter.GetBytes(ilength);
+            Array.Reverse(length);
+            length.CopyTo(buffer, 2);
+
+            WebSocketFrameHeader header;
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.IsNotNull(header);
+            Assert.IsTrue(header.Flags.FIN);
+            Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual((Int64)ilength, header.ContentLength);
+        }
+
+        [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Can_ParseBigHeader()
+        {
+            Byte[] buffer = new Byte[10];
+            buffer[0] = 129;
+            buffer[1] = 127;
+
+            var length = BitConverter.GetBytes(Int64.MaxValue);
+            Array.Reverse(length);
+            length.CopyTo(buffer, 2);
+
+            WebSocketFrameHeader header;
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.IsNotNull(header);
+            Assert.IsTrue(header.Flags.FIN);
+            Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual(Int64.MaxValue, header.ContentLength);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(WebSocketException))]
+        public void With_WebSocketFrameHeaderFlags_Fail_ParseBigHeader_When_Overflows_Int64()
+        {
+            Byte[] buffer = new Byte[10];
+            buffer[0] = 129;
+            buffer[1] = 127;
+
+            UInt64 ilength = (UInt64)Int64.MaxValue + 1;
+            var length = BitConverter.GetBytes(ilength);
+            Array.Reverse(length);
+            length.CopyTo(buffer, 2);
+
+            WebSocketFrameHeader header;
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+        }
     }
 }

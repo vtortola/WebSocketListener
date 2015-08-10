@@ -11,7 +11,7 @@ namespace vtortola.WebSockets.Rfc6455
         public Int64 RemainingBytes { get; private set; }
 
         readonly ArraySegment<Byte> _key;
-        Int32 _cursor = 0;
+        Int32 cursor = 0;
 
         private WebSocketFrameHeader(ArraySegment<Byte> keySegment)
         {
@@ -33,9 +33,9 @@ namespace vtortola.WebSockets.Rfc6455
 
                 for (int i = bufferOffset; i < bufferOffset + readed; i++)
                 {
-                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + _cursor++]);
-                    if (_cursor >= 4)
-                        _cursor = 0;
+                    buffer[i] = (Byte)(buffer[i] ^ _key.Array[_key.Offset + cursor++]);
+                    if (cursor >= 4)
+                        cursor = 0;
                 }
             }
 
@@ -95,7 +95,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if(BitConverter.IsLittleEndian)
                     frameStart.ReversePortion(offset + 2, 2);
-                contentLength = BitConverter.ToInt16(frameStart, 2);
+                contentLength = BitConverter.ToUInt16(frameStart, 2);
             }
             else if (contentLength == 127)
             {
@@ -104,7 +104,14 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (BitConverter.IsLittleEndian)
                     frameStart.ReversePortion(offset + 2, 8);
-                contentLength = (Int64)BitConverter.ToInt64(frameStart, 2);
+
+                UInt64 length = BitConverter.ToUInt64(frameStart, 2);
+                if(length > Int64.MaxValue)
+                {
+                    throw new WebSocketException("The maximum supported frame length is 9223372036854775807, current frame is " + length.ToString());
+                }
+
+                contentLength = (Int64)length;
             }
             else
                 return false;
