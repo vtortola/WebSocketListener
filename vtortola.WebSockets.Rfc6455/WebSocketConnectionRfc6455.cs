@@ -389,7 +389,7 @@ namespace vtortola.WebSockets.Rfc6455
                 if (Interlocked.CompareExchange(ref _isClosed,1,0) == 1)
                     return;
 
-                ((Int16)reason).ToBytes(_closeBuffer.Array, _controlBuffer.Offset);
+                ((Int16)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
                 WriteInternal(_closeBuffer, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
                 _clientStream.Close();
             }
