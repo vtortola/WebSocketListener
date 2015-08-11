@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace vtortola.WebSockets.Tools
+namespace vtortola.WebSockets.Rfc6455
 {
-    public static class ByteArrayExtensions
+    internal static class ByteArrayExtensions
     {
-        public static void ReversePortion(this Byte[] array, Int32 from, Int32 count)
+        internal static void ReversePortion(this Byte[] array, Int32 from, Int32 count)
         {
             if (count + from > array.Length)
                 throw new ArgumentException("The array is to small");
@@ -23,7 +23,7 @@ namespace vtortola.WebSockets.Tools
             }
         }
 
-        public static void ToBytes(this UInt16 value, Byte[] buffer, Int32 offset)
+        internal static void ToBytes(this UInt16 value, Byte[] buffer, Int32 offset)
         {
             for (int i = 0; i < 2; i++)
             {
@@ -32,7 +32,7 @@ namespace vtortola.WebSockets.Tools
             }
         }
 
-        public static void ToBytes(this UInt64 value, Byte[] buffer, Int32 offset)
+        internal static void ToBytes(this UInt64 value, Byte[] buffer, Int32 offset)
         {
             for (int i = 0; i < 8; i++)
             {
@@ -41,7 +41,7 @@ namespace vtortola.WebSockets.Tools
             }
         }
 
-        public static void ToBytesBackwards(this UInt16 value, Byte[] buffer, Int32 offset)
+        internal static void ToBytesBackwards(this UInt16 value, Byte[] buffer, Int32 offset)
         {
             for (int i = offset + 1; i >= offset; i--)
             {
@@ -50,7 +50,7 @@ namespace vtortola.WebSockets.Tools
             }
         }
 
-        public static void ToBytesBackwards(this UInt64 value, Byte[] buffer, Int32 offset)
+        internal static void ToBytesBackwards(this UInt64 value, Byte[] buffer, Int32 offset)
         {
             for (int i = offset + 7; i >= offset; i--)
             {

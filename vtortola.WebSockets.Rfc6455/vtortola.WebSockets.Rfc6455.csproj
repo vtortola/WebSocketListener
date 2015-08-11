@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Header\ByteArrayExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\WebSocketMessageReadRfc6455Stream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteRfc6455Stream.cs" />
