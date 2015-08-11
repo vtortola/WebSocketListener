@@ -63,7 +63,7 @@ namespace WebSocketListener.UnitTests
         }
 
         [TestMethod]
-        public void With_WebSocketFrameHeaderFlags_Cannot_CreateBigHeader_Int64()
+        public void With_WebSocketFrameHeaderFlags_Can_CreateBigHeader_Int64()
         {
             var header = WebSocketFrameHeader.Create(Int64.MaxValue, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
             Byte[] buffer = new Byte[10];
