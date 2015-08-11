@@ -48,12 +48,12 @@ namespace vtortola.WebSockets.Rfc6455
             if (this.ContentLength <= 125)
             { // header length is included in the 2b header
             }
-            else if (this.ContentLength < Int16.MaxValue)
-                ((Int16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
-            else if (this.ContentLength < Int64.MaxValue)
-                this.ContentLength.ToBytesBackwards(segment, offset + 2);
+            else if (this.ContentLength < UInt16.MaxValue)
+                ((UInt16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
+            else if ((UInt64)this.ContentLength <= UInt64.MaxValue)
+                ((UInt64)this.ContentLength).ToBytesBackwards(segment, offset + 2);
             else
-                throw new WebSocketException("Invalid frame header " + this.ContentLength);
+                throw new WebSocketException("Invalid frame header length " + this.ContentLength);
         }
 
         public static Int32 GetHeaderLength(Byte[] frameStart, Int32 offset)
@@ -139,7 +139,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             return false; 
         }
-        public static WebSocketFrameHeader Create(Int32 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
+        public static WebSocketFrameHeader Create(Int64 count, Boolean isComplete, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             var flags = new WebSocketFrameHeaderFlags(isComplete, headerSent ? WebSocketFrameOption.Continuation : option, extensionFlags);
 
@@ -147,9 +147,9 @@ namespace vtortola.WebSockets.Rfc6455
                         
             if (count <= 125)
                 headerLength = 2;
-            else if (count < Int16.MaxValue)
+            else if (count < UInt16.MaxValue)
                 headerLength = 4;
-            else if ((Int64)count < Int64.MaxValue)
+            else if ((UInt64)count < UInt64.MaxValue)
                 headerLength = 10;
             else
                 throw new WebSocketException("Cannot create a header with a length of " + count);

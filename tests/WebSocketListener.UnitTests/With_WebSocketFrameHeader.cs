@@ -7,7 +7,7 @@ namespace WebSocketListener.UnitTests
 {
     [TestClass]
     public class With_WebSocketFrameHeader
-    {
+    { 
         [TestMethod]
         public void With_WebSocketFrameHeaderFlags_Can_CreateSmallHeader()
         {
@@ -31,7 +31,21 @@ namespace WebSocketListener.UnitTests
         }
 
         [TestMethod]
-        public void With_WebSocketFrameHeaderFlags_Can_CreateBigHeader()
+        public void With_WebSocketFrameHeaderFlags_Can_CreateMediumHeader_BiggerThanInt16()
+        {
+            UInt16 ilength = (UInt16)Int16.MaxValue + 1;
+
+            var header = WebSocketFrameHeader.Create((Int64)ilength, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Byte[] buffer = new Byte[4];
+            header.ToBytes(buffer, 0);
+            Assert.AreEqual(129, buffer[0]);
+            Assert.AreEqual(126, buffer[1]);
+            Assert.AreEqual(128, buffer[2]);
+            Assert.AreEqual(0, buffer[3]);
+        }
+
+        [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Can_CreateBigHeader_Int32()
         {
             var header = WebSocketFrameHeader.Create(Int32.MaxValue, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
             Byte[] buffer = new Byte[10];
@@ -43,6 +57,24 @@ namespace WebSocketListener.UnitTests
             Assert.AreEqual(0, buffer[4]);
             Assert.AreEqual(0, buffer[5]);
             Assert.AreEqual(127, buffer[6]);
+            Assert.AreEqual(255, buffer[7]);
+            Assert.AreEqual(255, buffer[8]);
+            Assert.AreEqual(255, buffer[9]);
+        }
+
+        [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Cannot_CreateBigHeader_Int64()
+        {
+            var header = WebSocketFrameHeader.Create(Int64.MaxValue, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Byte[] buffer = new Byte[10];
+            header.ToBytes(buffer, 0);
+            Assert.AreEqual(129, buffer[0]);
+            Assert.AreEqual(127, buffer[1]);
+            Assert.AreEqual(127, buffer[2]);
+            Assert.AreEqual(255, buffer[3]);
+            Assert.AreEqual(255, buffer[4]);
+            Assert.AreEqual(255, buffer[5]);
+            Assert.AreEqual(255, buffer[6]);
             Assert.AreEqual(255, buffer[7]);
             Assert.AreEqual(255, buffer[8]);
             Assert.AreEqual(255, buffer[9]);

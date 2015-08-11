@@ -309,7 +309,7 @@ namespace vtortola.WebSockets.Rfc6455
                         Close(WebSocketCloseReasons.GoingAway);
                     else
                     {
-                        ((Int64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
+                        ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
                         WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
@@ -389,7 +389,7 @@ namespace vtortola.WebSockets.Rfc6455
                 if (Interlocked.CompareExchange(ref _isClosed,1,0) == 1)
                     return;
 
-                ((Int16)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
+                ((UInt16)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
                 WriteInternal(_closeBuffer, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
                 _clientStream.Close();
             }
