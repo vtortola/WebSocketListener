@@ -4,13 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}</ProjectGuid>
+    <ProjectGuids>{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406};{EFBA0AD7-5A72-4C68-AF49-83D382785DCF}</ProjectGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>vtortola.WebSockets</RootNamespace>
     <AssemblyName>vtortola.WebSockets</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <ProjectGuid>{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -49,7 +50,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -89,7 +89,12 @@
     <Compile Include="WebSocketListenerOptions.cs" />
     <Compile Include="WebSocketStringExtensions.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Common.WebSockets.Services\Common.WebSockets.Services.csproj">
+      <Project>{2f7c761f-3eb2-4535-977e-a6b642789363}</Project>
+      <Name>Common.WebSockets.Services</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="WebSocketListener.snk" />

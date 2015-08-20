@@ -2,11 +2,19 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Web;
+using Common.WebSockets.Services;
 
 namespace vtortola.WebSockets
 {
     public class CookieParser
     {
+        readonly IHttpServices _httpServices;
+
+        public CookieParser()
+        {
+            _httpServices = HttpServicesLocator.HttpServices;
+        }
+
         public IEnumerable<Cookie> Parse(String cookieString)
         {
             if (String.IsNullOrWhiteSpace(cookieString))
@@ -38,7 +46,7 @@ namespace vtortola.WebSockets
         }
         private Cookie CreateCookie(String key, String value)
         {
-            return new Cookie(key.Trim(), HttpUtility.UrlDecode(value.Trim()));
+            return new Cookie(key.Trim(), _httpServices.UrlDecode(value.Trim()));
         }
     }
 }
