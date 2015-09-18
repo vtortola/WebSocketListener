@@ -16,9 +16,14 @@ namespace vtortola.WebSockets.Rfc6455
             :base(listener)
         {
         }
+        public Action<WebSocket> OnPingReceived { get; set; }
+
         public override WebSocket CreateWebSocket(Stream stream, WebSocketListenerOptions options, IPEndPoint localEndpoint, IPEndPoint remoteEndpoint, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions)
         {
-            return new WebSocketRfc6455(stream, options, localEndpoint, remoteEndpoint, httpRequest, httpResponse, negotiatedExtensions);
+            var webSocket = new WebSocketRfc6455(stream, options, localEndpoint, remoteEndpoint, httpRequest, httpResponse, negotiatedExtensions);
+            if (OnPingReceived != null)
+                webSocket.OnPingReceived = OnPingReceived;
+            return webSocket;
         }
     }
 }
