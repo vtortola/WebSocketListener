@@ -25,6 +25,8 @@ namespace vtortola.WebSockets.Rfc6455
         internal Boolean IsConnected { get { return _isClosed==0; } }
         internal WebSocketFrameHeader CurrentHeader { get; private set; }
         public TimeSpan Latency { get; private set; }
+        public Action OnPingReceived { get; set; }
+
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
         {
             if (clientStream == null)
@@ -53,6 +55,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             _pingTimeout = _options.PingTimeout;
             _pingInterval = TimeSpan.FromMilliseconds(Math.Min(500, _options.PingTimeout.TotalMilliseconds / 2));
+            OnPingReceived = () => { };
         }
         private void StartPing()
         {
@@ -288,9 +291,10 @@ namespace vtortola.WebSockets.Rfc6455
                         var timestamp = BitConverter.ToInt64(_pongBuffer.Array, _pongBuffer.Offset);
                         Latency = TimeSpan.FromTicks((now.Ticks - timestamp) / 2);
                     }
-                    else // pong frames echo what was 'pinged'
+                    else {// pong frames echo what was 'pinged'
                         this.WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
-                    
+                        OnPingReceived();
+                    }
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
             }
@@ -308,10 +312,7 @@ namespace vtortola.WebSockets.Rfc6455
                     if (_lastPong.Add(_pingTimeout) < now)
                         Close(WebSocketCloseReasons.GoingAway);
                     else
-                    {
-                        ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
-                        WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
-                    }
+                        Ping(now);
                 }
                 catch
                 {
@@ -322,6 +323,13 @@ namespace vtortola.WebSockets.Rfc6455
                 }
             }
         }
+
+        internal void Ping(DateTime now)
+        {
+            ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
+            WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+        }
+
         private void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             try

@@ -18,6 +18,7 @@ namespace vtortola.WebSockets.Rfc6455
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
         public override Boolean IsConnected { get { return Connection.IsConnected; } }
         public TimeSpan Latency { get { return Connection.Latency; } }
+        public Action<WebSocket> OnPingReceived { set { Connection.OnPingReceived = () => value(this); } }
 
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             :base(httpRequest, httpResponse)
@@ -46,6 +47,7 @@ namespace vtortola.WebSockets.Rfc6455
             Connection = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;
         }
+        
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
             using (token.Register(this.Close, false))
@@ -110,6 +112,15 @@ namespace vtortola.WebSockets.Rfc6455
         ~WebSocketRfc6455()
         {
             Dispose(false);
+        }
+    }
+
+    public static class WebSocketRfc6455Extensions
+    {
+        public static void Ping(this WebSocket socket)
+        {
+            if (socket is WebSocketRfc6455)
+                ((WebSocketRfc6455)socket).Connection.Ping(DateTime.Now);
         }
     }
 }
