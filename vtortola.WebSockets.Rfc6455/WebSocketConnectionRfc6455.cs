@@ -15,16 +15,32 @@ namespace vtortola.WebSockets.Rfc6455
         readonly SemaphoreSlim _writeSemaphore;
         readonly Stream _clientStream;
         readonly WebSocketListenerOptions _options;
-        
+        readonly PingStrategy _ping;
+
         Boolean _isDisposed;
         Int32 _ongoingMessageWrite, _ongoingMessageAwaiting, _isClosed;
-        readonly TimeSpan _pingInterval, _pingTimeout;
-        DateTime _lastPong;
-        Boolean _pingFail, _pingStarted;
+        
+        Boolean _pingStarted;
+        TimeSpan _latency;
 
         internal Boolean IsConnected { get { return _isClosed==0; } }
-        internal WebSocketFrameHeader CurrentHeader { get; private set; }
-        public TimeSpan Latency { get; private set; }
+        internal WebSocketFrameHeader CurrentHeader { get; private set; }        
+        internal TimeSpan Latency 
+        {
+            get 
+            {
+                if (_options.PingMode != PingModes.LatencyControl)
+                    throw new InvalidOperationException("PingMode has not been set to 'LatencyControl', so latency is not available");
+                return _latency; 
+            }
+            set 
+            {
+                if (_options.PingMode != PingModes.LatencyControl)
+                    throw new InvalidOperationException("PingMode has not been set to 'LatencyControl', so latency is not available");
+                _latency = value; 
+            }
+        }
+
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
         {
             if (clientStream == null)
@@ -51,8 +67,16 @@ namespace vtortola.WebSockets.Rfc6455
             _keyBuffer = new ArraySegment<Byte>(_buffer, 14 + 125 + 125 + 8 + 10 + _options.SendBufferSize, 4);
             _closeBuffer = new ArraySegment<Byte>(_buffer, 14 + 125 + 125 + 8 + 10 + _options.SendBufferSize + 4, 2);
 
-            _pingTimeout = _options.PingTimeout;
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(500, _options.PingTimeout.TotalMilliseconds / 2));
+            switch (options.PingMode)
+            {
+                case PingModes.BandwidthSaving:
+                    _ping = new BandwidthSavingPing(this, _options.PingTimeout, _pingBuffer);
+                    break;
+                case PingModes.LatencyControl:
+                default:
+                    _ping = new LatencyControlPing(this, _options.PingTimeout, _pingBuffer);
+                    break;
+            }
         }
         private void StartPing()
         {
@@ -61,8 +85,7 @@ namespace vtortola.WebSockets.Rfc6455
                 _pingStarted = true;
                 if (_options.PingTimeout != Timeout.InfiniteTimeSpan)
                 {
-                    _lastPong = DateTime.Now.Add(_pingTimeout);
-                    Task.Run((Func<Task>)PingAsync);
+                    Task.Run((Func<Task>)_ping.StartPing);
                 }
             }
         }
@@ -233,6 +256,8 @@ namespace vtortola.WebSockets.Rfc6455
             }
             else
                 _ongoingMessageAwaiting = 0;
+
+            _ping.NotifyActivity();
         }
         private Boolean TryReadHeaderUntil(ref Int32 readed, Int32 until)
         {
@@ -282,12 +307,7 @@ namespace vtortola.WebSockets.Rfc6455
                     }
 
                     if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
-                    {
-                        var now = DateTime.Now;
-                        _lastPong = now;
-                        var timestamp = BitConverter.ToInt64(_pongBuffer.Array, _pongBuffer.Offset);
-                        Latency = TimeSpan.FromTicks((now.Ticks - timestamp) / 2);
-                    }
+                        _ping.NotifyPong(_pongBuffer);
                     else // pong frames echo what was 'pinged'
                         this.WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
                     
@@ -295,34 +315,7 @@ namespace vtortola.WebSockets.Rfc6455
                 default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
             }
         }    
-        private async Task PingAsync()
-        {
-            while (this.IsConnected)
-            {
-                await Task.Delay(_pingInterval).ConfigureAwait(false);
-
-                try
-                {
-                    var now = DateTime.Now;
-
-                    if (_lastPong.Add(_pingTimeout) < now)
-                        Close(WebSocketCloseReasons.GoingAway);
-                    else
-                    {
-                        ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
-                        WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
-                    }
-                }
-                catch
-                {
-                    if (_pingFail)
-                        return;
-                    else
-                        _pingFail = true;
-                }
-            }
-        }
-        private void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
+        internal void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             try
             {
@@ -382,7 +375,7 @@ namespace vtortola.WebSockets.Rfc6455
                 _writeSemaphore.Release();
             }
         }
-        private void Close(WebSocketCloseReasons reason)
+        internal void Close(WebSocketCloseReasons reason)
         {
             try
             {

@@ -72,7 +72,6 @@
     <Compile Include="Http\WebSocketHttpRequest.cs" />
     <Compile Include="Http\WebSocketHttpResponse.cs" />
     <Compile Include="Http\WebSocketNegotiationResult.cs" />
-    <Compile Include="IWebSocketLatencyMeasure.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\WebSocketMessageReadStream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />

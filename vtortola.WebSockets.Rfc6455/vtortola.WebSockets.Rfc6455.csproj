@@ -48,6 +48,9 @@
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Header\ByteArrayExtensions.cs" />
+    <Compile Include="Ping\BandwidthSavingPing.cs" />
+    <Compile Include="Ping\PingStrategy.cs" />
+    <Compile Include="Ping\LatencyControlPing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\WebSocketMessageReadRfc6455Stream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteRfc6455Stream.cs" />

@@ -6,6 +6,8 @@ namespace vtortola.WebSockets
 {
     public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
 
+    public enum PingModes { LatencyControl, BandwidthSaving }
+
     public sealed class WebSocketListenerOptions
     {
         public TimeSpan PingTimeout { get; set; }
@@ -20,6 +22,7 @@ namespace vtortola.WebSockets
         public BufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
         public Boolean? UseNagleAlgorithm { get; set; }
+        public PingModes PingMode { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
@@ -34,6 +37,7 @@ namespace vtortola.WebSockets
             SubProtocols = _noSubProtocols;
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
+            PingMode = PingModes.LatencyControl;
         }
         public void CheckCoherence()
         {
@@ -75,7 +79,8 @@ namespace vtortola.WebSockets
                 SubProtocols = this.SubProtocols??_noSubProtocols,
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
-                UseNagleAlgorithm = this.UseNagleAlgorithm
+                UseNagleAlgorithm = this.UseNagleAlgorithm,
+                PingMode = this.PingMode
             };
         }
     }
