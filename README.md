@@ -97,7 +97,7 @@ if(messageReadStream.MessageType == WebSocketMessageType.Binary)
 {
    using (var ms = new MemoryStream())
    {
-       await messageReader.CopyToAsync(ms);
+       await messageReadStream.CopyToAsync(ms);
    }
 }
 ```
