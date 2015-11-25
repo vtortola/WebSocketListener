@@ -28,7 +28,7 @@ namespace vtortola.WebSockets.Rfc6455
         internal override async Task StartPing()
         {
             _lastActivity = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Min(500, _pingTimeout.TotalMilliseconds / 2));
+            _pingInterval = TimeSpan.FromMilliseconds(Math.Max(500, _pingTimeout.TotalMilliseconds / 2));
 
             while (_connection.IsConnected)
             {
