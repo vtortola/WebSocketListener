@@ -39,7 +39,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>WebSocketListener.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -57,42 +58,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensibility\IWebSocketConnectionExtension.cs" />
-    <Compile Include="Extensibility\WebSocketSecureConnectionExtension.cs" />
-    <Compile Include="Extensibility\WebSocketConnectionExtensionCollection.cs" />
-    <Compile Include="Extensibility\WebSocketMessageExtensionCollection.cs" />
-    <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Http\CookieParser.cs" />
-    <Compile Include="Http\HttpNegotiationQueue.cs" />
-    <Compile Include="Http\WebSocketHandshake.cs" />
-    <Compile Include="Header\WebSocketExtensionFlags.cs" />
-    <Compile Include="Header\WebSocketMessageType.cs" />
-    <Compile Include="Http\HttpHeadersCollection.cs" />
-    <Compile Include="Http\WebSocketException.cs" />
-    <Compile Include="Http\WebSocketHttpRequest.cs" />
-    <Compile Include="Http\WebSocketHttpResponse.cs" />
-    <Compile Include="Http\WebSocketNegotiationResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Streams\WebSocketMessageReadStream.cs" />
-    <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
-    <Compile Include="Tools\AsyncResultTask.cs" />
-    <Compile Include="Tools\CompletedTasks.cs" />
-    <Compile Include="WebSocket.cs" />
-    <Compile Include="WebSocketFactory.cs" />
-    <Compile Include="WebSocketFactoryCollection.cs" />
-    <Compile Include="WebSocketException.cs" />
-    <Compile Include="Extensibility\IWebSocketMessageExtension.cs" />
-    <Compile Include="Streams\WebSocketMessageStream.cs" />
-    <Compile Include="WebSocketListener.cs" />
-    <Compile Include="Http\WebSocketHandshaker.cs" />
-    <Compile Include="WebSocketListenerOptions.cs" />
-    <Compile Include="WebSocketStringExtensions.cs" />
   </ItemGroup>
   <ItemGroup />
-  <ItemGroup>
-    <None Include="packages.config" />
-    <None Include="WebSocketListener.snk" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -1,0 +1,988 @@
+{
+  "locked": false,
+  "version": 2,
+  "targets": {
+    ".NETFramework,Version=v4.5.1": {
+      "Microsoft.CSharp/4.0.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.CSharp"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Microsoft.Tpl.Dataflow/4.5.24": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
+      "NUnit/3.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/nunit.framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunit.framework.dll": {}
+        }
+      },
+      "NUnitLite/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "NUnit": "[3.0.0]"
+        },
+        "compile": {
+          "lib/net45/nunitlite.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunitlite.dll": {}
+        }
+      },
+      "System.Linq/4.0.1-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.Reflection/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "vtortola.Core.WebSockets/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "Microsoft.Tpl.Dataflow": "4.5.24",
+          "System.ServiceModel.NetTcp": "4.1.0-rc2-23525"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core",
+          "System.Net",
+          "System.Net.Http",
+          "System.Runtime",
+          "System.ServiceModel",
+          "System.ServiceModel.Channels",
+          "System.Threading",
+          "System.Threading.Tasks",
+          "System.Web"
+        ]
+      },
+      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      },
+      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      }
+    },
+    "DNX,Version=v4.5.1": {
+      "Microsoft.CSharp/4.0.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.CSharp"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Microsoft.Tpl.Dataflow/4.5.24": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
+      "NUnit/3.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/nunit.framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunit.framework.dll": {}
+        }
+      },
+      "NUnitLite/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "NUnit": "[3.0.0]"
+        },
+        "compile": {
+          "lib/net45/nunitlite.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunitlite.dll": {}
+        }
+      },
+      "System.Linq/4.0.1-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.Reflection/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "vtortola.Core.WebSockets/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "Microsoft.Tpl.Dataflow": "4.5.24",
+          "System.ServiceModel.NetTcp": "4.1.0-rc2-23525"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core",
+          "System.Net",
+          "System.Net.Http",
+          "System.Runtime",
+          "System.ServiceModel",
+          "System.ServiceModel.Channels",
+          "System.Threading",
+          "System.Threading.Tasks",
+          "System.Web"
+        ]
+      },
+      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      },
+      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win7-x86": {
+      "Microsoft.CSharp/4.0.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.CSharp"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Microsoft.Tpl.Dataflow/4.5.24": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
+      "NUnit/3.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/nunit.framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunit.framework.dll": {}
+        }
+      },
+      "NUnitLite/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "NUnit": "[3.0.0]"
+        },
+        "compile": {
+          "lib/net45/nunitlite.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunitlite.dll": {}
+        }
+      },
+      "System.Linq/4.0.1-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.Reflection/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "vtortola.Core.WebSockets/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "Microsoft.Tpl.Dataflow": "4.5.24",
+          "System.ServiceModel.NetTcp": "4.1.0-rc2-23525"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core",
+          "System.Net",
+          "System.Net.Http",
+          "System.Runtime",
+          "System.ServiceModel",
+          "System.ServiceModel.Channels",
+          "System.Threading",
+          "System.Threading.Tasks",
+          "System.Web"
+        ]
+      },
+      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      },
+      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win7-x64": {
+      "Microsoft.CSharp/4.0.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.CSharp"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Microsoft.Tpl.Dataflow/4.5.24": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
+      "NUnit/3.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/nunit.framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunit.framework.dll": {}
+        }
+      },
+      "NUnitLite/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "NUnit": "[3.0.0]"
+        },
+        "compile": {
+          "lib/net45/nunitlite.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunitlite.dll": {}
+        }
+      },
+      "System.Linq/4.0.1-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.Reflection/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "vtortola.Core.WebSockets/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "Microsoft.Tpl.Dataflow": "4.5.24",
+          "System.ServiceModel.NetTcp": "4.1.0-rc2-23525"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core",
+          "System.Net",
+          "System.Net.Http",
+          "System.Runtime",
+          "System.ServiceModel",
+          "System.ServiceModel.Channels",
+          "System.Threading",
+          "System.Threading.Tasks",
+          "System.Web"
+        ]
+      },
+      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      },
+      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      }
+    },
+    "DNX,Version=v4.5.1/win7-x86": {
+      "Microsoft.CSharp/4.0.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.CSharp"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Microsoft.Tpl.Dataflow/4.5.24": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
+      "NUnit/3.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/nunit.framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunit.framework.dll": {}
+        }
+      },
+      "NUnitLite/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "NUnit": "[3.0.0]"
+        },
+        "compile": {
+          "lib/net45/nunitlite.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunitlite.dll": {}
+        }
+      },
+      "System.Linq/4.0.1-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.Reflection/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "vtortola.Core.WebSockets/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "Microsoft.Tpl.Dataflow": "4.5.24",
+          "System.ServiceModel.NetTcp": "4.1.0-rc2-23525"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core",
+          "System.Net",
+          "System.Net.Http",
+          "System.Runtime",
+          "System.ServiceModel",
+          "System.ServiceModel.Channels",
+          "System.Threading",
+          "System.Threading.Tasks",
+          "System.Web"
+        ]
+      },
+      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      },
+      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      }
+    },
+    "DNX,Version=v4.5.1/win7-x64": {
+      "Microsoft.CSharp/4.0.0": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "Microsoft.CSharp"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Microsoft.Tpl.Dataflow/4.5.24": {
+        "type": "package",
+        "compile": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        },
+        "runtime": {
+          "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
+      "NUnit/3.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/nunit.framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunit.framework.dll": {}
+        }
+      },
+      "NUnitLite/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "NUnit": "[3.0.0]"
+        },
+        "compile": {
+          "lib/net45/nunitlite.dll": {}
+        },
+        "runtime": {
+          "lib/net45/nunitlite.dll": {}
+        }
+      },
+      "System.Linq/4.0.1-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.Reflection/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+        "type": "package",
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "vtortola.Core.WebSockets/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "Microsoft.Tpl.Dataflow": "4.5.24",
+          "System.ServiceModel.NetTcp": "4.1.0-rc2-23525"
+        },
+        "frameworkAssemblies": [
+          "System",
+          "System.Core",
+          "System.Net",
+          "System.Net.Http",
+          "System.Runtime",
+          "System.ServiceModel",
+          "System.ServiceModel.Channels",
+          "System.Threading",
+          "System.Threading.Tasks",
+          "System.Web"
+        ]
+      },
+      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      },
+      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.5.1",
+        "dependencies": {
+          "vtortola.Core.WebSockets": null
+        }
+      }
+    }
+  },
+  "libraries": {
+    "vtortola.Core.WebSockets/1.0.0": {
+      "type": "project",
+      "path": "../vtortola.Core.WebSockets/project.json"
+    },
+    "vtortola.Core.WebSockets.Deflate/1.0.0": {
+      "type": "project",
+      "path": "../vtortola.Core.WebSockets.Deflate/project.json"
+    },
+    "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+      "type": "project",
+      "path": "../vtortola.Core.WebSockets.Rfc6455/project.json"
+    },
+    "Microsoft.CSharp/4.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "oWqeKUxHXdK6dL2CFjgMcaBISbkk+AqEg+yvJHE4DElNzS4QaTsCflgkkqZwVlWby1Dg9zo9n+iCAMFefFdJ/A==",
+      "files": [
+        "lib/dotnet/Microsoft.CSharp.dll",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net45/_._",
+        "lib/netcore50/Microsoft.CSharp.dll",
+        "lib/win8/_._",
+        "lib/wp80/_._",
+        "lib/wpa81/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "Microsoft.CSharp.4.0.0.nupkg",
+        "Microsoft.CSharp.4.0.0.nupkg.sha512",
+        "Microsoft.CSharp.nuspec",
+        "ref/dotnet/de/Microsoft.CSharp.xml",
+        "ref/dotnet/es/Microsoft.CSharp.xml",
+        "ref/dotnet/fr/Microsoft.CSharp.xml",
+        "ref/dotnet/it/Microsoft.CSharp.xml",
+        "ref/dotnet/ja/Microsoft.CSharp.xml",
+        "ref/dotnet/ko/Microsoft.CSharp.xml",
+        "ref/dotnet/Microsoft.CSharp.dll",
+        "ref/dotnet/Microsoft.CSharp.xml",
+        "ref/dotnet/ru/Microsoft.CSharp.xml",
+        "ref/dotnet/zh-hans/Microsoft.CSharp.xml",
+        "ref/dotnet/zh-hant/Microsoft.CSharp.xml",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net45/_._",
+        "ref/netcore50/Microsoft.CSharp.dll",
+        "ref/netcore50/Microsoft.CSharp.xml",
+        "ref/win8/_._",
+        "ref/wp80/_._",
+        "ref/wpa81/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._"
+      ]
+    },
+    "Microsoft.Tpl.Dataflow/4.5.24": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "6BE4Vu74+dkv5AkJd+UxW1sFMepMZOVlUoMZDUKqhc4Bf7pe7yySzCj6QrowUZbCqcDPwOiQsAgz3nXiLQSyMw==",
+      "files": [
+        "lib/portable-net45+win8+wp8+wpa81/System.Threading.Tasks.Dataflow.dll",
+        "lib/portable-net45+win8+wp8+wpa81/system.threading.tasks.dataflow.xml",
+        "lib/portable-net45+win8+wpa81/System.Threading.Tasks.Dataflow.dll",
+        "lib/portable-net45+win8+wpa81/system.threading.tasks.dataflow.xml",
+        "License-Stable.rtf",
+        "Microsoft.Tpl.Dataflow.4.5.24.nupkg",
+        "Microsoft.Tpl.Dataflow.4.5.24.nupkg.sha512",
+        "Microsoft.Tpl.Dataflow.nuspec"
+      ]
+    },
+    "Moq/4.2.1510.2205": {
+      "type": "package",
+      "sha512": "nqMoHSP5f04/kyKbRUjGgzqtIb5LUUs0H6llHOkQJ5Takx4Ezr2H+59pkIgxkmpbHAcGmc/KsyRZUs1ehnPYag==",
+      "files": [
+        "lib/net35/Moq.dll",
+        "lib/net35/Moq.xml",
+        "lib/net40/Moq.dll",
+        "lib/net40/Moq.xml",
+        "lib/sl5/Moq.Silverlight.dll",
+        "lib/sl5/Moq.Silverlight.xml",
+        "Moq.4.2.1510.2205.nupkg",
+        "Moq.4.2.1510.2205.nupkg.sha512",
+        "Moq.nuspec"
+      ]
+    },
+    "NUnit/3.0.0": {
+      "type": "package",
+      "sha512": "/7lqdUb+/e1NAd3NDhY05ppjQUieAamnUxHzhKgaxWVNyTJqhdR0z73MXNc2VV2dignM4MieF3Tzs1wXsWx8/w==",
+      "files": [
+        "CHANGES.txt",
+        "lib/dotnet/nunit.framework.dll",
+        "lib/dotnet/nunit.framework.xml",
+        "lib/net20/nunit.framework.dll",
+        "lib/net20/nunit.framework.xml",
+        "lib/net40/nunit.framework.dll",
+        "lib/net40/nunit.framework.xml",
+        "lib/net45/nunit.framework.dll",
+        "lib/net45/nunit.framework.xml",
+        "lib/portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10/nunit.framework.dll",
+        "lib/portable-net45+win8+wp8+wpa81+Xamarin.Mac+MonoAndroid10+MonoTouch10+Xamarin.iOS10/nunit.framework.xml",
+        "LICENSE.txt",
+        "NOTICES.txt",
+        "NUnit.3.0.0.nupkg",
+        "NUnit.3.0.0.nupkg.sha512",
+        "NUnit.nuspec"
+      ]
+    },
+    "NUnitLite/3.0.0": {
+      "type": "package",
+      "sha512": "mw+PsR4loAK9MXpuXZO5uGgjad0fQruUG/wXl7CbyFj9X1zQnt4wj3mSc5mBn9z0CPhAPmI8g++xrzoHrzF70Q==",
+      "files": [
+        "CHANGES.txt",
+        "content/Program.cs",
+        "content/Program.vb",
+        "lib/dotnet/nunitlite.dll",
+        "lib/net20/nunitlite.dll",
+        "lib/net40/nunitlite.dll",
+        "lib/net45/nunitlite.dll",
+        "lib/portable-net45+win8+wp8+wpa81+Xamarin.Mac/nunitlite.dll",
+        "LICENSE.txt",
+        "NOTICES.txt",
+        "NUnitLite.3.0.0.nupkg",
+        "NUnitLite.3.0.0.nupkg.sha512",
+        "NUnitLite.nuspec",
+        "tools/install.ps1"
+      ]
+    },
+    "System.Linq/4.0.1-rc2-23525": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "nxeyB3ycuQRIyRb/EVh+IEBN4heKR5LGo3+NvQl0/nJs/nIJym4Yb+pqHjhMAFwv9L7KoUIanhg1uRES7+IaQQ==",
+      "files": [
+        "lib/dotnet5.4/System.Linq.dll",
+        "lib/net45/_._",
+        "lib/netcore50/System.Linq.dll",
+        "lib/win8/_._",
+        "lib/wp80/_._",
+        "lib/wpa81/_._",
+        "ref/dotnet5.1/de/System.Linq.xml",
+        "ref/dotnet5.1/es/System.Linq.xml",
+        "ref/dotnet5.1/fr/System.Linq.xml",
+        "ref/dotnet5.1/it/System.Linq.xml",
+        "ref/dotnet5.1/ja/System.Linq.xml",
+        "ref/dotnet5.1/ko/System.Linq.xml",
+        "ref/dotnet5.1/ru/System.Linq.xml",
+        "ref/dotnet5.1/System.Linq.dll",
+        "ref/dotnet5.1/System.Linq.xml",
+        "ref/dotnet5.1/zh-hans/System.Linq.xml",
+        "ref/dotnet5.1/zh-hant/System.Linq.xml",
+        "ref/net45/_._",
+        "ref/netcore50/de/System.Linq.xml",
+        "ref/netcore50/es/System.Linq.xml",
+        "ref/netcore50/fr/System.Linq.xml",
+        "ref/netcore50/it/System.Linq.xml",
+        "ref/netcore50/ja/System.Linq.xml",
+        "ref/netcore50/ko/System.Linq.xml",
+        "ref/netcore50/ru/System.Linq.xml",
+        "ref/netcore50/System.Linq.dll",
+        "ref/netcore50/System.Linq.xml",
+        "ref/netcore50/zh-hans/System.Linq.xml",
+        "ref/netcore50/zh-hant/System.Linq.xml",
+        "ref/win8/_._",
+        "ref/wp80/_._",
+        "ref/wpa81/_._",
+        "System.Linq.4.0.1-rc2-23525.nupkg",
+        "System.Linq.4.0.1-rc2-23525.nupkg.sha512",
+        "System.Linq.nuspec"
+      ]
+    },
+    "System.Reflection/4.1.0-rc2-23525": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "NC5bqbghdHXHQTTRNpN0/t16Iw0tEzzzmLM+pU/nf86IBXuQJhz9gmbDZjbrKgQDLRbKJutzBQG+9pKMKNhwwg==",
+      "files": [
+        "lib/DNXCore50/System.Reflection.dll",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net45/_._",
+        "lib/net46/System.Reflection.dll",
+        "lib/netcore50/System.Reflection.dll",
+        "lib/win8/_._",
+        "lib/wp80/_._",
+        "lib/wpa81/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet5.1/de/System.Reflection.xml",
+        "ref/dotnet5.1/es/System.Reflection.xml",
+        "ref/dotnet5.1/fr/System.Reflection.xml",
+        "ref/dotnet5.1/it/System.Reflection.xml",
+        "ref/dotnet5.1/ja/System.Reflection.xml",
+        "ref/dotnet5.1/ko/System.Reflection.xml",
+        "ref/dotnet5.1/ru/System.Reflection.xml",
+        "ref/dotnet5.1/System.Reflection.dll",
+        "ref/dotnet5.1/System.Reflection.xml",
+        "ref/dotnet5.1/zh-hans/System.Reflection.xml",
+        "ref/dotnet5.1/zh-hant/System.Reflection.xml",
+        "ref/dotnet5.4/de/System.Reflection.xml",
+        "ref/dotnet5.4/es/System.Reflection.xml",
+        "ref/dotnet5.4/fr/System.Reflection.xml",
+        "ref/dotnet5.4/it/System.Reflection.xml",
+        "ref/dotnet5.4/ja/System.Reflection.xml",
+        "ref/dotnet5.4/ko/System.Reflection.xml",
+        "ref/dotnet5.4/ru/System.Reflection.xml",
+        "ref/dotnet5.4/System.Reflection.dll",
+        "ref/dotnet5.4/System.Reflection.xml",
+        "ref/dotnet5.4/zh-hans/System.Reflection.xml",
+        "ref/dotnet5.4/zh-hant/System.Reflection.xml",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net45/_._",
+        "ref/net46/System.Reflection.dll",
+        "ref/netcore50/de/System.Reflection.xml",
+        "ref/netcore50/es/System.Reflection.xml",
+        "ref/netcore50/fr/System.Reflection.xml",
+        "ref/netcore50/it/System.Reflection.xml",
+        "ref/netcore50/ja/System.Reflection.xml",
+        "ref/netcore50/ko/System.Reflection.xml",
+        "ref/netcore50/ru/System.Reflection.xml",
+        "ref/netcore50/System.Reflection.dll",
+        "ref/netcore50/System.Reflection.xml",
+        "ref/netcore50/zh-hans/System.Reflection.xml",
+        "ref/netcore50/zh-hant/System.Reflection.xml",
+        "ref/win8/_._",
+        "ref/wp80/_._",
+        "ref/wpa81/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "runtimes/win8-aot/lib/netcore50/System.Reflection.dll",
+        "System.Reflection.4.1.0-rc2-23525.nupkg",
+        "System.Reflection.4.1.0-rc2-23525.nupkg.sha512",
+        "System.Reflection.nuspec"
+      ]
+    },
+    "System.ServiceModel.NetTcp/4.1.0-rc2-23525": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "pLkbDSQMlRKqpMdkeoxrOM0ab8CKGPVaNY0nwcSwt0LUbMYtr2lMhOBEQmic4cTauxdxiyk8tWa3RVX7Zkme/Q==",
+      "files": [
+        "lib/DNXCore50/System.ServiceModel.NetTcp.dll",
+        "lib/net45/_._",
+        "lib/net46/System.ServiceModel.NetTcp.dll",
+        "lib/netcore50/System.ServiceModel.NetTcp.dll",
+        "lib/win8/_._",
+        "ref/dotnet5.2/de/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/es/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/fr/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/it/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/ja/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/ko/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/ru/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/System.ServiceModel.NetTcp.dll",
+        "ref/dotnet5.2/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/zh-hans/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.2/zh-hant/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/de/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/es/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/fr/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/it/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/ja/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/ko/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/ru/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/System.ServiceModel.NetTcp.dll",
+        "ref/dotnet5.4/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/zh-hans/System.ServiceModel.NetTcp.xml",
+        "ref/dotnet5.4/zh-hant/System.ServiceModel.NetTcp.xml",
+        "ref/net45/_._",
+        "ref/net46/System.ServiceModel.NetTcp.dll",
+        "ref/netcore50/de/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/es/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/fr/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/it/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/ja/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/ko/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/ru/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/System.ServiceModel.NetTcp.dll",
+        "ref/netcore50/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/zh-hans/System.ServiceModel.NetTcp.xml",
+        "ref/netcore50/zh-hant/System.ServiceModel.NetTcp.xml",
+        "ref/win8/_._",
+        "System.ServiceModel.NetTcp.4.1.0-rc2-23525.nupkg",
+        "System.ServiceModel.NetTcp.4.1.0-rc2-23525.nupkg.sha512",
+        "System.ServiceModel.NetTcp.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "": [
+      "Moq >= 4.2.1510.2205",
+      "vtortola.Core.WebSockets ",
+      "vtortola.Core.WebSockets.Deflate ",
+      "vtortola.Core.WebSockets.Rfc6455 ",
+      "System.Reflection >= 4.1.0-rc2-23525",
+      "NUnitLite >= 3.0.0",
+      "System.Linq >= 4.0.1-rc2-23525",
+      "Microsoft.CSharp >= 4.0.0"
+    ],
+    ".NETFramework,Version=v4.5.1": [],
+    "DNX,Version=v4.5.1": []
+  }
+}
