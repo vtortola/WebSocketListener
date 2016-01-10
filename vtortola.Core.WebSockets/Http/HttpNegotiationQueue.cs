@@ -77,9 +77,9 @@ namespace vtortola.WebSockets.Http
             try
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
-#if NET451
+#if (NET45 || NET451 || NET452)
                 Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
-#elif DOTNET5_4
+#elif ((DNX451 || DNX452 || DNXCORE50))
                 Stream stream = new NetworkStream(client);
 #endif
                 foreach (var conExt in _extensions)

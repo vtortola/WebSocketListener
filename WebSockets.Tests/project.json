@@ -1,33 +1,33 @@
 ﻿{
-  "version": "1.0.0-*",
-  "description": "WebSockets.Tests Console Application",
-  "authors": [ "Pierre" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
+    "version": "1.0.0-*",
+    "description": "WebSockets.Tests Console Application",
+    "authors": [ "Pierre" ],
+    "tags": [ "" ],
+    "projectUrl": "",
+    "licenseUrl": "",
 
-  "compilationOptions": {
-    "emitEntryPoint": true
-  },
+    "compilationOptions": {
+        "emitEntryPoint": true
+    },
 
-  "dependencies": {
-    "Moq": "4.2.1510.2205",
-    "vtortola.Core.WebSockets": "",
-    "vtortola.Core.WebSockets.Deflate": "",
-    "vtortola.Core.WebSockets.Rfc6455": "",
-    "System.Reflection": "4.1.0-rc2-23525",
-    "NUnitLite": "3.0.0",
-    "System.Linq": "4.0.1-rc2-23525",
-    "Microsoft.CSharp": "4.0.0"
-  },
+    "dependencies": {
+        "vtortola.Core.WebSockets": "",
+        "vtortola.Core.WebSockets.Deflate": "",
+        "vtortola.Core.WebSockets.Rfc6455": "",
 
-  "commands": {
-    "WebSockets.Tests": "WebSockets.Tests"
-  },
+        "Moq": "4.2.1510.2205",
+        "NUnitLite": "3.0.0"
+    },
 
-  "frameworks": {
-    "net451": { },
-    "dnx451": { }
+    "commands": {
+        "WebSockets.Tests": "WebSockets.Tests"
+    },
 
-  }
+    "frameworks": {
+        "dnx452": {
+            "frameworkAssemblies": {
+                "System.Runtime": "4.0.0.0"
+            }
+        }
+    }
 }

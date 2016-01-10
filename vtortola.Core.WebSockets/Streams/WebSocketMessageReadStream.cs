@@ -14,9 +14,9 @@ namespace vtortola.WebSockets
         public override abstract Int32 Read(Byte[] buffer, Int32 offset, Int32 count);
         public override abstract Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken);
 
-#if NET451
+#if (NET45 || NET451 || NET452)
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state) 
-#elif DOTNET5_4
+#elif (DNX451 || DNX452 || DNXCORE50)
         public IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
@@ -28,9 +28,9 @@ namespace vtortola.WebSockets
             });
             return wrapper;
         }
-#if NET451
+#if (NET45 || NET451 || NET452)
         public override sealed int EndRead(IAsyncResult asyncResult) 
-#elif DOTNET5_4
+#elif ((DNX451 || DNX452 || DNXCORE50))
         public int EndRead(IAsyncResult asyncResult)
 #endif
         {
