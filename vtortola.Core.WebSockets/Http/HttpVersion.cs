@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace vtortola.Core.WebSockets.Http
 {
-#if DOTNET5_4
+#if (DNXCORE50)
     public class HttpVersion
     {
         public static Version Version10 => new Version(1,0);

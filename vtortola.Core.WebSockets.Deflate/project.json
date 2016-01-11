@@ -1,27 +1,105 @@
 ﻿{
-  "version": "1.0.0-*",
-  "description": "vtortola.Core.WebSockets.Deflate Class Library",
-  "authors": [ "Pierre" ],
-  "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
-  "dependencies": {
-    "vtortola.Core.WebSockets": ""
+    "version": "1.0.0-*",
+    "description": "vtortola.Core.WebSockets.Deflate Class Library",
+    "authors": [ "Pierre" ],
+    "tags": [ "" ],
+    "projectUrl": "",
+    "licenseUrl": "",
+    "dependencies": {
+        "vtortola.Core.WebSockets": ""
 
-  },
-  "frameworks": {
-    "net451": { },
-    "dotnet5.4": {
-      "dependencies": {
-        "Microsoft.CSharp": "4.0.1-beta-23516",
-        "System.Collections": "4.0.11-beta-23516",
-        "System.Linq": "4.0.1-beta-23516",
-        "System.Runtime": "4.0.21-beta-23516",
-        "System.Threading": "4.0.11-beta-23516",
-        "System.IO": "4.0.11-rc2-23525",
-        "System.IO.Compression.ZipFile": "4.0.1-rc2-23525"
+    },
+    "frameworks": {
+        "net45": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Runtime": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0"
+            }
+        },
+        "net451": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.Threading": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0"
+            }
+        },
+        "net452": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.Threading": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0"
+            }
+        },
+        "dnx451": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.Threading": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0"
+            }
+        },
+        "dnx452": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Runtime": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0"
+            }
+        },
+        "dnxcore5": {
+            "dependencies": {
+                "Microsoft.CSharp": "4.0.1-beta-*",
+                "System.Runtime": "4.0.21-beta-*",
 
-      }
+                "System.Collections": "4.0.11-beta-*",
+
+                "System.Net.Security": "4.0.0-beta-*",
+                "System.Net.Http": "4.0.1-beta-*",
+                "System.Net.Primitives": "4.0.11-beta-*",
+
+                "System.Threading": "4.0.11-beta-*",
+                "System.Threading.Tasks": "4.0.11-beta-*",
+
+                "System.ServiceModel.Primitives": "4.0.0",
+                "System.ServiceModel.Security": "4.0.1-beta-*",
+                "System.ServiceModel.Http": "4.0.11-beta-*",
+
+                "System.Private.Networking": "4.0.1-beta-*"
+            }
+        }
     }
-  }
 }
