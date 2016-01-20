@@ -82,7 +82,7 @@ A text message can be read with a simple `StreamReader`.  It is worth remember t
 ```cs
 if(messageReadStream.MessageType == WebSocketMessageType.Text)
 {
-   String msgContent = String.Empty.
+   String msgContent = String.Empty;
    using (var sr = new StreamReader(messageReadStream, Encoding.UTF8))
         msgContent = await sr.ReadToEndAsync();
 }
@@ -97,7 +97,7 @@ if(messageReadStream.MessageType == WebSocketMessageType.Binary)
 {
    using (var ms = new MemoryStream())
    {
-       await messageReader.CopyToAsync(ms);
+       await messageReadStream.CopyToAsync(ms);
    }
 }
 ```
