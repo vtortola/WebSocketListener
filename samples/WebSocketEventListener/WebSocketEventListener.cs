@@ -46,10 +46,18 @@ namespace WebSocketEventListenerSample
         {
             while (_listener.IsStarted)
             {
-                var websocket = await _listener.AcceptWebSocketAsync(CancellationToken.None)
-                                               .ConfigureAwait(false);
-                if (websocket != null)
-                    Task.Run(() => HandleWebSocketAsync(websocket));
+                try
+                {
+                    var websocket = await _listener.AcceptWebSocketAsync(CancellationToken.None)
+                                                   .ConfigureAwait(false);
+                    if (websocket != null)
+                        Task.Run(() => HandleWebSocketAsync(websocket));
+                }
+                catch(Exception ex)
+                {
+                    if (OnError != null)
+                        OnError.Invoke(null, ex);
+                }
             }
         }
         private async Task HandleWebSocketAsync(WebSocket websocket)
