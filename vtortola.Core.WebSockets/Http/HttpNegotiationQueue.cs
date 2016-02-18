@@ -102,7 +102,10 @@ namespace vtortola.WebSockets.Http
                 if (handshake.IsValid)
                     result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
                 else
+                {
+                    FinishSocket(client);
                     result = new WebSocketNegotiationResult(handshake.Error);
+                }
             }
             catch (Exception ex)
             {
