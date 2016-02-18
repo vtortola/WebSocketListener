@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{45AC3A8B-FEC2-4499-820E-5596B81DF98A}"
 EndProject
@@ -12,6 +12,13 @@ EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets.Rfc6455", "vtortola.Core.WebSockets.Rfc6455\vtortola.Core.WebSockets.Rfc6455.xproj", "{176E19AB-1011-4355-9924-41EBA40572CD}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSockets.Tests", "WebSockets.Tests\WebSockets.Tests.xproj", "{E621657D-102F-49FD-B2E6-8B620B66DB2A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB6FB7EB-57F6-4D57-9322-6FB113FB0C88}"
+	ProjectSection(SolutionItems) = preProject
+		vtortola.Core.WebSockets.Deflate\global.json = vtortola.Core.WebSockets.Deflate\global.json
+		vtortola.Core.WebSockets\global.json = vtortola.Core.WebSockets\global.json
+		vtortola.Core.WebSockets.Rfc6455\global.json = vtortola.Core.WebSockets.Rfc6455\global.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
