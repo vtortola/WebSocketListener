@@ -46,10 +46,10 @@ namespace vtortola.WebSockets
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
-#if (NET45 || NET451 || NET452)
-         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-#elif ((DNX451 || DNX452 || DNXCORE50))
-        public IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#if (NET45 || NET451 || NET452 || DNX451 || DNX452)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#elif (DNXCORE50)
+        public virtual IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
@@ -65,10 +65,10 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || DNX451 || DNX452)
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state) 
-#elif ((DNX451 || DNX452 || DNXCORE50))
-        public IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#elif (DNXCORE50)
+        public virtual IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");

@@ -17,7 +17,7 @@ namespace vtortola.WebSockets
 #if (NET45 || NET451 || NET452)
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state) 
 #elif (DNX451 || DNX452 || DNXCORE50)
-        public IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
             var wrapper = new AsyncResultTask<Int32>(ReadAsync(buffer, offset, count), state);
