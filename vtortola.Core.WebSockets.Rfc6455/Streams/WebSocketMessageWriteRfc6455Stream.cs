@@ -81,9 +81,9 @@ namespace vtortola.WebSockets.Rfc6455
             _internalUsedBufferLength = 0;
             _isHeaderSent = true;
         }
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || DNX451 || DNX452)
         public override void Close()
-#elif ((DNX451 || DNX452 || DNXCORE50))
+#elif (DNXCORE50)
         public  void Close() 
 #endif
         {
