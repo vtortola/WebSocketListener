@@ -2,7 +2,7 @@
 using NUnit.Framework;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
-using WebSocketException = System.Net.WebSockets.WebSocketException;
+//using WebSocketException = System.Net.WebSockets.WebSocketException;
 
 namespace WebSockets.Tests
 {
@@ -188,7 +188,7 @@ namespace WebSockets.Tests
         [Test]
         public void With_WebSocketFrameHeaderFlags_Fail_ParseBigHeader_When_Overflows_Int64()
         {
-            Assert.Throws<WebSocketException>(() =>
+            Assert.Throws<vtortola.WebSockets.WebSocketException>(() =>
             {
                 Byte[] buffer = new Byte[10];
                 buffer[0] = 129;

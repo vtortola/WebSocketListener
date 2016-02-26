@@ -53,7 +53,7 @@ namespace vtortola.WebSockets.Http
                 {
                     await _semaphore.WaitAsync(_cancel.Token).ConfigureAwait(false);
                     var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
-                    NegotiateWebSocket(socket);
+                    NegotiateWebSocket(socket); // TODO : no need to use await here ?
                 }
                 catch (TaskCanceledException)
                 {
@@ -102,7 +102,10 @@ namespace vtortola.WebSockets.Http
                 if (handshake.IsValid)
                     result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
                 else
+                {
+                    FinishSocket(client);
                     result = new WebSocketNegotiationResult(handshake.Error);
+                }
             }
             catch (Exception ex)
             {

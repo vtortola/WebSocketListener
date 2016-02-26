@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("WebSockets.Tests")]
+[assembly: AssemblyTitle("vtortola.Core.WebSocketListener")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("WebSockets.Tests")]
-[assembly: AssemblyCopyright("Copyright © 2016")]
+[assembly: AssemblyProduct("vtortola.Core.WebSocketListener")]
+[assembly: AssemblyCopyright("Copyright © Stef Heyenrath 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -19,4 +19,4 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("e621657d-102f-49fd-b2e6-8b620b66db2a")]
+[assembly: Guid("0f6245c3-ff0d-4052-81eb-f06e2652ef2d")]

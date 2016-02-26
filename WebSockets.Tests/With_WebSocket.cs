@@ -266,8 +266,11 @@ namespace WebSockets.Tests
             using (var ms = new MemoryStream())
             using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions() { PingTimeout = Timeout.InfiniteTimeSpan }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
-                using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text)) { }
-                using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text)) { }
+                using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text))
+                {
+                    writer.Write(new byte[] { 0 }, 0, 1);
+                    writer.Write(new byte[] { 1 }, 0, 1);
+                }
             }
         }
 

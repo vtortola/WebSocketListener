@@ -14,10 +14,10 @@ namespace vtortola.WebSockets
         public override abstract Int32 Read(Byte[] buffer, Int32 offset, Int32 count);
         public override abstract Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken);
 
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || DNX451 || DNX452)
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state) 
-#elif (DNX451 || DNX452 || DNXCORE50)
-        public IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#elif (DNXCORE50)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
             var wrapper = new AsyncResultTask<Int32>(ReadAsync(buffer, offset, count), state);
@@ -28,9 +28,9 @@ namespace vtortola.WebSockets
             });
             return wrapper;
         }
-#if (NET45 || NET451 || NET452)
-        public override sealed int EndRead(IAsyncResult asyncResult) 
-#elif ((DNX451 || DNX452 || DNXCORE50))
+#if (NET45 || NET451 || NET452 || DNX451 || DNX452)
+        public override sealed int EndRead(IAsyncResult asyncResult)
+#elif (DNXCORE50)
         public int EndRead(IAsyncResult asyncResult)
 #endif
         {

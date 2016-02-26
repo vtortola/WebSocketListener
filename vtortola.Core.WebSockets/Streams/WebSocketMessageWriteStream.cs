@@ -20,8 +20,8 @@ namespace vtortola.WebSockets
         }
 #if (NET45 || NET451 || NET452)
         public sealed override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state) 
-#elif ((DNX451 || DNX452 || DNXCORE50))
-        public IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#elif (DNX451 || DNX452 || DNXCORE50)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
             var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count), state);
@@ -34,8 +34,10 @@ namespace vtortola.WebSockets
         }
 #if (NET45 || NET451 || NET452)
         public sealed override void EndWrite(IAsyncResult asyncResult)
-#elif ((DNX451 || DNX452 || DNXCORE50))
+#elif (DNXCORE50)
         public void EndWrite(IAsyncResult asyncResult)
+#elif (DNX451 || DNX452)
+        public override void EndWrite(IAsyncResult asyncResult)
 #endif
         {
             try

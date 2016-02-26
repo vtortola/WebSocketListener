@@ -216,3 +216,7 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+# DNX
+project.lock.json
+artifacts/

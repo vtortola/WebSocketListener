@@ -1,10 +1,10 @@
 ﻿{
-    "version": "1.0.0-*",
+    "version": "2.2.0.1",
     "description": "vtortola.Core.WebSockets Class Library",
-    "authors": [ "Pierre" ],
-    "tags": [ "" ],
-    "projectUrl": "",
-    "licenseUrl": "",
+    "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
+    "tags": [ "websockets", "HTML5", "realtime", "streaming", "sockets", "server", "async", "asynchronous", "dnxcore" ],
+    "projectUrl": "https://github.com/vtortola/WebSocketListener",
+    "licenseUrl": "https://opensource.org/licenses/MIT",
 
     "dependencies": {
         "Microsoft.Tpl.Dataflow": "4.5.24"

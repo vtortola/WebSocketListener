@@ -1,13 +1,31 @@
 ﻿{
-    "version": "2.2.0.2",
-    "description": "vtortola.Core.WebSockets.Rfc6455 Class Library",
+    "version": "2.2.0.1",
+    "description": "vtortola.Core.WebSockets Class Library",
     "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
     "tags": [ "websockets", "HTML5", "realtime", "streaming", "sockets", "server", "async", "asynchronous", "dnxcore" ],
     "projectUrl": "https://github.com/vtortola/WebSocketListener",
     "licenseUrl": "https://opensource.org/licenses/MIT",
 
-    "dependencies": { "vtortola.Core.WebSockets": "" },
-    
+    "dependencies": {
+        "Microsoft.Tpl.Dataflow": "4.5.24"
+    },
+
+    "compile": [
+        "../vtortola.Core.WebSockets/Extensibility/*.cs",
+        "../vtortola.Core.WebSockets/Header/*.cs",
+        "../vtortola.Core.WebSockets/Http/*.cs",
+        "../vtortola.Core.WebSockets/Streams/*.cs",
+        "../vtortola.Core.WebSockets/Tools/*.cs",
+        "../vtortola.Core.WebSockets/*.cs",
+
+        "../vtortola.Core.WebSockets.Deflate/*.cs",
+
+        "../vtortola.Core.WebSockets.Rfc6455/Header/*.cs",
+        "../vtortola.Core.WebSockets.Rfc6455/Ping/*.cs",
+        "../vtortola.Core.WebSockets.Rfc6455/Streams/*.cs",
+        "../vtortola.Core.WebSockets.Rfc6455/*.cs"
+    ],
+
     "frameworks": {
         "net45": {
             "frameworkAssemblies": {

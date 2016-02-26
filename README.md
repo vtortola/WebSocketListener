@@ -15,6 +15,7 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It is **extensible**. [More info](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
  * It is **asynchronous**. 
  * It supports **Mono**. [More info] (//github.com/vtortola/WebSocketListener/wiki/Mono-support)
+ * It supports **DNXCORE50**.
  * It has the [**Ping/Pong** functionality](http://tools.ietf.org/html/rfc6455#section-5.5.2) **built-in**.
  * It can measure **connection latency**. [More info](//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency)
  * It can work with **cookies and custom HTTP response statuses**. [More info](//github.com/vtortola/WebSocketListener/wiki/Hooking-into-the-HTTP-negotiation)
@@ -82,7 +83,7 @@ A text message can be read with a simple `StreamReader`.  It is worth remember t
 ```cs
 if(messageReadStream.MessageType == WebSocketMessageType.Text)
 {
-   String msgContent = String.Empty.
+   String msgContent = String.Empty;
    using (var sr = new StreamReader(messageReadStream, Encoding.UTF8))
         msgContent = await sr.ReadToEndAsync();
 }
