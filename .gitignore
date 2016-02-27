@@ -224,3 +224,7 @@ vtortola.Core.WebSockets.Deflate/project.lock.json
 vtortola.Core.WebSockets.Rfc6455/project.lock.json
 vtortola.Core.WebSockets/project.lock.json
 WebSockets.Tests/project.lock.json
+vtortola.Core.WebSockets.Deflate/project.lock.json
+WebSockets.Tests/project.lock.json
+vtortola.Core.WebSockets/project.lock.json
+vtortola.Core.WebSockets.Rfc6455/project.lock.json
