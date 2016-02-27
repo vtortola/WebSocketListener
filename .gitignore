@@ -220,3 +220,7 @@ pip-log.txt
 # DNX
 project.lock.json
 artifacts/
+vtortola.Core.WebSockets.Deflate/project.lock.json
+vtortola.Core.WebSockets.Rfc6455/project.lock.json
+vtortola.Core.WebSockets/project.lock.json
+WebSockets.Tests/project.lock.json

@@ -83,7 +83,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
 #if (NET45 || NET451 || NET452 || DNX451 || DNX452)
         public override void Close()
-#elif (DNXCORE50)
+#else
         public  void Close() 
 #endif
         {

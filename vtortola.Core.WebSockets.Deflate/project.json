@@ -94,11 +94,35 @@
                 "System.Threading": "4.0.11-beta-*",
                 "System.Threading.Tasks": "4.0.11-beta-*",
 
-                "System.ServiceModel.Primitives": "4.0.0",
+                "System.ServiceModel.Primitives": "4.0.1-beta-*",
                 "System.ServiceModel.Security": "4.0.1-beta-*",
                 "System.ServiceModel.Http": "4.0.11-beta-*",
 
                 "System.Private.Networking": "4.0.1-beta-*"
+            }
+        },
+        "uap10.0": {
+            "dependencies": {
+                "Microsoft.CSharp": "4.0.1-rc2-*",
+                "System.Runtime": "4.0.21-rc2-*",
+
+                "System.Collections": "4.0.11-rc2-*",
+
+                "System.IO.Compression": "4.1.0-rc2-*",
+
+                "System.Net.Sockets": "4.1.0-rc2-*",
+                "System.Net.Security": "4.0.0-rc2-*",
+                "System.Net.Http": "4.0.1-rc2-*",
+                "System.Net.Primitives": "4.0.11-rc2-*",
+
+                "System.Threading": "4.0.11-rc2-*",
+                "System.Threading.Tasks": "4.0.11-rc2-*",
+
+                "System.ServiceModel.Primitives": "4.1.0-rc2-*",
+                "System.ServiceModel.Security": "4.0.1-rc2-*",
+                "System.ServiceModel.Http": "4.0.11-rc2-*",
+
+                "System.Private.Networking": "4.0.1-rc2-*"
             }
         }
     }

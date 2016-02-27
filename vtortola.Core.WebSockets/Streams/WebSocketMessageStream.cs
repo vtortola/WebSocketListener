@@ -48,7 +48,7 @@ namespace vtortola.WebSockets
         }
 #if (NET45 || NET451 || NET452 || DNX451 || DNX452)
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-#elif (DNXCORE50)
+#else
         public virtual IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
@@ -66,8 +66,8 @@ namespace vtortola.WebSockets
         }
 
 #if (NET45 || NET451 || NET452 || DNX451 || DNX452)
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state) 
-#elif (DNXCORE50)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#else
         public virtual IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {

@@ -47,7 +47,7 @@ namespace vtortola.WebSockets.Deflate
 
 #if (NET45 || NET451 || NET452 || DNX451 || DNX452)
         public override void Close()
-#elif (DNXCORE50)
+#else
         public void Close()
 #endif
         {
