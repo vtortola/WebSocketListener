@@ -1,12 +1,12 @@
 ﻿{
     "title": "vtortola.WebSocketListener.dnx",
-    "version": "2.2.0.1-beta-00001",
+    "version": "2.2.0.1-beta-00002",
     "description": "Lightweight and highly scalable asynchronous WebSocket listener, compilant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.",
     "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
     "tags": [ "websockets", "HTML5", "realtime", "streaming", "sockets", "server", "async", "asynchronous", "dnxcore" ],
     "projectUrl": "https://github.com/vtortola/WebSocketListener",
     "licenseUrl": "https://opensource.org/licenses/MIT",
-    "releaseNotes": "Support for more frameworks: dnx451, dnx452, dnx46, dnxcore5 and uap10.0",
+    "releaseNotes": "Fixed bug in WebSocketMessageWriteRfc6455Stream for dnxcore.",
 
     "dependencies": {
         "Microsoft.Tpl.Dataflow": "4.5.24"

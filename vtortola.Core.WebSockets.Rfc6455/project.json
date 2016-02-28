@@ -1,5 +1,5 @@
 ﻿{
-    "version": "2.2.0.1",
+    "version": "2.2.0.1-beta-00002",
     "description": "vtortola.Core.WebSockets.Rfc6455 Class Library",
     "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
     "tags": [ "websockets", "HTML5", "realtime", "streaming", "sockets", "server", "async", "asynchronous", "dnxcore" ],
