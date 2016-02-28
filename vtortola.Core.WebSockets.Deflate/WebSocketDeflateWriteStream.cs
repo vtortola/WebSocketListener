@@ -45,7 +45,7 @@ namespace vtortola.WebSockets.Deflate
             await _inner.CloseAsync(cancellation).ConfigureAwait(false);
         }
 
-#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452)
+#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override void Close()
 #else
         public void Close()

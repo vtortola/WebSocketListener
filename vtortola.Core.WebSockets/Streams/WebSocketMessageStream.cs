@@ -46,7 +46,7 @@ namespace vtortola.WebSockets
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
-#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452)
+#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #else
         public virtual IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -65,7 +65,7 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452)
+#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #else
         public virtual IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
