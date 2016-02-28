@@ -38,14 +38,14 @@ namespace vtortola.WebSockets.Deflate
                 return;
 
             _isClosed = true;
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || NET46 || NET46)
             _deflate.Close();
 #endif
             _inner.Write(_BFINAL, 0, 1);
             await _inner.CloseAsync(cancellation).ConfigureAwait(false);
         }
 
-#if (NET45 || NET451 || NET452 || DNX451 || DNX452)
+#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452)
         public override void Close()
 #else
         public void Close()
@@ -55,11 +55,11 @@ namespace vtortola.WebSockets.Deflate
                 return;
 
             _isClosed = true;
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || NET46)
             _deflate.Close(); 
 #endif
             _inner.Write(_BFINAL, 0, 1);
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || NET46)
             _inner.Close(); 
 #endif
         }

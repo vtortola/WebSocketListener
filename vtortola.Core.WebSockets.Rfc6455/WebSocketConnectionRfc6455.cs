@@ -384,7 +384,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 ((UInt16)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
                 WriteInternal(_closeBuffer, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || NET46)
                 _clientStream.Close(); 
 #endif
             }

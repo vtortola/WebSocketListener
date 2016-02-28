@@ -6,6 +6,7 @@
     "tags": [ "websockets", "HTML5", "realtime", "streaming", "sockets", "server", "async", "asynchronous", "dnxcore" ],
     "projectUrl": "https://github.com/vtortola/WebSocketListener",
     "licenseUrl": "https://opensource.org/licenses/MIT",
+    "releaseNotes": "Support for more frameworks: dnx451, dnx452, dnxcore5 and uap10.0",
 
     "dependencies": {
         "Microsoft.Tpl.Dataflow": "4.5.24"
@@ -70,6 +71,20 @@
                 "System.Net.Http": "4.0.0.0"
             }
         },
+        "net46": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Runtime": "4.0.20.0",
+                "System.Threading": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0"
+            }
+        },
         "dnx451": {
             "frameworkAssemblies": {
                 "System": "4.0.0.0",
@@ -101,6 +116,7 @@
         "dnxcore5": {
             "dependencies": {
                 "Microsoft.CSharp": "4.0.1-beta-*",
+
                 "System.Runtime": "4.0.21-beta-*",
 
                 "System.Collections": "4.0.11-beta-*",
@@ -122,6 +138,7 @@
         "uap10.0": {
             "dependencies": {
                 "Microsoft.CSharp": "4.0.1-rc2-*",
+
                 "System.Runtime": "4.0.21-rc2-*",
 
                 "System.Collections": "4.0.11-rc2-*",

@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
-#if (NET45 || NET451 || NET452)
+#if (NET45 || NET451 || NET452 || NET46)
 using System.Web;
 #endif
 using vtortola.Core.WebSockets.Http;
