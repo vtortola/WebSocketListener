@@ -2,7 +2,7 @@
 
 namespace vtortola.Core.WebSockets.Http
 {
-#if (DNXCORE50 || UAP10_0)
+#if (DNXCORE50 || UAP10_0 || DOTNET5_4)
     public class HttpVersion
     {
         public static Version Version10 => new Version(1,0);
