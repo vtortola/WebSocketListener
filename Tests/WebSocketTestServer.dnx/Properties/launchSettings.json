@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WebSocketTestServer.dnx": {
+      "commandName": "WebSocketTestServer.dnx",
+      "commandLineArgs": "10000"
+    }
+  }
+}

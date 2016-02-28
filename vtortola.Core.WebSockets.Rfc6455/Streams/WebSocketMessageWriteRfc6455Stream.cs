@@ -84,14 +84,15 @@ namespace vtortola.WebSockets.Rfc6455
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override void Close()
 #else
-        public  void Close() 
+        // DNXCORE50, UAP10_0 and DOTNET5_4 don't support Close, so just override Dispose(bool disposing).
+        protected override void Dispose(bool disposing)
 #endif
         {
             if (!_isFinished)
             {
                 _isFinished = true;
                 _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
-                _webSocket.Connection.EndWritting();
+                _webSocket.Connection.EndWriting();
             }
         }
 
@@ -101,7 +102,7 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 _isFinished = true;
                 await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags, cancellation).ConfigureAwait(false);
-                _webSocket.Connection.EndWritting();
+                _webSocket.Connection.EndWriting();
             }
         }
     }

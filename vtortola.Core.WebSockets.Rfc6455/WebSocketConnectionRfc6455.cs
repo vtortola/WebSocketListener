@@ -198,11 +198,11 @@ namespace vtortola.WebSockets.Rfc6455
                 return 0;
             }
         }
-        internal void EndWritting()
+        internal void EndWriting()
         {
             _ongoingMessageWrite = 0;
         }
-        internal void BeginWritting()
+        internal void BeginWriting()
         {
             if(Interlocked.CompareExchange(ref _ongoingMessageWrite, 1 , 0) == 1)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");

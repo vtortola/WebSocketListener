@@ -23,6 +23,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.WebSocketListener.dnx", "vtortola.WebSocketListener.dnx\vtortola.WebSocketListener.dnx.xproj", "{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1A0CF43B-5717-4CE8-8F5D-FEF8E2F4B5D3}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSocketTestServer.dnx", "Tests\WebSocketTestServer.dnx\WebSocketTestServer.dnx.xproj", "{A70737D6-F21B-4968-921B-149AFF750568}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSockets.Tests.dnxcore", "WebSockets.Tests.dnxcore\WebSockets.Tests.dnxcore.xproj", "{E763EA56-24C6-401B-9222-BCDD098D8AE4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,11 +55,21 @@ Global
 		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A70737D6-F21B-4968-921B-149AFF750568}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A70737D6-F21B-4968-921B-149AFF750568}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A70737D6-F21B-4968-921B-149AFF750568}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A70737D6-F21B-4968-921B-149AFF750568}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E763EA56-24C6-401B-9222-BCDD098D8AE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E763EA56-24C6-401B-9222-BCDD098D8AE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E763EA56-24C6-401B-9222-BCDD098D8AE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E763EA56-24C6-401B-9222-BCDD098D8AE4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E621657D-102F-49FD-B2E6-8B620B66DB2A} = {45AC3A8B-FEC2-4499-820E-5596B81DF98A}
+		{A70737D6-F21B-4968-921B-149AFF750568} = {1A0CF43B-5717-4CE8-8F5D-FEF8E2F4B5D3}
+		{E763EA56-24C6-401B-9222-BCDD098D8AE4} = {45AC3A8B-FEC2-4499-820E-5596B81DF98A}
 	EndGlobalSection
 EndGlobal

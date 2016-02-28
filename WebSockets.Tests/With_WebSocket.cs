@@ -275,6 +275,20 @@ namespace WebSockets.Tests
         }
 
         [Test]
+        public void With_WebSocket_CanWriteString()
+        {
+            string msg = "01";
+            var handshake = GenerateSimpleHandshake();
+            var ms = new MemoryStream();
+            using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions { PingTimeout = Timeout.InfiniteTimeSpan }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            {
+                ws.WriteString(msg);
+            }
+
+            Assert.AreEqual(new byte[] { 129, 2, 48, 49, 136, 2, 3, 232 }, ms.ToArray());
+        }
+
+        [Test]
         public void With_WebSocket_CanDetectHalfOpenConnection()
         {
             var handshake = GenerateSimpleHandshake();
