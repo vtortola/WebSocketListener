@@ -25,7 +25,7 @@ namespace vtortola.WebSockets
         public Stream ExtendConnection(Stream stream)
         {
             var ssl = new SslStream(stream, false, _validation);
-#if (UAP10_0 || DOTNET5_4)
+#if (UAP10_0 || DOTNET5_4 || DNXCORE50)
             ssl.AuthenticateAsServerAsync(_certificate, _validation != null, SslProtocols.Tls12, false).Wait();
 #else
             ssl.AuthenticateAsServer(_certificate, _validation != null, SslProtocols.Tls12, false);

@@ -226,3 +226,5 @@ vtortola.Core.WebSockets/project.lock.json
 WebSockets.Tests/project.lock.json
 .vs/config/applicationhost.config
 WebSockets.Tests/TestResult.xml
+WebSockets.Tests/project.lock.json
+vtortola.Core.WebSockets.Deflate/project.lock.json
