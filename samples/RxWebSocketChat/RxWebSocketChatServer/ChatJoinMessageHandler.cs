@@ -42,7 +42,7 @@ namespace ChatServer
         {
             if (!String.IsNullOrWhiteSpace(_session.Room))
             {
-                Broadcast(new { cls = "msg", message = _session.Nick + " leaves the room.", room = _session.Room, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") });
+                Broadcast(new { cls = "msg", message = _session.Nick + " leaves the room.", room = _session.Room, nick = "Server", timestamp = DateTime.Now.ToString("hh:mm:ss") }, _session);
                 Broadcast(new { cls = "leave", room = _session.Room, nick = _session.Nick }, _session);
             }
         }
