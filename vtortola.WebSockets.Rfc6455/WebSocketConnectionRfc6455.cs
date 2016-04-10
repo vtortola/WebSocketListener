@@ -368,6 +368,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
             finally
             {
+                reg.Dispose();
                 if (_isClosed == 0)
                     SafeEnd.ReleaseSemaphore(_writeSemaphore);
             }
