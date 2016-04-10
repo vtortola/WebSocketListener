@@ -17,11 +17,8 @@ namespace vtortola.WebSockets
 
         public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
         {
-            if (factories == null)
-                throw new ArgumentNullException("factories");
-
-            if (options == null)
-                throw new ArgumentNullException("options");
+            Guard.ParameterCannotBeNull(factories, "factories");
+            Guard.ParameterCannotBeNull(options, "options");
 
             _factories = factories;
             _options = options;
@@ -33,11 +30,11 @@ namespace vtortola.WebSockets
             try
             {
                 ReadHttpRequest(clientStream, handshake);
-                if (!(handshake.Request.Headers.AllKeys.Contains("Host") &&
-                       handshake.Request.Headers.AllKeys.Contains("Upgrade") && "websocket".Equals(handshake.Request.Headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase) &&
-                       handshake.Request.Headers.AllKeys.Contains("Connection") &&
-                       handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
-                       handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Version")))
+                if (!(handshake.Request.Headers.HeaderNames.Contains("Host") &&
+                       handshake.Request.Headers.HeaderNames.Contains("Upgrade") && "websocket".Equals(handshake.Request.Headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase) &&
+                       handshake.Request.Headers.HeaderNames.Contains("Connection") &&
+                       handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
+                       handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Version")))
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
                     return handshake;
@@ -58,18 +55,7 @@ namespace vtortola.WebSockets
 
                 SelectExtensions(handshake);
 
-                if (_options.OnHttpNegotiation != null)
-                {
-                    try
-                    {
-                        _options.OnHttpNegotiation(handshake.Request, handshake.Response);
-                    }
-                    catch (Exception onNegotiationHandlerError)
-                    {
-                        handshake.Response.Status = HttpStatusCode.InternalServerError;
-                        handshake.Error = ExceptionDispatchInfo.Capture(onNegotiationHandlerError);
-                    }
-                }
+                RunHttpNegotiationHandler(handshake);
 
                 await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
             }
@@ -80,10 +66,29 @@ namespace vtortola.WebSockets
                 if (!handshake.IsResponseSent)
                 {
                     try { WriteHttpResponse(handshake, clientStream); }
-                    catch { };
+                    catch(Exception ex2) 
+                    {
+                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse)", ex2);
+                    };
                 }
             }
             return handshake;
+        }
+
+        private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
+        {
+            if (_options.OnHttpNegotiation != null)
+            {
+                try
+                {
+                    _options.OnHttpNegotiation(handshake.Request, handshake.Response);
+                }
+                catch (Exception onNegotiationHandlerError)
+                {
+                    handshake.Response.Status = HttpStatusCode.InternalServerError;
+                    handshake.Error = ExceptionDispatchInfo.Capture(onNegotiationHandlerError);
+                }
+            }
         }
 
         private void SelectExtensions(WebSocketHandshake handshake)
@@ -175,9 +180,7 @@ namespace vtortola.WebSockets
         }
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
         {
-            writer.Write("HTTP/1.1 101 Switching Protocols\r\n");
-            writer.Write("Upgrade: websocket\r\n");
-            writer.Write("Connection: Upgrade\r\n");
+            writer.Write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n");
             if (handshake.Response.Cookies.Count > 0)
             {
                 foreach (var cookie in handshake.Response.Cookies)
@@ -190,31 +193,37 @@ namespace vtortola.WebSockets
             writer.Write("Sec-WebSocket-Accept: ");
             writer.Write(handshake.GenerateHandshake());
 
-            if (handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Protocol"))
+            if (handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Protocol"))
             {
-                writer.Write("\r\n");
-                writer.Write("Sec-WebSocket-Protocol: ");
+                writer.Write("\r\nSec-WebSocket-Protocol: ");
                 writer.Write(handshake.Response.WebSocketProtocol);
             }
 
+            WriteHandshakeCookies(handshake, writer);
+
+            writer.Write("\r\n\r\n");
+        }
+
+        private static void WriteHandshakeCookies(WebSocketHandshake handshake, StreamWriter writer)
+        {
             if (handshake.Response.WebSocketExtensions.Any())
             {
-                Boolean firstExt=true, firstOpt=true;
-                writer.Write("\r\n");
-                writer.Write("Sec-WebSocket-Extensions: ");
+                Boolean firstExt = true, firstOpt = true;
+                writer.Write("\r\nSec-WebSocket-Extensions: ");
+
                 foreach (var extension in handshake.Response.WebSocketExtensions)
                 {
-                    if(!firstExt)
+                    if (!firstExt)
                         writer.Write(",");
 
                     writer.Write(extension.Name);
                     var serverAcceptedOptions = extension.Options.Where(x => !x.ClientAvailableOption);
-                    if(extension.Options.Any())
+                    if (extension.Options.Any())
                     {
                         writer.Write(";");
                         foreach (var extOption in serverAcceptedOptions)
                         {
-                            if(!firstOpt)
+                            if (!firstOpt)
                                 writer.Write(";");
 
                             writer.Write(extOption.Name);
@@ -229,9 +238,6 @@ namespace vtortola.WebSockets
                     }
                 }
             }
-
-            writer.Write("\r\n");
-            writer.Write("\r\n");
         }
         private void SendNegotiationErrorResponse(StreamWriter writer, HttpStatusCode code)
         {
@@ -244,8 +250,8 @@ namespace vtortola.WebSockets
         }
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)
         {
-            writer.Write("HTTP/1.1 426 Upgrade Required\r\n");
-            writer.Write("Sec-WebSocket-Version: ");
+            writer.Write("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: ");
+
             Boolean first = true;
             foreach (var standard in _factories)
             {
@@ -254,8 +260,7 @@ namespace vtortola.WebSockets
                 first = false;
                 writer.Write(standard.Version.ToString());
             }
-            writer.Write("\r\n");
-            writer.Write("\r\n");
+            writer.Write("\r\n\r\n");
         }
 
         private void ConsolidateObjectModel(WebSocketHandshake handshake)
@@ -269,7 +274,7 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
-            if (handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Protocol"))
+            if (handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Protocol"))
             {
                 var subprotocolRequest = handshake.Request.Headers["Sec-WebSocket-Protocol"];
 
@@ -303,7 +308,7 @@ namespace vtortola.WebSockets
         private void ParseWebSocketExtensions(WebSocketHandshake handshake)
         {
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
-            if (handshake.Request.Headers.AllKeys.Contains("Sec-WebSocket-Extensions"))
+            if (handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Extensions"))
             {
                 var header = handshake.Request.Headers["Sec-WebSocket-Extensions"];
                 var extensions = header.Split(',');
@@ -313,34 +318,44 @@ namespace vtortola.WebSockets
                 if (extensions.Any(e => String.IsNullOrWhiteSpace(e)))
                     throw new WebSocketException("Cannot parse a null extension");
 
-                foreach (var extension in extensions)
-                {
-                    List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
-                    var parts = extension.Split(';');
-                    AssertArrayIsAtLeast(parts, 1, "Cannot parse extension [" + header + "]");
-                    if (parts.Any(e => String.IsNullOrWhiteSpace(e)))
-                        throw new WebSocketException("Cannot parse a null extension part");
-                    foreach (var part in parts.Skip(1))
-                    {
-                        var optParts = part.Split('=');
-                        AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options [" + header + "]");
-                        if (optParts.Any(e => String.IsNullOrWhiteSpace(e)))
-                            throw new WebSocketException("Cannot parse a null extension part option");
-                        if (optParts.Length == 1)
-                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption = true });
-                        else
-                            extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], Value = optParts[1] });
-                    }
-                    extensionList.Add(new WebSocketExtension(parts[0], extOptions));
-                }
+                BuildExtensions(extensionList, header, extensions);
             }
             handshake.Request.SetExtensions(extensionList);
+        }
+
+        private void BuildExtensions(List<WebSocketExtension> extensionList, String header, String[] extensions)
+        {
+            foreach (var extension in extensions)
+            {
+                List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
+                var parts = extension.Split(';');
+
+                AssertArrayIsAtLeast(parts, 1, "Cannot parse extension [" + header + "]");
+
+                if (parts.Any(e => String.IsNullOrWhiteSpace(e)))
+                    throw new WebSocketException("Cannot parse a null extension part");
+
+                foreach (var part in parts.Skip(1))
+                {
+                    var optParts = part.Split('=');
+                    AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options [" + header + "]");
+
+                    if (optParts.Any(e => String.IsNullOrWhiteSpace(e)))
+                        throw new WebSocketException("Cannot parse a null extension part option");
+
+                    if (optParts.Length == 1)
+                        extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption = true });
+                    else
+                        extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], Value = optParts[1] });
+                }
+                extensionList.Add(new WebSocketExtension(parts[0], extOptions));
+            }
         }
 
         static readonly Uri _dummyCookie = new Uri("http://vtortola.github.io/WebSocketListener/");
         private void ParseCookies(WebSocketHandshake handshake)
         {
-            if (handshake.Request.Headers.AllKeys.Contains("Cookie"))
+            if (handshake.Request.Headers.HeaderNames.Contains("Cookie"))
             {
                 var cookieString = handshake.Request.Headers["Cookie"];
                 try

@@ -21,11 +21,8 @@ namespace vtortola.WebSockets
         public WebSocketFactoryCollection Standards { get; private set; }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
-            if (options == null)
-                throw new ArgumentNullException("options");
-
-            if (endpoint == null)
-                throw new ArgumentNullException("endpoint");
+            Guard.ParameterCannotBeNull(endpoint, "endpoint");
+            Guard.ParameterCannotBeNull(options, "options");
             
             options.CheckCoherence();
             _options = options.Clone();
@@ -112,11 +109,19 @@ namespace vtortola.WebSockets
                 _isDisposed = true;
                 if (disposing)
                     GC.SuppressFinalize(this);
+
                 this.Stop();
-                _listener.Server.Dispose();
-                _cancel.Cancel();
-                _negotiationQueue.Dispose();
-                _cancel.Dispose();
+
+                if (_listener != null)
+                    SafeEnd.Dispose(_listener.Server);
+
+                if (_cancel != null)
+                {
+                    _cancel.Cancel();
+                    SafeEnd.Dispose(_cancel);
+                }
+                
+                SafeEnd.Dispose(_negotiationQueue);
             }
         }
         public void Dispose()

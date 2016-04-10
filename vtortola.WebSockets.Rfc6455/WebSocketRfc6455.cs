@@ -22,23 +22,12 @@ namespace vtortola.WebSockets.Rfc6455
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             :base(httpRequest, httpResponse)
         {
-            if (clientStream == null)
-                throw new ArgumentNullException("clientStream");
-
-            if (options == null)
-                throw new ArgumentNullException("options");
-
-            if (local == null)
-                throw new ArgumentNullException("local");
-
-            if (remote == null)
-                throw new ArgumentNullException("remote");
-
-            if (extensions == null)
-                throw new ArgumentNullException("extensions");
-
-            if (httpRequest == null)
-                throw new ArgumentNullException("httpRequest");
+            Guard.ParameterCannotBeNull(clientStream, "clientStream");
+            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(local, "local");
+            Guard.ParameterCannotBeNull(remote, "remote");
+            Guard.ParameterCannotBeNull(extensions, "extensions");
+            Guard.ParameterCannotBeNull(httpRequest, "httpRequest");
 
             _remoteEndpoint = remote;
             _localEndpoint = local;
@@ -100,7 +89,7 @@ namespace vtortola.WebSockets.Rfc6455
                 _isDisposed = true;
                 if (disposing)
                     GC.SuppressFinalize(this);
-                Connection.Dispose();
+                SafeEnd.Dispose(Connection);
             }
         }
         public override void Dispose()

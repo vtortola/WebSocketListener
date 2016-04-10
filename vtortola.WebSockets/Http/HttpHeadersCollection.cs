@@ -1,23 +1,47 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 
 namespace vtortola.WebSockets
 {
-    public sealed class HttpHeadersCollection : NameValueCollection
+    public sealed class HttpHeadersCollection
     {
+        private Dictionary<String, String> _headers;
+
         public Uri Origin { get; private set; }
         public String Host { get; private set; }
         public Int16 WebSocketVersion { get; internal set; }
-        
+
+        public HttpHeadersCollection()
+        {
+            _headers = new Dictionary<String, String>(); 
+        }
+
         public String this[HttpRequestHeader header]
         {
             get { return this[header.ToString()]; }
         }
 
-        public override void Add(string name, string value)
+        public String this[String header]
         {
-            base.Add(name, value);
+            get 
+            {
+                String result;
+                if (_headers.TryGetValue(header, out result))
+                    return result;
+                return null; 
+            }
+        }
+
+        public IEnumerable<String> HeaderNames
+        {
+            get { return _headers.Keys; }
+        }
+
+        public void Add(string name, string value)
+        {
+            _headers.Add(name, value);
             Uri uri;
             switch (name)
             {

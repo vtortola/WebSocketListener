@@ -15,8 +15,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public WebSocketMessageReadRfc6455Stream(WebSocketRfc6455 webSocket)
         {
-            if(webSocket == null)
-                throw new ArgumentNullException("webSocket");
+            Guard.ParameterCannotBeNull(webSocket, "webSocket");
 
             _webSocket = webSocket;
             _messageType = (WebSocketMessageType)_webSocket.Connection.CurrentHeader.Flags.Option;
