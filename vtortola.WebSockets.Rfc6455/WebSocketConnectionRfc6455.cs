@@ -16,7 +16,6 @@ namespace vtortola.WebSockets.Rfc6455
         readonly WebSocketListenerOptions _options;
         readonly PingStrategy _ping;
 
-        Boolean _isDisposed;
         Int32 _ongoingMessageWrite, _ongoingMessageAwaiting, _isClosed;
         
         Boolean _pingStarted;
@@ -215,14 +214,6 @@ namespace vtortola.WebSockets.Rfc6455
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-        ~WebSocketConnectionRfc6455()
-        {
-            Dispose(false);
-        }
         private void ParseHeader(Int32 readed)
         {
             if (!TryReadHeaderUntil(ref readed, 6))
@@ -389,27 +380,21 @@ namespace vtortola.WebSockets.Rfc6455
                 DebugLog.Fail("WebSocketConnectionRfc6455.Close", ex);
             }
         }
-        private void Dispose(Boolean disposing)
-        {
-            if (!_isDisposed)
-            {
-                _isDisposed = true;
-                if (disposing)
-                    GC.SuppressFinalize(this);
 
-                try
-                {
-                    this.Close();
-                }
-                catch { }
-                finally
-                {
-                    if (_options != null && _options.BufferManager != null)
-                        _options.BufferManager.ReturnBuffer(_buffer);
-                }
-                SafeEnd.Dispose(_writeSemaphore);
-                SafeEnd.Dispose(_clientStream);
+        public void Dispose()
+        {
+            try
+            {
+                this.Close();
             }
+            catch { }
+            finally
+            {
+                if (_options != null && _options.BufferManager != null)
+                    _options.BufferManager.ReturnBuffer(_buffer);
+            }
+            SafeEnd.Dispose(_writeSemaphore);
+            SafeEnd.Dispose(_clientStream);
         }
     }
 

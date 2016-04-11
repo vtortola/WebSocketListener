@@ -10,7 +10,7 @@ namespace vtortola.WebSockets.Deflate
         readonly static Byte[] _BFINAL = new Byte[] { 0 };
         readonly WebSocketMessageWriteStream _inner;
         readonly DeflateStream _deflate;
-        Boolean _isClosed, _isDisposed;
+        Boolean _isClosed;
 
         public WebSocketDeflateWriteStream(WebSocketMessageWriteStream inner)
         {
@@ -56,12 +56,8 @@ namespace vtortola.WebSockets.Deflate
         
         protected override void Dispose(Boolean disposing)
         {
-            if (!_isDisposed)
-            {
-                _isDisposed = true;
-                _deflate.Dispose();
-                _inner.Dispose();
-            }
+            SafeEnd.Dispose(_deflate);
+            SafeEnd.Dispose(_inner);
             base.Dispose(disposing);
         }
     }

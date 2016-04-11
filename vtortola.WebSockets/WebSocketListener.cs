@@ -13,8 +13,6 @@ namespace vtortola.WebSockets
         readonly HttpNegotiationQueue _negotiationQueue;
         readonly CancellationTokenSource _cancel;
         readonly WebSocketListenerOptions _options;
-        
-        Boolean _isDisposed;
 
         public Boolean IsStarted { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
@@ -56,19 +54,16 @@ namespace vtortola.WebSockets
 
         public void Start()
         {
-            if (!_isDisposed)
-            {
-                if (Standards.Count <= 0)
-                    throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
+            if (Standards.Count <= 0)
+                throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
 
-                IsStarted = true;
-                if (_options.TcpBacklog.HasValue)
-                    _listener.Start(_options.TcpBacklog.Value);
-                else
-                    _listener.Start();
+            IsStarted = true;
+            if (_options.TcpBacklog.HasValue)
+                _listener.Start(_options.TcpBacklog.Value);
+            else
+                _listener.Start();
 
-                Task.Run((Func<Task>)StartAccepting);
-            }
+            Task.Run((Func<Task>)StartAccepting);
         }
         public void Stop()
         {
@@ -102,35 +97,20 @@ namespace vtortola.WebSockets
                 return null;
             }
         }
-        private void Dispose(Boolean disposing)
-        {
-            if(!_isDisposed)
-            {
-                _isDisposed = true;
-                if (disposing)
-                    GC.SuppressFinalize(this);
-
-                this.Stop();
-
-                if (_listener != null)
-                    SafeEnd.Dispose(_listener.Server);
-
-                if (_cancel != null)
-                {
-                    _cancel.Cancel();
-                    SafeEnd.Dispose(_cancel);
-                }
-                
-                SafeEnd.Dispose(_negotiationQueue);
-            }
-        }
         public void Dispose()
         {
-            Dispose(true);
-        }
-        ~WebSocketListener()
-        {
-            Dispose(false);
+            this.Stop();
+
+            if (_listener != null)
+                SafeEnd.Dispose(_listener.Server);
+
+            if (_cancel != null)
+            {
+                _cancel.Cancel();
+                SafeEnd.Dispose(_cancel);
+            }
+
+            SafeEnd.Dispose(_negotiationQueue);
         }
     }
 }

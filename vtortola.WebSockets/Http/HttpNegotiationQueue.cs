@@ -131,11 +131,8 @@ namespace vtortola.WebSockets.Http
             return _negotiations.ReceiveAsync(cancel);
         }
 
-        private void Dispose(Boolean disposing)
+        public void Dispose()
         {
-            if(disposing)
-                GC.SuppressFinalize(this);
-
             SafeEnd.Dispose(_semaphore);
 
             if (_cancel != null)
@@ -143,16 +140,6 @@ namespace vtortola.WebSockets.Http
                 _cancel.Cancel();
                 _cancel.Dispose();
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        ~HttpNegotiationQueue()
-        {
-            Dispose(false);
         }
     }
 }

@@ -11,7 +11,6 @@ namespace vtortola.WebSockets.Rfc6455
     {
         internal WebSocketConnectionRfc6455 Connection { get; private set; }
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-        Boolean _isDisposed;
 
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
@@ -82,23 +81,9 @@ namespace vtortola.WebSockets.Rfc6455
         {
             Connection.Close();
         }
-        protected virtual void Dispose(Boolean disposing)
-        {
-            if (!_isDisposed)
-            {
-                _isDisposed = true;
-                if (disposing)
-                    GC.SuppressFinalize(this);
-                SafeEnd.Dispose(Connection);
-            }
-        }
         public override void Dispose()
         {
-            Dispose(true);
-        }
-        ~WebSocketRfc6455()
-        {
-            Dispose(false);
+            SafeEnd.Dispose(Connection);
         }
     }
 }
