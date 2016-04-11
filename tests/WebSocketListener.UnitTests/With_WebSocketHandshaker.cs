@@ -55,10 +55,26 @@ namespace WebSocketListenerTests.UnitTests
             Assert.AreEqual("cookie2", parsed[1].Name);
             Assert.AreEqual("==dos==", parsed[1].Value);
 
+            parsed = parser.Parse("language=ru; _ym_uid=1111111111111; _ym_isad=2; __test; settings=%7B%22market_730_onPage%22%3A24%7D; timezoneOffset=10800").ToArray();
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(6, parsed.Length);
+            Assert.AreEqual("language", parsed[0].Name);
+            Assert.AreEqual("ru", parsed[0].Value);
+            Assert.AreEqual("_ym_uid", parsed[1].Name);
+            Assert.AreEqual("1111111111111", parsed[1].Value);
+            Assert.AreEqual("_ym_isad", parsed[2].Name);
+            Assert.AreEqual("2", parsed[2].Value);
+            Assert.AreEqual("__test", parsed[3].Name);
+            Assert.AreEqual("", parsed[3].Value);
+            Assert.AreEqual("settings", parsed[4].Name);
+            Assert.AreEqual("{\"market_730_onPage\":24}", parsed[4].Value);
+            Assert.AreEqual("timezoneOffset", parsed[5].Name);
+            Assert.AreEqual("10800", parsed[5].Value);
+
             parsed = parser.Parse(null).ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(0, parsed.Length);
-
+            
             parsed = parser.Parse(String.Empty).ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(0, parsed.Length);

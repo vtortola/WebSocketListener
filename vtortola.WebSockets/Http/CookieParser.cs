@@ -22,9 +22,13 @@ namespace vtortola.WebSockets
                     part = String.Empty;
                     continue;
                 }
-                else if (c == ';' && !String.IsNullOrWhiteSpace(name))
+                else if (c == ';')
                 {
-                    yield return CreateCookie(name, part);
+                    if (!String.IsNullOrWhiteSpace(name))
+                        yield return CreateCookie(name, part);
+                    else
+                        yield return CreateCookie(part, String.Empty);
+
                     name = String.Empty;
                     part = String.Empty;
                     continue;
