@@ -26,7 +26,10 @@ namespace vtortola.WebSockets
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
 
-            _listener = new TcpListener(endpoint);
+            if (Type.GetType("Mono.Runtime") == null && _options.UseDualStackSocket)
+                _listener = TcpListener.Create(endpoint.Port);
+            else
+                _listener = new TcpListener(endpoint);
             if(_options.UseNagleAlgorithm.HasValue)
                 _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
 
