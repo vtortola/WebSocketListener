@@ -18,6 +18,13 @@
         "iconUrl": "http://vtortola.github.io/WebSocketListener/images/WSOrange_small.png"
     },
 
+    "dependencies": {
+        "JetBrains.Annotations": {
+            "version": "10.1.4",
+            "type": "build"
+        }
+    },
+
     "buildOptions": {
         "compile": {
             "include": [
