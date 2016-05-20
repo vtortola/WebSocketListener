@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
@@ -17,8 +14,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
         {
-            if (connection == null)
-                throw new ArgumentNullException("connection");
+            Guard.ParameterCannotBeNull(connection, "connection");
 
             _pingTimeout = pingTimeout;
             _pingBuffer = pingBuffer;
@@ -47,8 +43,9 @@ namespace vtortola.WebSockets.Rfc6455
                         _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
-                catch
+                catch(Exception ex)
                 {
+                    DebugLog.Fail("LatencyControlPing.StartPing", ex);
                     _connection.Close(WebSocketCloseReasons.ProtocolError);
                 }
             }

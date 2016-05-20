@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -17,7 +16,6 @@ namespace vtortola.WebSockets.Rfc6455
         readonly WebSocketListenerOptions _options;
         readonly PingStrategy _ping;
 
-        Boolean _isDisposed;
         Int32 _ongoingMessageWrite, _ongoingMessageAwaiting, _isClosed;
         
         Boolean _pingStarted;
@@ -43,11 +41,8 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
         {
-            if (clientStream == null)
-                throw new ArgumentNullException("clientStream");
-
-            if (options == null)
-                throw new ArgumentNullException("options");
+            Guard.ParameterCannotBeNull(clientStream, "clientStream");
+            Guard.ParameterCannotBeNull(options, "options");
 
             _writeSemaphore = new SemaphoreSlim(1);
             _options = options;
@@ -219,14 +214,6 @@ namespace vtortola.WebSockets.Rfc6455
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-        ~WebSocketConnectionRfc6455()
-        {
-            Dispose(false);
-        }
         private void ParseHeader(Int32 readed)
         {
             if (!TryReadHeaderUntil(ref readed, 6))
@@ -341,7 +328,8 @@ namespace vtortola.WebSockets.Rfc6455
             }
             finally
             {
-                _writeSemaphore.Release();
+                if(_isClosed == 0)
+                    SafeEnd.ReleaseSemaphore(_writeSemaphore);
             }
         }
         private async Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
@@ -372,7 +360,8 @@ namespace vtortola.WebSockets.Rfc6455
             finally
             {
                 reg.Dispose();
-                _writeSemaphore.Release();
+                if (_isClosed == 0)
+                    SafeEnd.ReleaseSemaphore(_writeSemaphore);
             }
         }
         internal void Close(WebSocketCloseReasons reason)
@@ -388,29 +377,26 @@ namespace vtortola.WebSockets.Rfc6455
                 _clientStream.Close(); 
 #endif
             }
-            catch { }
-        }
-        private void Dispose(Boolean disposing)
-        {
-            if (!_isDisposed)
+            catch (Exception ex)
             {
-                _isDisposed = true;
-                if (disposing)
-                    GC.SuppressFinalize(this);
-
-                try
-                {
-                    this.Close();
-                    _writeSemaphore.Dispose();
-                    _clientStream.Dispose();
-                }
-                catch { }
-                finally
-                {
-                    if (_options.BufferManager != null)
-                        _options.BufferManager.ReturnBuffer(_buffer);
-                }
+                DebugLog.Fail("WebSocketConnectionRfc6455.Close", ex);
             }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                this.Close();
+            }
+            catch { }
+            finally
+            {
+                if (_options != null && _options.BufferManager != null)
+                    _options.BufferManager.ReturnBuffer(_buffer);
+            }
+            SafeEnd.Dispose(_writeSemaphore);
+            SafeEnd.Dispose(_clientStream);
         }
     }
 
