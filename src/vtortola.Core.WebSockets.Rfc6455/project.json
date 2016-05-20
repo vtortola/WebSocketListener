@@ -1,0 +1,136 @@
+﻿{
+    "version": "2.2.0.2",
+    "description": "vtortola.Core.WebSockets.Rfc6455 Class Library",
+    "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
+
+    "dependencies": {
+        "vtortola.Core.WebSockets": { "target": "project" }
+    },
+
+    "frameworks": {
+        "net45": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0",
+                "System.Runtime": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0"
+            },
+            "dependencies": {
+                "System.Threading.Tasks.Dataflow": "4.5.25"
+            }
+        },
+        "net451": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0"
+            },
+            "dependencies": {
+                "System.Threading.Tasks.Dataflow": "4.5.25"
+            }
+        },
+        "net452": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0"
+            },
+            "dependencies": {
+                "System.Threading.Tasks.Dataflow": "4.5.25"
+            }
+        },
+        "net46": {
+            "frameworkAssemblies": {
+                "System": "",
+                "System.Core": "",
+                "System.Net": "",
+                "System.Net.Http": "",
+                "System.Runtime": "",
+                "System.ServiceModel": "",
+                "System.ServiceModel.Channels": "",
+                "System.Threading": "",
+                "System.Threading.Tasks": "",
+                "System.Web": ""
+            },
+            "dependencies": {
+                "System.Threading.Tasks.Dataflow": "4.5.25"
+            }
+        },
+        "netstandard1.3": {
+            "buildOptions": { "define": [ "NETSTANDARD" ] },
+            "NETStandard.Library": {
+                "version": "1.5.0-rc2-*"
+            },
+            "imports": [
+                "dotnet5.4",
+                "portable-win81+wp81",
+                "portable-net45+wp8",
+                "portable-net45+win8+wp8",
+                "portable-wp81+wpa81",
+                "portable-win81+wp81+wpa81",
+                "portable-net45+win8+wpa81+wp8",
+                "portable-net45+win8",
+                "portable-net45+win8+wpa81",
+                "portable-win81+wpa81",
+                "portable-net451+win81",
+                "portable-net451+win81+wpa81"
+            ],
+            "dependencies": {
+                "Microsoft.CSharp": "4.0.1-rc2-*",
+                "System.Collections": "4.0.11-rc2-*",
+                "System.Collections.Specialized": "4.0.1-rc2-*",
+                "System.IO.Compression": "4.1.0-rc2-*",
+                "System.Net.Http": "4.0.1-rc2-*",
+                "System.Net.Primitives": "4.0.11-rc2-*",
+                "System.Net.Security": "4.0.0-rc2-*",
+                "System.Net.Sockets": "4.1.0-rc2-*",
+                "System.Runtime": "4.1.0-rc2-*",
+                "System.ServiceModel.Http": "4.1.0-rc2-*",
+                "System.ServiceModel.Primitives": "4.1.0-rc2-*",
+                "System.ServiceModel.Security": "4.0.1-rc2-*",
+                "System.Threading": "4.0.11-rc2-*",
+                "System.Threading.Tasks": "4.0.11-rc2-*",
+                "System.Threading.Tasks.Dataflow": "4.6.0-rc2-*"
+            }
+        },
+        "uap10.0": {
+            "dependencies": {
+                "Microsoft.CSharp": "4.0.1-rc2-*",
+                "System.Collections": "4.0.11-rc2-*",
+                "System.Collections.Specialized": "4.0.1-rc2-*",
+                "System.IO.Compression": "4.1.0-rc2-*",
+                "System.Net.Http": "4.0.1-rc2-*",
+                "System.Net.Primitives": "4.0.11-rc2-*",
+                "System.Net.Security": "4.0.0-rc2-*",
+                "System.Net.Sockets": "4.1.0-rc2-*",
+                "System.Runtime": "4.1.0-rc2-*",
+                "System.ServiceModel.Http": "4.1.0-rc2-*",
+                "System.ServiceModel.Primitives": "4.1.0-rc2-*",
+                "System.ServiceModel.Security": "4.0.1-rc2-*",
+                "System.Threading": "4.0.11-rc2-*",
+                "System.Threading.Tasks": "4.0.11-rc2-*",
+                "System.Threading.Tasks.Dataflow": "4.6.0-rc2-*"
+            }
+        }
+    }
+}
