@@ -35,7 +35,7 @@ namespace vtortola.WebSockets
             {
                 ReadHttpRequest(clientStream, handshake);
                 if (!(handshake.Request.Headers.HeaderNames.Contains("Host") &&
-                       handshake.Request.Headers.HeaderNames.Contains("Upgrade") && "websocket".Equals(handshake.Request.Headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase) &&
+                       handshake.Request.Headers.HeaderNames.Contains("Upgrade") && "websocket".Equals(handshake.Request.Headers["Upgrade"], StringComparison.OrdinalIgnoreCase) &&
                        handshake.Request.Headers.HeaderNames.Contains("Connection") &&
                        handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
                        handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Version")))

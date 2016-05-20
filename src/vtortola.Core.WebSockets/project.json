@@ -127,6 +127,7 @@
             }
         },
         "uap10.0": {
+            "buildOptions": { "define": [ "UAP" ] },
             "dependencies": {
                 "Microsoft.CSharp": "4.0.1-rc2-*",
                 "System.Collections": "4.0.11-rc2-*",
