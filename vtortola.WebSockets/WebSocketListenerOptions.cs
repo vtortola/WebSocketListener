@@ -23,7 +23,6 @@ namespace vtortola.WebSockets
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
         public Boolean? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
-        public Boolean UseDualStackSocket { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
@@ -39,7 +38,6 @@ namespace vtortola.WebSockets
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
             PingMode = PingModes.LatencyControl;
-            UseDualStackSocket = false;
         }
         public void CheckCoherence()
         {
@@ -82,8 +80,7 @@ namespace vtortola.WebSockets
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,
-                PingMode = this.PingMode,
-                UseDualStackSocket = this.UseDualStackSocket
+                PingMode = this.PingMode
             };
         }
     }
