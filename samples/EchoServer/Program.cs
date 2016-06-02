@@ -107,8 +107,6 @@ namespace WebSocketListenerTests.Echo
         {
             try
             {
-                IWebSocketLatencyMeasure l = ws as IWebSocketLatencyMeasure;
-
                 PerformanceCounters.Connected.Increment();
                 while (ws.IsConnected && !cancellation.IsCancellationRequested)
                 {
@@ -121,7 +119,7 @@ namespace WebSocketListenerTests.Echo
                     ws.WriteString(msg);
                     PerformanceCounters.MessagesOut.Increment();
 
-                    PerformanceCounters.Delay.IncrementBy(l.Latency.Ticks * Stopwatch.Frequency / 10000);
+                    PerformanceCounters.Delay.IncrementBy(ws.Latency.Ticks * Stopwatch.Frequency / 10000);
                     PerformanceCounters.DelayBase.Increment();
                 }
             }

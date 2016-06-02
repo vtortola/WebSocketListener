@@ -1,6 +1,6 @@
 {
     "title": "vtortola.WebSocketListener.Core",
-    "version": "2.2.0.2",
+    "version": "2.2.0.3",
     "description": "Lightweight and highly scalable asynchronous WebSocket listener, compliant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.",
     "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
 
@@ -137,6 +137,7 @@
                 "Microsoft.CSharp": "4.0.1-rc2-*",
                 "System.Collections": "4.0.11-rc2-*",
                 "System.Collections.Specialized": "4.0.1-rc2-*",
+                "System.Diagnostics.Debug": "4.0.11-rc2-*",
                 "System.Diagnostics.Tools": "4.0.1-rc2-*",
                 "System.IO.Compression": "4.1.0-rc2-*",
                 "System.Net.Http": "4.0.1-rc2-*",
@@ -155,10 +156,10 @@
         "uap10.0": {
             "buildOptions": { "define": [ "UAP" ] },
             "dependencies": {
-                "System.Diagnostics.Debug": "4.0.11-rc2-*",
                 "Microsoft.CSharp": "4.0.1-rc2-*",
                 "System.Collections": "4.0.11-rc2-*",
                 "System.Collections.Specialized": "4.0.1-rc2-*",
+                "System.Diagnostics.Debug": "4.0.11-rc2-*",
                 "System.Diagnostics.Tools": "4.0.1-rc2-*",
                 "System.IO.Compression": "4.1.0-rc2-*",
                 "System.Net.Http": "4.0.1-rc2-*",

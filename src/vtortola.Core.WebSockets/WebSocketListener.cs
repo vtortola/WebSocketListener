@@ -7,7 +7,7 @@ using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketListener: IDisposable
+    public sealed class WebSocketListener : IDisposable
     {
         readonly TcpListener _listener;
         readonly HttpNegotiationQueue _negotiationQueue;
@@ -17,24 +17,17 @@ namespace vtortola.WebSockets
         public Boolean IsStarted { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
         public WebSocketFactoryCollection Standards { get; private set; }
+
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             Guard.ParameterCannotBeNull(endpoint, "endpoint");
             Guard.ParameterCannotBeNull(options, "options");
-            
+
             options.CheckCoherence();
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
 
-#if NETSTANDARD || UAP
             _listener = new TcpListener(endpoint);
-#else
-            if (Type.GetType("Mono.Runtime") == null && _options.UseDualStackSocket)
-                _listener = TcpListener.Create(endpoint.Port);
-            else
-                _listener = new TcpListener(endpoint);
-#endif
-
             if (_options.UseNagleAlgorithm.HasValue)
                 _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
 
@@ -43,13 +36,15 @@ namespace vtortola.WebSockets
 
             _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, options);
         }
+
         public WebSocketListener(IPEndPoint endpoint)
-            :this(endpoint,new WebSocketListenerOptions())
+            : this(endpoint, new WebSocketListenerOptions())
         {
         }
+
         private async Task StartAccepting()
         {
-            while(IsStarted)
+            while (IsStarted)
             {
                 var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
                 if (client != null)
@@ -73,14 +68,16 @@ namespace vtortola.WebSockets
 
             Task.Run((Func<Task>)StartAccepting);
         }
+
         public void Stop()
         {
             IsStarted = false;
             _listener.Stop();
         }
+
         private void ConfigureSocket(Socket client)
         {
-            if(_options.UseNagleAlgorithm.HasValue)
+            if (_options.UseNagleAlgorithm.HasValue)
                 client.NoDelay = !_options.UseNagleAlgorithm.Value;
             client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
             client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
@@ -105,6 +102,7 @@ namespace vtortola.WebSockets
                 return null;
             }
         }
+
         public void Dispose()
         {
             this.Stop();

@@ -23,9 +23,9 @@ namespace vtortola.WebSockets
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
         public Boolean? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
-        public Boolean UseDualStackSocket { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
+
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
@@ -39,8 +39,8 @@ namespace vtortola.WebSockets
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
             PingMode = PingModes.LatencyControl;
-            UseDualStackSocket = false;
         }
+
         public void CheckCoherence()
         {
             if (PingTimeout == TimeSpan.Zero)
@@ -57,16 +57,17 @@ namespace vtortola.WebSockets
 
             if (NegotiationTimeout == TimeSpan.Zero)
                 NegotiationTimeout = Timeout.InfiniteTimeSpan;
-            
+
             if (WebSocketSendTimeout == TimeSpan.Zero)
                 WebSocketSendTimeout = Timeout.InfiniteTimeSpan;
 
             if (WebSocketReceiveTimeout == TimeSpan.Zero)
                 WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
 
-            if(SendBufferSize <= 0)
+            if (SendBufferSize <= 0)
                 throw new WebSocketException("SendBufferSize must be bigger than 0.");
         }
+
         public WebSocketListenerOptions Clone()
         {
             return new WebSocketListenerOptions()
@@ -78,12 +79,11 @@ namespace vtortola.WebSockets
                 WebSocketSendTimeout = this.WebSocketSendTimeout,
                 WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
                 SendBufferSize = this.SendBufferSize,
-                SubProtocols = this.SubProtocols??_noSubProtocols,
+                SubProtocols = this.SubProtocols ?? _noSubProtocols,
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,
-                PingMode = this.PingMode,
-                UseDualStackSocket = this.UseDualStackSocket
+                PingMode = this.PingMode
             };
         }
     }
