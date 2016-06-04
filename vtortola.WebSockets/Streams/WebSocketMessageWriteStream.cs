@@ -18,9 +18,13 @@ namespace vtortola.WebSockets
         {
             ExtensionFlags = new WebSocketExtensionFlags();
         }
+#if (NET45 || NET451 || NET452 || NET46)
         public override sealed IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#else
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#endif
         {
-            var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count),state);
+            var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count), state);
             wrapper.Task.ContinueWith(t =>
             {
                 if (callback != null)
@@ -28,7 +32,11 @@ namespace vtortola.WebSockets
             });
             return wrapper;
         }
-        public override sealed void EndWrite(IAsyncResult asyncResult)
+#if (NET45 || NET451 || NET452 || NET46)
+        public sealed override void EndWrite(IAsyncResult asyncResult)
+#else
+        public void EndWrite(IAsyncResult asyncResult)
+#endif
         {
             try
             {

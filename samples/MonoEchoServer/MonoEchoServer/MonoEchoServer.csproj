@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -33,25 +33,29 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Threading.Tasks.Dataflow">
-      <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.9\lib\net45\System.Threading.Tasks.Dataflow.dll</HintPath>
+    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="vtortola.WebSockets.Deflate">
-      <HintPath>..\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.Deflate.dll</HintPath>
+    <Reference Include="vtortola.WebSockets, Version=2.2.0.3, Culture=neutral, PublicKeyToken=7f78616efb4a208d, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\vtortola.WebSocketListener.2.2.0.3\lib\net45\vtortola.WebSockets.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="vtortola.WebSockets">
-      <HintPath>..\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.dll</HintPath>
+    <Reference Include="vtortola.WebSockets.Deflate, Version=2.2.0.3, Culture=neutral, PublicKeyToken=7f78616efb4a208d, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\vtortola.WebSocketListener.2.2.0.3\lib\net45\vtortola.WebSockets.Deflate.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="vtortola.WebSockets.Rfc6455">
-      <HintPath>..\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.Rfc6455.dll</HintPath>
+    <Reference Include="vtortola.WebSockets.Rfc6455, Version=2.2.0.3, Culture=neutral, PublicKeyToken=7f78616efb4a208d, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\vtortola.WebSocketListener.2.2.0.3\lib\net45\vtortola.WebSockets.Rfc6455.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
