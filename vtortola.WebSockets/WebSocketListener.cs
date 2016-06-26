@@ -112,5 +112,12 @@ namespace vtortola.WebSockets
 
             SafeEnd.Dispose(_negotiationQueue);
         }
+        public EndPoint LocalEndpoint
+        {
+            get
+            {
+                return _listener.LocalEndpoint;
+            }
+        }
     }
 }
