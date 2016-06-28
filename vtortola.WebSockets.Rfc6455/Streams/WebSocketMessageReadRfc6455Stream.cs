@@ -53,31 +53,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public override Int32 Read(Byte[] buffer, Int32 offset, Int32 count)
         {
-            Int32 readed = 0;
-            do
-            {
-                if (!_webSocket.IsConnected)
-                    break;
-
-                var checkedcount = CheckBoundaries(buffer, offset, count);
-
-                if (checkedcount == 0 && !_hasPendingFrames)
-                {
-                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
-                    break;
-                }
-                else if (checkedcount == 0 && _hasPendingFrames)
-                    LoadNewHeader();
-                else
-                {
-                    readed = _webSocket.Connection.ReadInternal(buffer, offset, checkedcount);
-                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
-                    if (_webSocket.Connection.CurrentHeader == null && _hasPendingFrames)
-                        LoadNewHeader();
-                }
-            } while (readed == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0);
-
-            return readed;
+            return ReadAsync(buffer, offset, count, CancellationToken.None).Result;
         }
 
         public override async Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
@@ -109,11 +85,6 @@ namespace vtortola.WebSockets.Rfc6455
             return readed;
         }
 
-        private void LoadNewHeader()
-        {
-            _webSocket.Connection.AwaitHeader();
-            _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
-        }
         private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
         {
             await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
