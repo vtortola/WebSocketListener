@@ -18,7 +18,6 @@ namespace vtortola.WebSockets
             HttpRequest = request;
             HttpResponse = response;
         }
-        public abstract WebSocketMessageReadStream ReadMessage();
         public abstract Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token);
         public abstract WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType);
         public abstract void Close();

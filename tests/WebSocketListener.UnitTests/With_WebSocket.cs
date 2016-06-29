@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using vtortola.WebSockets.Rfc6455;
 
 namespace WebSocketListenerTests.UnitTests
@@ -193,7 +194,7 @@ namespace WebSocketListenerTests.UnitTests
 
         [TestMethod]
         [ExpectedException(typeof(WebSocketException))]
-        public void With_WebSocket_FailsWithDoubleMessageAwait()
+        public async Task With_WebSocket_FailsWithDoubleMessageAwait()
         {
             var handshake = GenerateSimpleHandshake();
             using (var ms = new BufferedStream(new MemoryStream()))
@@ -204,14 +205,14 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
-                ws.ReadMessage();
-                ws.ReadMessage();
+                await ws.ReadMessageAsync(CancellationToken.None);
+                await ws.ReadMessageAsync(CancellationToken.None);
             }
         }
 
         [TestMethod]
         [ExpectedException(typeof(WebSocketException))]
-        public void With_WebSocket_FailsWithDoubleMessageRead()
+        public async Task With_WebSocket_FailsWithDoubleMessageRead()
         {
             var handshake = GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
@@ -222,8 +223,9 @@ namespace WebSocketListenerTests.UnitTests
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
-                var reader = ws.ReadMessage();
-                reader = ws.ReadMessage();
+                var msg = await ws.ReadMessageAsync(CancellationToken.None);
+                Assert.IsTrue(msg != null);
+                await ws.ReadMessageAsync(CancellationToken.None);
             }
         }
 

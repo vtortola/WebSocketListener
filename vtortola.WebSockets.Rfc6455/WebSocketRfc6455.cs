@@ -51,18 +51,6 @@ namespace vtortola.WebSockets.Rfc6455
                 return null;
             }
         }
-        public override WebSocketMessageReadStream ReadMessage()
-        {
-            try
-            {
-                return ReadMessageAsync(CancellationToken.None).Result;
-            }
-            catch (AggregateException e)
-            {
-                ExceptionDispatchInfo.Capture(e.Flatten().InnerException).Throw();
-                return null;
-            }
-        }
 
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
