@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
@@ -40,7 +41,7 @@ namespace vtortola.WebSockets.Rfc6455
                     else
                     {
                         ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
-                        _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+                        await _connection.WriteInternalAsync(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 catch(Exception ex)
