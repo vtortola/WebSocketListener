@@ -1,0 +1,154 @@
+{
+    "title": "vtortola.WebSocketListener",
+    "version": "2.2.0.4",
+    "description": "Lightweight and highly scalable asynchronous WebSocket listener, compliant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.",
+    "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
+
+    "packOptions": {
+        "summary": "Lightweight and highly scalable asynchronous WebSocket listener, compliant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.",
+        "tags": [ "websockets", "HTML5", "realtime", "streaming", "sockets", "server", "async", "asynchronous", "dnxcore" ],
+        "owners": [ "vtortola", "Stef Heyenrath" ],
+        "repository": {
+            "type": "git",
+            "url": "https://github.com/vtortola/WebSocketListener"
+        },
+        "projectUrl": "https://github.com/vtortola/WebSocketListener",
+        "licenseUrl": "https://opensource.org/licenses/MIT",
+        "releaseNotes": "support for dotnet rc2",
+        "iconUrl": "http://vtortola.github.io/WebSocketListener/images/WSOrange_small.png"
+    },
+
+    "dependencies": {
+        "JetBrains.Annotations": {
+            "version": "10.1.4",
+            "type": "build"
+        }
+    },
+
+    "buildOptions": {
+        "compile": {
+            "include": [
+                "../vtortola.WebSockets/Extensibility/*.cs",
+                "../vtortola.WebSockets/Header/*.cs",
+                "../vtortola.WebSockets/Http/*.cs",
+                "../vtortola.WebSockets/Streams/*.cs",
+                "../vtortola.WebSockets/Tools/*.cs",
+                "../vtortola.WebSockets/*.cs",
+
+                "../vtortola.WebSockets.Deflate/*.cs",
+
+                "../vtortola.WebSockets.Rfc6455/Header/*.cs",
+                "../vtortola.WebSockets.Rfc6455/Ping/*.cs",
+                "../vtortola.WebSockets.Rfc6455/Streams/*.cs",
+                "../vtortola.WebSockets.Rfc6455/*.cs"
+            ]
+        }
+    },
+
+    "frameworks": {
+        "net45": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0",
+                "System.Runtime": "4.0.0.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0"
+            },
+            "dependencies": {
+                "Microsoft.Tpl.Dataflow": "4.5.24"
+            }
+        },
+        "net451": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0"
+            },
+            "dependencies": {
+                "Microsoft.Tpl.Dataflow": "4.5.24"
+            }
+        },
+        "net452": {
+            "frameworkAssemblies": {
+                "System": "4.0.0.0",
+                "System.Core": "4.0.0.0",
+                "System.Net": "4.0.0.0",
+                "System.Net.Http": "4.0.0.0",
+                "System.Runtime": "4.0.10.0",
+                "System.ServiceModel": "4.0.0.0",
+                "System.ServiceModel.Channels": "4.0.0.0",
+                "System.Threading": "4.0.0.0",
+                "System.Threading.Tasks": "4.0.0.0",
+                "System.Web": "4.0.0.0"
+            },
+            "dependencies": {
+                "Microsoft.Tpl.Dataflow": "4.5.24"
+            }
+        },
+        "net46": {
+            "frameworkAssemblies": {
+                "System": "",
+                "System.Core": "",
+                "System.Net": "",
+                "System.Net.Http": "",
+                "System.Runtime": "",
+                "System.ServiceModel": "",
+                "System.ServiceModel.Channels": "",
+                "System.Threading": "",
+                "System.Threading.Tasks": "",
+                "System.Web": ""
+            },
+            "dependencies": {
+                "Microsoft.Tpl.Dataflow": "4.5.24"
+            }
+        },
+        "netstandard1.3": {
+            "buildOptions": { "define": [ "NETSTANDARD" ] },
+            "NETStandard.Library": {
+                "version": "1.5.0-rc2-24027"
+            },
+            "imports": [
+                "dotnet5.4"
+            ],
+            "dependencies": {
+                "Microsoft.CSharp": "4.0.1-rc2-24027",
+                "System.Collections": "4.0.11-rc2-24027",
+                "System.Collections.Specialized": "4.0.1-rc2-24027",
+                "System.Net.Http": "4.0.1-rc2-24027",
+                "System.Net.Security": "4.0.0-rc2-24027",
+                "System.Net.Sockets": "4.1.0-rc2-24027",
+                "System.ServiceModel.Http": "4.1.0-rc2-24027",
+                "System.ServiceModel.Primitives": "4.1.0-rc2-24027",
+                "System.ServiceModel.Security": "4.0.1-rc2-24027",
+                "System.Threading.Tasks.Dataflow": "4.6.0-rc2-24027"
+            }
+        },
+        "uap10.0": {
+            "buildOptions": { "define": [ "UAP" ] },
+            "dependencies": {
+                "Microsoft.CSharp": "4.0.1-rc2-24027",
+                "System.Collections": "4.0.11-rc2-24027",
+                "System.Collections.Specialized": "4.0.1-rc2-24027",
+                "System.Net.Http": "4.0.1-rc2-24027",
+                "System.Net.Security": "4.0.0-rc2-24027",
+                "System.Net.Sockets": "4.1.0-rc2-24027",
+                "System.ServiceModel.Http": "4.1.0-rc2-24027",
+                "System.ServiceModel.Primitives": "4.1.0-rc2-24027",
+                "System.ServiceModel.Security": "4.0.1-rc2-24027",
+                "System.Threading.Tasks.Dataflow": "4.6.0-rc2-24027"
+            }
+        }
+    }
+}

@@ -193,11 +193,11 @@ namespace vtortola.WebSockets.Rfc6455
                 return 0;
             }
         }
-        internal void EndWritting()
+        internal void EndWriting()
         {
             _ongoingMessageWrite = 0;
         }
-        internal void BeginWritting()
+        internal void BeginWriting()
         {
             if(Interlocked.CompareExchange(ref _ongoingMessageWrite, 1 , 0) == 1)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
@@ -373,7 +373,9 @@ namespace vtortola.WebSockets.Rfc6455
 
                 ((UInt16)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
                 WriteInternal(_closeBuffer, 2, true, false, WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
-                _clientStream.Close();
+#if (NET45 || NET451 || NET452 || NET46)
+                _clientStream.Close(); 
+#endif
             }
             catch (Exception ex)
             {
