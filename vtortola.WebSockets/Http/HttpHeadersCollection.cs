@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
+using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
@@ -45,17 +46,17 @@ namespace vtortola.WebSockets
             Uri uri;
             switch (name)
             {
-                case "Origin":
+                case WebSocketHeaders.Origin:
                     if (String.Equals(value, "null", StringComparison.OrdinalIgnoreCase))
                         uri = null;
                     else if (!Uri.TryCreate(value, UriKind.Absolute, out uri))
                         throw new WebSocketException("Cannot parse '" + value + "' as Origin header Uri");
                     Origin = uri;
                     break;
-                case "Host":
+                case WebSocketHeaders.Host:
                     Host = value;
                     break;
-                case "Sec-WebSocket-Version":
+                case WebSocketHeaders.Version:
                     WebSocketVersion = Int16.Parse(value);
                     break;
             }
