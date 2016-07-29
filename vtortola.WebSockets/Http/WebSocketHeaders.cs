@@ -1,26 +1,18 @@
 ﻿
+using System;
 namespace vtortola.WebSockets.Http
 {
     public static class WebSocketHeaders
     {
-        public const string Host = "host";
-
-        public const string Upgrade = "upgrade";
-
-        public const string Connection = "connection";
-
-        public const string Key = "sec-websocket-key";
-
-        public const string Version = "sec-websocket-version";
-
-        public const string UpgradeExpectedValue = "websocket";
-
-        public const string Protocol = "sec-websocket-protocol";
-
-        public const string Extensions = "sec-websocket-extensions";
-
-        public const string Cookie = "cookie";
-
-        public const string Origin = "origin";
+        public const String Host = "host";
+        public const String Upgrade = "upgrade";
+        public const String Connection = "connection";
+        public const String Key = "sec-websocket-key";
+        public const String Version = "sec-websocket-version";
+        public const String UpgradeExpectedValue = "websocket";
+        public const String Protocol = "sec-websocket-protocol";
+        public const String Extensions = "sec-websocket-extensions";
+        public const String Cookie = "cookie";
+        public const String Origin = "origin";
     }
 }
