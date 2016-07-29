@@ -76,7 +76,7 @@ namespace vtortola.WebSockets
         {
             return handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Host) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Upgrade) &&
-                   WebSocketHeaders.UpgradeExpectedValue.Equals(handShake.Request.Headers[WebSocketHeaders.Upgrade],
+                   "websocket".Equals(handShake.Request.Headers[WebSocketHeaders.Upgrade],
                                              StringComparison.InvariantCultureIgnoreCase) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Connection) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Key) &&
@@ -185,7 +185,7 @@ namespace vtortola.WebSockets
                 return;
             String key = line.Substring(0, separator);
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
-            handshake.Request.Headers.Add(key.ToLower(), value); // make the keys lowercase
+            handshake.Request.Headers.Add(key, value);
         }
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
         {

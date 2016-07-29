@@ -16,7 +16,7 @@ namespace vtortola.WebSockets
 
         public HttpHeadersCollection()
         {
-            _headers = new Dictionary<String, String>(); 
+            _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase); 
         }
 
         public String this[HttpRequestHeader header]
@@ -40,9 +40,13 @@ namespace vtortola.WebSockets
             get { return _headers.Keys; }
         }
 
-        public void Add(string name, string value)
+        public void Add(String name, String value)
         {
+            Guard.ParameterCannotBeNull(name, "name");
+            name = name.ToLowerInvariant();
+
             _headers.Add(name, value);
+
             Uri uri;
             switch (name)
             {
@@ -53,9 +57,11 @@ namespace vtortola.WebSockets
                         throw new WebSocketException("Cannot parse '" + value + "' as Origin header Uri");
                     Origin = uri;
                     break;
+
                 case WebSocketHeaders.Host:
                     Host = value;
                     break;
+
                 case WebSocketHeaders.Version:
                     WebSocketVersion = Int16.Parse(value);
                     break;
