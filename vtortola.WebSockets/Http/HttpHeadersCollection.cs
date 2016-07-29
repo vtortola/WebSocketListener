@@ -21,7 +21,7 @@ namespace vtortola.WebSockets
 
         public String this[HttpRequestHeader header]
         {
-            get { return this[header.ToString().ToLowerInvariant()]; }
+            get { return this[header.ToString()]; }
         }
 
         public String this[String header]
@@ -40,13 +40,9 @@ namespace vtortola.WebSockets
             get { return _headers.Keys; }
         }
 
-        public void Add(String name, String value)
+        public void Add(string name, string value)
         {
-            Guard.ParameterCannotBeNull(name, "name");
-
-            name = name.ToLowerInvariant();
             _headers.Add(name, value);
-            
             Uri uri;
             switch (name)
             {
