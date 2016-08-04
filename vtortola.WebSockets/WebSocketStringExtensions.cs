@@ -8,24 +8,7 @@ namespace vtortola.WebSockets
 {
     public static class WebSocketStringExtensions
     {
-        public static String ReadString(this WebSocket ws)
-        {
-            using (var msg = ws.ReadMessage())
-            {
-                if (msg == null)
-                    return null;
-
-                using (var reader = new StreamReader(msg, Encoding.UTF8))
-                    return reader.ReadToEnd();
-            }
-        }
-        public static void WriteString(this WebSocket ws, String data)
-        {
-            using (var msg = ws.CreateMessageWriter(WebSocketMessageType.Text))
-            using (var writer = new StreamWriter(msg, Encoding.UTF8))
-                writer.Write(data);
-        }
-        /*
+       /*
          * Async methods are not enterely asynchronous. There are an asynchronous part and a synchronous one.
          * 
          * ReadStringAsync: Awaiting a message is async (since it is unpredictable), but reading is sync since usually

@@ -84,34 +84,6 @@ namespace vtortola.WebSockets.Rfc6455
                 }
             }
         }
-        internal void AwaitHeader()
-        {
-            CheckForDoubleRead();
-            StartPing();
-            try
-            {
-                while (this.IsConnected && CurrentHeader == null)
-                {
-                    // try read minimal frame first
-                    Int32 readed =  _clientStream.Read(_headerBuffer.Array,_headerBuffer.Offset, 6);
-                    if (readed == 0 )
-                    {
-                        Close(WebSocketCloseReasons.ProtocolError);
-                        return;
-                    }
-
-                    ParseHeader(readed);
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                Close(WebSocketCloseReasons.ProtocolError);
-            }
-            catch (IOException)
-            {
-                Close(WebSocketCloseReasons.ProtocolError);
-            }
-        }
         internal async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
             CheckForDoubleRead();
@@ -120,15 +92,8 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 while (this.IsConnected && CurrentHeader == null)
                 {
-                    // try read minimal frame first
-                    Int32 readed = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset, 6, cancellation).ConfigureAwait(false);
-                    if (readed == 0 || cancellation.IsCancellationRequested)
-                    {
-                        Close(WebSocketCloseReasons.ProtocolError);
-                        return;
-                    }
-
-                    ParseHeader(readed);
+                    cancellation.ThrowIfCancellationRequested();
+                    await ReadHeader(cancellation).ConfigureAwait(false);
                 }
             }
             catch (InvalidOperationException)
@@ -138,6 +103,10 @@ namespace vtortola.WebSockets.Rfc6455
             catch (IOException)
             {
                 Close(WebSocketCloseReasons.ProtocolError);
+            }
+            catch (OperationCanceledException)
+            {
+                Close(WebSocketCloseReasons.GoingAway);
             }
             catch
             {
@@ -214,17 +183,20 @@ namespace vtortola.WebSockets.Rfc6455
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
-        private void ParseHeader(Int32 readed)
+        private async Task ReadHeader(CancellationToken cancellation)
         {
-            if (!TryReadHeaderUntil(ref readed, 6))
+            Int32 readed = 0;
+            var success = await TryReadHeaderUntil(readed, 6, cancellation).ConfigureAwait(false);
+            if (!success)
             {
                 Close(WebSocketCloseReasons.ProtocolError);
                 return;
             }
 
+            readed += 6;
             Int32 headerlength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer.Array, _headerBuffer.Offset);
-
-            if (!TryReadHeaderUntil(ref readed, headerlength))
+            success = await TryReadHeaderUntil(readed, headerlength, cancellation).ConfigureAwait(false);
+            if (!success)
             {
                 Close(WebSocketCloseReasons.ProtocolError);
                 return;
@@ -246,12 +218,11 @@ namespace vtortola.WebSockets.Rfc6455
 
             _ping.NotifyActivity();
         }
-        private Boolean TryReadHeaderUntil(ref Int32 readed, Int32 until)
+        private async Task<Boolean> TryReadHeaderUntil(Int32 readed, Int32 until, CancellationToken cancellation)
         {
-            Int32 r = 0;
             while (readed < until)
             {
-                r = _clientStream.Read(_headerBuffer.Array, _headerBuffer.Offset + readed, until - readed);
+                var r = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset + readed, until - readed, cancellation).ConfigureAwait(false);
                 if (r == 0)
                     return false;
 
@@ -272,11 +243,6 @@ namespace vtortola.WebSockets.Rfc6455
         {
             switch (CurrentHeader.Flags.Option)
             {
-                case WebSocketFrameOption.Continuation:
-                case WebSocketFrameOption.Text:
-                case WebSocketFrameOption.Binary:
-                    throw new WebSocketException("Text, Continuation or Binary are not protocol frames");
-
                 case WebSocketFrameOption.ConnectionClose:
                     this.Close(WebSocketCloseReasons.NormalClose);
                     break;
@@ -299,7 +265,7 @@ namespace vtortola.WebSockets.Rfc6455
                         this.WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
                     
                     break;
-                default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
+                default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option + "'");
             }
         }    
         internal void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)

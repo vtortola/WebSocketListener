@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +10,7 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455 : WebSocket
     {
-        internal WebSocketConnectionRfc6455 Connection { get; private set; }
+        internal readonly WebSocketConnectionRfc6455 Connection;
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
 
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
@@ -50,20 +51,7 @@ namespace vtortola.WebSockets.Rfc6455
                 return null;
             }
         }
-        public override WebSocketMessageReadStream ReadMessage()
-        {
-            Connection.AwaitHeader();
 
-            if (Connection.IsConnected && Connection.CurrentHeader != null)
-            {
-                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
-                foreach (var extension in _extensions)
-                    reader = extension.ExtendReader(reader);
-                return reader;
-            }
-
-            return null;
-        }
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
             if (!Connection.IsConnected)
