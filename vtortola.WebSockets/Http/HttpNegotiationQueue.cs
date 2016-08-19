@@ -58,7 +58,7 @@ namespace vtortola.WebSockets.Http
                 {
                     await _semaphore.WaitAsync(_cancel.Token).ConfigureAwait(false);
                     var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
-                    Task.Run(() => NegotiateWebSocket(socket));
+                    await Task.Run(() => NegotiateWebSocket(socket));
                 }
                 catch (TaskCanceledException)
                 {
