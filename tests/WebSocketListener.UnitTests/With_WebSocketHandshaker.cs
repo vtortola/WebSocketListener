@@ -406,7 +406,7 @@ namespace WebSocketListenerTests.UnitTests
 
 
         [TestMethod]
-        public void WebSocketHandshaker_FailWhenSubProtocolRequestedButNotOffered()
+        public void WebSocketHandshaker_DoesNotFailWhenSubProtocolRequestedButNotOffered()
         {
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions());
 
@@ -432,13 +432,16 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
-                Assert.IsNotNull(result.Error);
-                Assert.IsFalse(result.IsValid);
+                Assert.IsNull(result.Error);
+                Assert.IsTrue(result.IsValid);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
+                sb.AppendLine(@"Upgrade: websocket");
+                sb.AppendLine(@"Connection: Upgrade");
+                sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))
@@ -450,7 +453,7 @@ namespace WebSocketListenerTests.UnitTests
         }
         
         [TestMethod]
-        public void WebSocketHandshaker_FailWhenSubProtocolRequestedButNoMatch()
+        public void WebSocketHandshaker_DoesNotFailWhenSubProtocolRequestedButNoMatch()
         {
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat2", "text" } });
 
@@ -476,13 +479,17 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
-                Assert.IsNotNull(result.Error);
-                Assert.IsFalse(result.IsValid);
+                Assert.IsNull(result.Error);
+                Assert.IsTrue(result.IsValid);
+                Assert.IsNull(result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
+                sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
+                sb.AppendLine(@"Upgrade: websocket");
+                sb.AppendLine(@"Connection: Upgrade");
+                sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
                 using (var sr = new StreamReader(ms))

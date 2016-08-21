@@ -202,7 +202,18 @@ namespace vtortola.WebSockets
             writer.Write("Sec-WebSocket-Accept: ");
             writer.Write(handshake.GenerateHandshake());
 
-            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Protocol))
+            // https://tools.ietf.org/html/rfc6455#section-4.2.2
+            /* 
+              Sec-WebSocket-Protocol
+              If the client's handshake did not contain such a header field or if
+              the server does not agree to any of the client's requested
+              subprotocols, the only acceptable value is null.  The absence
+              of such a field is equivalent to the null value (meaning that
+              if the server does not wish to agree to one of the suggested
+              subprotocols, it MUST NOT send back a |Sec-WebSocket-Protocol|
+              header field in its response).
+             */
+            if (handshake.Response.WebSocketProtocol != null)
             {
                 writer.Write("\r\nSec-WebSocket-Protocol: ");
                 writer.Write(handshake.Response.WebSocketProtocol);
@@ -283,15 +294,12 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
+            if (!_options.SubProtocols.Any())
+                return;
+
             if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Protocol))
             {
                 var subprotocolRequest = handshake.Request.Headers[WebSocketHeaders.Protocol];
-
-                if (!_options.SubProtocols.Any())
-                {
-                    handshake.HasSubProtocolMatch = false;
-                    throw new WebSocketException("Client is requiring a sub protocol '" + subprotocolRequest + "' but there are not subprotocols defined");
-                }
 
                 String[] sp = subprotocolRequest.Split(',');
                 AssertArrayIsAtLeast(sp, 1, "Cannot understand the 'Sec-WebSocket-Protocol' header '" + subprotocolRequest + "'");
@@ -304,12 +312,6 @@ namespace vtortola.WebSockets
                         handshake.Response.WebSocketProtocol = match;
                         break;
                     }
-                }
-
-                if (String.IsNullOrWhiteSpace(handshake.Response.WebSocketProtocol))
-                {
-                    handshake.HasSubProtocolMatch = false;
-                    throw new WebSocketException("There is no subprotocol defined for '" + subprotocolRequest + "'");
                 }
             }
         }

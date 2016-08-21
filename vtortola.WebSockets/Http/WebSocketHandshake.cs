@@ -15,7 +15,7 @@ namespace vtortola.WebSockets
         { 
             get 
             { 
-                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && HasSubProtocolMatch && Response.Status == HttpStatusCode.SwitchingProtocols; 
+                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && Response.Status == HttpStatusCode.SwitchingProtocols; 
             }
             set { _invalidated = !value; }
         }
@@ -24,7 +24,6 @@ namespace vtortola.WebSockets
         public List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions { get; private set; }
         public Boolean IsWebSocketRequest { get; internal set; }
         public Boolean IsVersionSupported { get; internal set; }
-        public Boolean HasSubProtocolMatch { get; internal set; }
         public WebSocketFactory Factory { get; internal set; }
         public ExceptionDispatchInfo Error { get; set; }
         public Boolean  IsResponseSent { get; internal set; }
@@ -33,7 +32,6 @@ namespace vtortola.WebSockets
             Request = new WebSocketHttpRequest();
             Response = new WebSocketHttpResponse();
             NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
-            HasSubProtocolMatch = true;
             _invalidated = false;
         }
         public String GenerateHandshake()
