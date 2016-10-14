@@ -1,27 +1,48 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{45AC3A8B-FEC2-4499-820E-5596B81DF98A}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets", "vtortola.Core.WebSockets\vtortola.Core.WebSockets.xproj", "{0FF7557A-EE15-4CBC-B8EC-862186A2D3DE}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets.Deflate", "vtortola.Core.WebSockets.Deflate\vtortola.Core.WebSockets.Deflate.xproj", "{C1BBE080-8AE6-4279-8044-F8CDAF21E5DF}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets.Rfc6455", "vtortola.Core.WebSockets.Rfc6455\vtortola.Core.WebSockets.Rfc6455.xproj", "{176E19AB-1011-4355-9924-41EBA40572CD}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSockets.Tests", "WebSockets.Tests\WebSockets.Tests.xproj", "{E621657D-102F-49FD-B2E6-8B620B66DB2A}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB6FB7EB-57F6-4D57-9322-6FB113FB0C88}"
 	ProjectSection(SolutionItems) = preProject
-		vtortola.Core.WebSockets.Deflate\global.json = vtortola.Core.WebSockets.Deflate\global.json
-		vtortola.Core.WebSockets\global.json = vtortola.Core.WebSockets\global.json
-		vtortola.Core.WebSockets.Rfc6455\global.json = vtortola.Core.WebSockets.Rfc6455\global.json
-		vtortola.Core.WebSocketListener\global.json = vtortola.Core.WebSocketListener\global.json
+		global.json = global.json
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSocketListener", "vtortola.Core.WebSocketListener\vtortola.Core.WebSocketListener.xproj", "{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CC32BEB3-C697-4973-93A1-46F38F4D26E4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{2A05E065-32CC-4B82-8162-AB72B9CFD3B2}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets", "src\vtortola.Core.WebSockets\vtortola.Core.WebSockets.xproj", "{9E685A09-4A25-4C99-A4A1-2F277132FA99}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets.Deflate", "src\vtortola.Core.WebSockets.Deflate\vtortola.Core.WebSockets.Deflate.xproj", "{6E655279-2110-463D-A4B7-D5810FC8EB46}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSockets.Rfc6455", "src\vtortola.Core.WebSockets.Rfc6455\vtortola.Core.WebSockets.Rfc6455.xproj", "{96532B25-DC47-46B2-87E4-FAD44568F958}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSocketListener", "src\vtortola.Core.WebSocketListener\vtortola.Core.WebSocketListener.xproj", "{A700B041-FCAB-4753-90D2-FE001231439E}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSockets.Tests", "tests\WebSockets.Tests\WebSockets.Tests.xproj", "{E1558EBE-1C89-45C2-A397-D3A99F795405}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSocketTestServer", "tests\WebSocketTestServer\WebSocketTestServer.xproj", "{57CD0BA2-9B7F-4B0B-9540-A37D70D8D59F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerminalServer.CliServer", "samples\TerminalServer\TerminalServer.CliServer\TerminalServer.CliServer.csproj", "{A65FE92A-29C0-4F73-8870-E1A008D92BAD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A700B041-FCAB-4753-90D2-FE001231439E} = {A700B041-FCAB-4753-90D2-FE001231439E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketEventListenerSample", "samples\WebSocketEventListener\WebSocketEventListenerSample.csproj", "{48051799-D0AB-45AF-ABAD-432949BDDE08}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A700B041-FCAB-4753-90D2-FE001231439E} = {A700B041-FCAB-4753-90D2-FE001231439E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RxWebsocketChatServer", "samples\RxWebSocketChat\RxWebSocketChatServer\RxWebsocketChatServer.csproj", "{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A700B041-FCAB-4753-90D2-FE001231439E} = {A700B041-FCAB-4753-90D2-FE001231439E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketChatClient", "samples\RxWebSocketChat\WebSocketChatClientMVC\WebSocketChatClient.csproj", "{F55E5E30-332A-4252-A02F-2FD9C7A43D60}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,31 +50,60 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0FF7557A-EE15-4CBC-B8EC-862186A2D3DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0FF7557A-EE15-4CBC-B8EC-862186A2D3DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0FF7557A-EE15-4CBC-B8EC-862186A2D3DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0FF7557A-EE15-4CBC-B8EC-862186A2D3DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C1BBE080-8AE6-4279-8044-F8CDAF21E5DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C1BBE080-8AE6-4279-8044-F8CDAF21E5DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C1BBE080-8AE6-4279-8044-F8CDAF21E5DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C1BBE080-8AE6-4279-8044-F8CDAF21E5DF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{176E19AB-1011-4355-9924-41EBA40572CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{176E19AB-1011-4355-9924-41EBA40572CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{176E19AB-1011-4355-9924-41EBA40572CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{176E19AB-1011-4355-9924-41EBA40572CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E621657D-102F-49FD-B2E6-8B620B66DB2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E621657D-102F-49FD-B2E6-8B620B66DB2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E621657D-102F-49FD-B2E6-8B620B66DB2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E621657D-102F-49FD-B2E6-8B620B66DB2A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0F6245C3-FF0D-4052-81EB-F06E2652EF2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E685A09-4A25-4C99-A4A1-2F277132FA99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E685A09-4A25-4C99-A4A1-2F277132FA99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E685A09-4A25-4C99-A4A1-2F277132FA99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E685A09-4A25-4C99-A4A1-2F277132FA99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E655279-2110-463D-A4B7-D5810FC8EB46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E655279-2110-463D-A4B7-D5810FC8EB46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E655279-2110-463D-A4B7-D5810FC8EB46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E655279-2110-463D-A4B7-D5810FC8EB46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96532B25-DC47-46B2-87E4-FAD44568F958}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96532B25-DC47-46B2-87E4-FAD44568F958}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96532B25-DC47-46B2-87E4-FAD44568F958}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96532B25-DC47-46B2-87E4-FAD44568F958}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A700B041-FCAB-4753-90D2-FE001231439E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A700B041-FCAB-4753-90D2-FE001231439E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A700B041-FCAB-4753-90D2-FE001231439E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A700B041-FCAB-4753-90D2-FE001231439E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1558EBE-1C89-45C2-A397-D3A99F795405}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1558EBE-1C89-45C2-A397-D3A99F795405}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1558EBE-1C89-45C2-A397-D3A99F795405}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1558EBE-1C89-45C2-A397-D3A99F795405}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57CD0BA2-9B7F-4B0B-9540-A37D70D8D59F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57CD0BA2-9B7F-4B0B-9540-A37D70D8D59F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57CD0BA2-9B7F-4B0B-9540-A37D70D8D59F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57CD0BA2-9B7F-4B0B-9540-A37D70D8D59F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A65FE92A-29C0-4F73-8870-E1A008D92BAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A65FE92A-29C0-4F73-8870-E1A008D92BAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A65FE92A-29C0-4F73-8870-E1A008D92BAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A65FE92A-29C0-4F73-8870-E1A008D92BAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48051799-D0AB-45AF-ABAD-432949BDDE08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48051799-D0AB-45AF-ABAD-432949BDDE08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48051799-D0AB-45AF-ABAD-432949BDDE08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48051799-D0AB-45AF-ABAD-432949BDDE08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F55E5E30-332A-4252-A02F-2FD9C7A43D60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F55E5E30-332A-4252-A02F-2FD9C7A43D60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F55E5E30-332A-4252-A02F-2FD9C7A43D60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F55E5E30-332A-4252-A02F-2FD9C7A43D60}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{E621657D-102F-49FD-B2E6-8B620B66DB2A} = {45AC3A8B-FEC2-4499-820E-5596B81DF98A}
+		{9E685A09-4A25-4C99-A4A1-2F277132FA99} = {CC32BEB3-C697-4973-93A1-46F38F4D26E4}
+		{6E655279-2110-463D-A4B7-D5810FC8EB46} = {CC32BEB3-C697-4973-93A1-46F38F4D26E4}
+		{96532B25-DC47-46B2-87E4-FAD44568F958} = {CC32BEB3-C697-4973-93A1-46F38F4D26E4}
+		{A700B041-FCAB-4753-90D2-FE001231439E} = {CC32BEB3-C697-4973-93A1-46F38F4D26E4}
+		{E1558EBE-1C89-45C2-A397-D3A99F795405} = {2A05E065-32CC-4B82-8162-AB72B9CFD3B2}
+		{57CD0BA2-9B7F-4B0B-9540-A37D70D8D59F} = {2A05E065-32CC-4B82-8162-AB72B9CFD3B2}
+		{A65FE92A-29C0-4F73-8870-E1A008D92BAD} = {7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}
+		{48051799-D0AB-45AF-ABAD-432949BDDE08} = {7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}
+		{D28A87C6-3ED0-43B8-9A66-0AE814D72D38} = {7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}
+		{F55E5E30-332A-4252-A02F-2FD9C7A43D60} = {7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}
 	EndGlobalSection
 EndGlobal

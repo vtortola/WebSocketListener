@@ -42,7 +42,7 @@
           "lib/net45/nunitlite.dll": {}
         }
       },
-      "vtortola.Core.WebSockets/1.0.0": {
+      "vtortola.Core.WebSockets/2.2.0.1": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -61,7 +61,7 @@
           "System.Web"
         ]
       },
-      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+      "vtortola.Core.WebSockets.Deflate/2.2.0.2": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -80,7 +80,7 @@
           "System.Web"
         ]
       },
-      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+      "vtortola.Core.WebSockets.Rfc6455/2.2.0.2": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -140,7 +140,7 @@
           "lib/net45/nunitlite.dll": {}
         }
       },
-      "vtortola.Core.WebSockets/1.0.0": {
+      "vtortola.Core.WebSockets/2.2.0.1": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -159,7 +159,7 @@
           "System.Web"
         ]
       },
-      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+      "vtortola.Core.WebSockets.Deflate/2.2.0.2": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -178,7 +178,7 @@
           "System.Web"
         ]
       },
-      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+      "vtortola.Core.WebSockets.Rfc6455/2.2.0.2": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -238,7 +238,7 @@
           "lib/net45/nunitlite.dll": {}
         }
       },
-      "vtortola.Core.WebSockets/1.0.0": {
+      "vtortola.Core.WebSockets/2.2.0.1": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -257,7 +257,7 @@
           "System.Web"
         ]
       },
-      "vtortola.Core.WebSockets.Deflate/1.0.0": {
+      "vtortola.Core.WebSockets.Deflate/2.2.0.2": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -276,7 +276,7 @@
           "System.Web"
         ]
       },
-      "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+      "vtortola.Core.WebSockets.Rfc6455/2.2.0.2": {
         "type": "project",
         "framework": "DNX,Version=v4.5.2",
         "dependencies": {
@@ -298,15 +298,15 @@
     }
   },
   "libraries": {
-    "vtortola.Core.WebSockets/1.0.0": {
+    "vtortola.Core.WebSockets/2.2.0.1": {
       "type": "project",
       "path": "../vtortola.Core.WebSockets/project.json"
     },
-    "vtortola.Core.WebSockets.Deflate/1.0.0": {
+    "vtortola.Core.WebSockets.Deflate/2.2.0.2": {
       "type": "project",
       "path": "../vtortola.Core.WebSockets.Deflate/project.json"
     },
-    "vtortola.Core.WebSockets.Rfc6455/1.0.0": {
+    "vtortola.Core.WebSockets.Rfc6455/2.2.0.2": {
       "type": "project",
       "path": "../vtortola.Core.WebSockets.Rfc6455/project.json"
     },
