@@ -7,6 +7,7 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
@@ -30,11 +31,7 @@ namespace vtortola.WebSockets
             try
             {
                 ReadHttpRequest(clientStream, handshake);
-                if (!(handshake.Request.Headers.HeaderNames.Contains("Host") &&
-                       handshake.Request.Headers.HeaderNames.Contains("Upgrade") && "websocket".Equals(handshake.Request.Headers["Upgrade"], StringComparison.InvariantCultureIgnoreCase) &&
-                       handshake.Request.Headers.HeaderNames.Contains("Connection") &&
-                       handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Key") && !String.IsNullOrWhiteSpace(handshake.Request.Headers["Sec-WebSocket-Key"]) &&
-                       handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Version")))
+                if (!IsHttpHeadersValid(handshake))
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
                     return handshake;
@@ -73,6 +70,18 @@ namespace vtortola.WebSockets
                 }
             }
             return handshake;
+        }
+
+        private static bool IsHttpHeadersValid(WebSocketHandshake handShake)
+        {
+            return handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Host) &&
+                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Upgrade) &&
+                   "websocket".Equals(handShake.Request.Headers[WebSocketHeaders.Upgrade],
+                                             StringComparison.InvariantCultureIgnoreCase) &&
+                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Connection) &&
+                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Key) &&
+                   !String.IsNullOrWhiteSpace(handShake.Request.Headers[WebSocketHeaders.Key]) &&
+                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Version);
         }
 
         private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
@@ -176,7 +185,7 @@ namespace vtortola.WebSockets
                 return;
             String key = line.Substring(0, separator);
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
-            handshake.Request.Headers.Add(key,value);
+            handshake.Request.Headers.Add(key, value);
         }
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
         {
@@ -193,7 +202,18 @@ namespace vtortola.WebSockets
             writer.Write("Sec-WebSocket-Accept: ");
             writer.Write(handshake.GenerateHandshake());
 
-            if (handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Protocol"))
+            // https://tools.ietf.org/html/rfc6455#section-4.2.2
+            /* 
+              Sec-WebSocket-Protocol
+              If the client's handshake did not contain such a header field or if
+              the server does not agree to any of the client's requested
+              subprotocols, the only acceptable value is null.  The absence
+              of such a field is equivalent to the null value (meaning that
+              if the server does not wish to agree to one of the suggested
+              subprotocols, it MUST NOT send back a |Sec-WebSocket-Protocol|
+              header field in its response).
+             */
+            if (handshake.Response.WebSocketProtocol != null)
             {
                 writer.Write("\r\nSec-WebSocket-Protocol: ");
                 writer.Write(handshake.Response.WebSocketProtocol);
@@ -274,15 +294,12 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
-            if (handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Protocol"))
-            {
-                var subprotocolRequest = handshake.Request.Headers["Sec-WebSocket-Protocol"];
+            if (!_options.SubProtocols.Any())
+                return;
 
-                if (!_options.SubProtocols.Any())
-                {
-                    handshake.HasSubProtocolMatch = false;
-                    throw new WebSocketException("Client is requiring a sub protocol '" + subprotocolRequest + "' but there are not subprotocols defined");
-                }
+            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Protocol))
+            {
+                var subprotocolRequest = handshake.Request.Headers[WebSocketHeaders.Protocol];
 
                 String[] sp = subprotocolRequest.Split(',');
                 AssertArrayIsAtLeast(sp, 1, "Cannot understand the 'Sec-WebSocket-Protocol' header '" + subprotocolRequest + "'");
@@ -296,21 +313,15 @@ namespace vtortola.WebSockets
                         break;
                     }
                 }
-
-                if (String.IsNullOrWhiteSpace(handshake.Response.WebSocketProtocol))
-                {
-                    handshake.HasSubProtocolMatch = false;
-                    throw new WebSocketException("There is no subprotocol defined for '" + subprotocolRequest + "'");
-                }
             }
         }
 
         private void ParseWebSocketExtensions(WebSocketHandshake handshake)
         {
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
-            if (handshake.Request.Headers.HeaderNames.Contains("Sec-WebSocket-Extensions"))
+            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Extensions))
             {
-                var header = handshake.Request.Headers["Sec-WebSocket-Extensions"];
+                var header = handshake.Request.Headers[WebSocketHeaders.Extensions];
                 var extensions = header.Split(',');
 
                 AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension [" + header + "]");
@@ -355,9 +366,9 @@ namespace vtortola.WebSockets
         static readonly Uri _dummyCookie = new Uri("http://vtortola.github.io/WebSocketListener/");
         private void ParseCookies(WebSocketHandshake handshake)
         {
-            if (handshake.Request.Headers.HeaderNames.Contains("Cookie"))
+            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Cookie))
             {
-                var cookieString = handshake.Request.Headers["Cookie"];
+                var cookieString = handshake.Request.Headers[WebSocketHeaders.Cookie];
                 try
                 {
                     CookieParser parser = new CookieParser();

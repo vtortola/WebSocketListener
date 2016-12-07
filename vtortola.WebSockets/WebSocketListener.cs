@@ -17,6 +17,7 @@ namespace vtortola.WebSockets
         public Boolean IsStarted { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
         public WebSocketFactoryCollection Standards { get; private set; }
+        public EndPoint LocalEndpoint { get { return _listener.LocalEndpoint; } }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             Guard.ParameterCannotBeNull(endpoint, "endpoint");

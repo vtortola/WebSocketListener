@@ -13,6 +13,7 @@ namespace vtortola.WebSockets
         public abstract Boolean IsConnected { get; }
         public abstract IPEndPoint LocalEndpoint { get; }
         public abstract TimeSpan Latency { get; }
+        public abstract String SubProtocol { get; }
         public WebSocket(WebSocketHttpRequest request, WebSocketHttpResponse response)
         {
             HttpRequest = request;

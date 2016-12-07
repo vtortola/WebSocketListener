@@ -9,14 +9,17 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455 : WebSocket
     {
-        internal WebSocketConnectionRfc6455 Connection { get; private set; }
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
+        readonly String _subprotocol;
+
+        internal WebSocketConnectionRfc6455 Connection { get; private set; }
+
         public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
         public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
         public override Boolean IsConnected { get { return Connection.IsConnected; } }
         public override TimeSpan Latency { get { return Connection.Latency; } }
+        public override String SubProtocol { get { return _subprotocol; } }
 
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             :base(httpRequest, httpResponse)
@@ -33,6 +36,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             Connection = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;
+            _subprotocol = httpResponse.WebSocketProtocol;
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {

@@ -22,6 +22,7 @@ namespace WebSocketListener.UnitTests
         public void With_WebSocketFrameHeaderFlags_Can_CreateMediumHeader()
         {
             var header = WebSocketFrameHeader.Create(138, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Assert.AreEqual(4, header.HeaderLength);
             Byte[] buffer = new Byte[4];
             header.ToBytes(buffer, 0);
             Assert.AreEqual(129, buffer[0]);
@@ -31,11 +32,25 @@ namespace WebSocketListener.UnitTests
         }
 
         [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Can_CreateMediumMaxHeader()
+        {
+            var header = WebSocketFrameHeader.Create(UInt16.MaxValue, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Assert.AreEqual(4, header.HeaderLength);
+            Byte[] buffer = new Byte[4];
+            header.ToBytes(buffer, 0);
+            Assert.AreEqual(129, buffer[0]);
+            Assert.AreEqual(126, buffer[1]);
+            Assert.AreEqual(255, buffer[2]);
+            Assert.AreEqual(255, buffer[3]);
+        }
+
+        [TestMethod]
         public void With_WebSocketFrameHeaderFlags_Can_CreateMediumHeader_BiggerThanInt16()
         {
             UInt16 ilength = (UInt16)Int16.MaxValue + 1;
 
             var header = WebSocketFrameHeader.Create((Int64)ilength, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Assert.AreEqual(4, header.HeaderLength);
             Byte[] buffer = new Byte[4];
             header.ToBytes(buffer, 0);
             Assert.AreEqual(129, buffer[0]);
@@ -48,6 +63,7 @@ namespace WebSocketListener.UnitTests
         public void With_WebSocketFrameHeaderFlags_Can_CreateBigHeader_Int32()
         {
             var header = WebSocketFrameHeader.Create(Int32.MaxValue, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Assert.AreEqual(10, header.HeaderLength);
             Byte[] buffer = new Byte[10];
             header.ToBytes(buffer, 0);
             Assert.AreEqual(129, buffer[0]);
@@ -84,6 +100,7 @@ namespace WebSocketListener.UnitTests
         public void With_WebSocketFrameHeaderFlags_Can_CreateStartPartialFrameHeader()
         {
             var header = WebSocketFrameHeader.Create(101, false, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
+            Assert.AreEqual(2, header.HeaderLength);
             Byte[] buffer = new Byte[2];
             header.ToBytes(buffer, 0);
             Assert.AreEqual(1, buffer[0]);
@@ -142,6 +159,7 @@ namespace WebSocketListener.UnitTests
             Assert.IsNotNull(header);
             Assert.IsTrue(header.Flags.FIN);
             Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual(2, header.HeaderLength);
             Assert.AreEqual((Int64)101, header.ContentLength);
         }
 
@@ -158,10 +176,32 @@ namespace WebSocketListener.UnitTests
             length.CopyTo(buffer, 2);
 
             WebSocketFrameHeader header;
-            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 4, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
             Assert.IsNotNull(header);
             Assert.IsTrue(header.Flags.FIN);
             Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual(4, header.HeaderLength);
+            Assert.AreEqual((Int64)ilength, header.ContentLength);
+        }
+
+        [TestMethod]
+        public void With_WebSocketFrameHeaderFlags_Can_ParseMediumMaxHeader()
+        {
+            Byte[] buffer = new Byte[6];
+            buffer[0] = 129;
+            buffer[1] = 126;
+
+            UInt16 ilength = UInt16.MaxValue;
+            var length = BitConverter.GetBytes(ilength);
+            Array.Reverse(length);
+            length.CopyTo(buffer, 2);
+
+            WebSocketFrameHeader header;
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 4, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.IsNotNull(header);
+            Assert.IsTrue(header.Flags.FIN);
+            Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual(4, header.HeaderLength);
             Assert.AreEqual((Int64)ilength, header.ContentLength);
         }
 
@@ -177,10 +217,11 @@ namespace WebSocketListener.UnitTests
             length.CopyTo(buffer, 2);
 
             WebSocketFrameHeader header;
-            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 10, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
             Assert.IsNotNull(header);
             Assert.IsTrue(header.Flags.FIN);
             Assert.IsFalse(header.Flags.MASK);
+            Assert.AreEqual(10, header.HeaderLength);
             Assert.AreEqual(Int64.MaxValue, header.ContentLength);
         }
 
@@ -198,7 +239,8 @@ namespace WebSocketListener.UnitTests
             length.CopyTo(buffer, 2);
 
             WebSocketFrameHeader header;
-            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 2, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 10, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
+            Assert.AreEqual(10, header.HeaderLength);
         }
     }
 }
