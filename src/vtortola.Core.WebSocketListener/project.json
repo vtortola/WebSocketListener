@@ -10,12 +10,12 @@
         "owners": [ "vtortola", "Stef Heyenrath" ],
         "repository": {
             "type": "git",
-            "url": "https://github.com/vtortola/WebSocketListener"
+            "url": "https://github.com/StefH/WebSocketListener"
         },
-        "projectUrl": "https://github.com/vtortola/WebSocketListener",
+        "projectUrl": "https://github.com/StefH/WebSocketListener",
         "licenseUrl": "https://opensource.org/licenses/MIT",
         "iconUrl": "http://vtortola.github.io/WebSocketListener/images/WSOrange_small.png",
-        "releaseNotes": "support for rc2"
+        "releaseNotes": "latest dotnet standard"
     },
 
     "dependencies": {
