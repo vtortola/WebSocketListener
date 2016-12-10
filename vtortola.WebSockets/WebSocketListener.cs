@@ -17,6 +17,7 @@ namespace vtortola.WebSockets
         public Boolean IsStarted { get; private set; }
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
         public WebSocketFactoryCollection Standards { get; private set; }
+        public EndPoint LocalEndpoint { get { return _listener.LocalEndpoint; } }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             Guard.ParameterCannotBeNull(endpoint, "endpoint");
@@ -26,16 +27,8 @@ namespace vtortola.WebSockets
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
 
-#if NETSTANDARD || UAP
             _listener = new TcpListener(endpoint);
-#else
-            if (Type.GetType("Mono.Runtime") == null && _options.UseDualStackSocket)
-                _listener = TcpListener.Create(endpoint.Port);
-            else
-                _listener = new TcpListener(endpoint);
-#endif
-
-            if (_options.UseNagleAlgorithm.HasValue)
+            if(_options.UseNagleAlgorithm.HasValue)
                 _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
 
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);

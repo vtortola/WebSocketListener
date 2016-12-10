@@ -9,7 +9,7 @@
     "dependencies": {
         "Microsoft.NETCore.App": {
             "type": "platform",
-            "version": "1.0.0-rc2-*"
+            "version": "1.1.0"
         },
         "vtortola.Core.WebSocketListener": { "target": "project" }
     },
@@ -17,12 +17,11 @@
     "frameworks": {
         "netcoreapp1.5": {
             "imports": [
-                "dotnet5.4",
-                "portable-net451+win8"
+                "dotnet5.4"
             ],
             "dependencies": {
-                "Newtonsoft.Json": "8.0.3",
-                "System.Private.ServiceModel": "4.1.0-rc2-*"
+                "Newtonsoft.Json": "9.0.1",
+                "System.Private.ServiceModel": "4.3.0"
             }
         }
     }

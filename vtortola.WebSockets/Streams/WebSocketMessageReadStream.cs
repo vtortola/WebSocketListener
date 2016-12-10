@@ -16,7 +16,7 @@ namespace vtortola.WebSockets
 
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-#elif (NETSTANDARD || UAP10_0 || DOTNET5_4 || NETSTANDARDAPP1_5)
+#elif (NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
@@ -30,7 +30,7 @@ namespace vtortola.WebSockets
         }
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override sealed int EndRead(IAsyncResult asyncResult)
-#elif (NETSTANDARD || UAP10_0 || DOTNET5_4 || NETSTANDARDAPP1_5)
+#elif (NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
         public int EndRead(IAsyncResult asyncResult)
 #endif
         {
