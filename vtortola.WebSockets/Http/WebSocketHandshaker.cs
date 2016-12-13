@@ -64,7 +64,7 @@ namespace vtortola.WebSockets
                     try { WriteHttpResponse(handshake, clientStream); }
                     catch(Exception ex2) 
                     {
-                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse)", ex2);
+                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writing error esponse)", ex2);
                     };
                 }
             }
@@ -267,7 +267,7 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
-            HttpStatusDescription.Get(code);
+            writer.Write(HttpStatusDescription.Get(code));
             writer.Write("\r\n\r\n");
         }
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)
