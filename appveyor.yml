@@ -20,17 +20,17 @@ environment:
 
 build_script:
 - appveyor-retry dotnet restore .\src\vtortola.Core.WebSocketListener -v Minimal
-- appveyor-retry dotnet restore .\tests\WebSockets.Tests -v Minimal
+- appveyor-retry dotnet restore .\tests\WebSocketListener.UnitTests -v Minimal
 - appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -PackagesDirectory packages
 
 - dotnet build .\src\vtortola.Core.WebSocketListener\project.json -c %CONFIGURATION%
-- dotnet build .\tests\WebSockets.Tests\project.json -c %CONFIGURATION%
+- dotnet build .\tests\WebSocketListener.UnitTests\project.json -c %CONFIGURATION%
 - cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
 
 - dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\src\vtortola.Core.WebSocketListener\project.json
 
 test_script:
-- dotnet test -c %CONFIGURATION% --no-build .\tests\WebSockets.Tests
+- dotnet test -c %CONFIGURATION% --no-build .\tests\WebSocketListener.UnitTests
 
 artifacts:
 - path: artifacts\**\*.*

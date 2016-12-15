@@ -57,6 +57,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "samples\EchoS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerService", "samples\WebSocketListenerService\WebSocketListenerService.csproj", "{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSocketListener.UnitTests", "tests\WebSocketListener.UnitTests\WebSocketListener.UnitTests.xproj", "{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,10 @@ Global
 		{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -143,5 +149,6 @@ Global
 		{72114F0D-EC56-43D5-8C13-43FB013C0C1D} = {13CB441F-4FBA-4786-9D38-F6A0053431B1}
 		{9586718A-CBF0-4E42-9FAC-81C09B59DF47} = {7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}
 		{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7} = {7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}
+		{47A31530-E061-4BE8-B9F8-0725ED4C3CF2} = {2A05E065-32CC-4B82-8162-AB72B9CFD3B2}
 	EndGlobalSection
 EndGlobal

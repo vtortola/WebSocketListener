@@ -7,7 +7,7 @@ using System.Threading;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
 
-namespace WebSockets.Tests.dnxcore
+namespace WebSockets.Tests
 {
     public class Program
     {
