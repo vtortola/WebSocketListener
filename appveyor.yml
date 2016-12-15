@@ -1,0 +1,39 @@
+os: Visual Studio 2015
+
+version: 2.2.2.{build}
+
+configuration:
+- Debug
+- Release
+
+platform: Any CPU
+
+init:
+- ps: $Env:LABEL = "CI" + $Env:APPVEYOR_BUILD_NUMBER.PadLeft(5, "0")
+
+install:
+- ps: Start-FileDownload 'https://download.microsoft.com/download/0/A/3/0A372822-205D-4A86-BFA7-084D2CBE9EDF/DotNetCore.1.0.1-SDK.1.0.0.Preview2-003133-x64.exe'
+- cmd: DotNetCore.1.0.1-SDK.1.0.0.Preview2-003133-x64 /quiet
+
+environment:
+  PATH: $(PATH);$(PROGRAMFILES)\dotnet\
+
+build_script:
+- appveyor-retry dotnet restore .\src\vtortola.Core.WebSocketListener -v Minimal
+- appveyor-retry dotnet restore .\tests\WebSocketListener.UnitTests -v Minimal
+- appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -PackagesDirectory packages
+
+- dotnet build .\src\vtortola.Core.WebSocketListener\project.json -c %CONFIGURATION%
+- dotnet build .\tests\WebSocketListener.UnitTests\project.json -c %CONFIGURATION%
+- cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
+
+- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\src\vtortola.Core.WebSocketListener\project.json
+
+test_script:
+- dotnet test -c %CONFIGURATION% --no-build .\tests\WebSocketListener.UnitTests
+
+artifacts:
+- path: artifacts\**\*.*
+
+cache:
+- packages
