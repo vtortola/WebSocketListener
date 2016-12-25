@@ -6,7 +6,7 @@ using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
 
-namespace WebSocketListener.UnitTests
+namespace WebSocketListenerTests
 {
     public class Tests
     {

@@ -57,7 +57,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "samples\EchoS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerService", "samples\WebSocketListenerService\WebSocketListenerService.csproj", "{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSocketListener.UnitTests", "tests\WebSocketListener.UnitTests\WebSocketListener.UnitTests.xproj", "{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WebSocketListenerTests", "tests\WebSocketListener.UnitTests\WebSocketListenerTests.xproj", "{47A31530-E061-4BE8-B9F8-0725ED4C3CF2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
