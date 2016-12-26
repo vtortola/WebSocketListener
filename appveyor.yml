@@ -20,12 +20,26 @@ environment:
 
 build_script:
 - appveyor-retry dotnet restore .\src\vtortola.Core.WebSocketListener -v Minimal
+- appveyor-retry dotnet restore .\src\vtortola.Core.WebSockets -v Minimal
+- appveyor-retry dotnet restore .\src\vtortola.Core.WebSockets.Deflate -v Minimal
+- appveyor-retry dotnet restore .\src\vtortola.Core.WebSockets.Rfc6455 -v Minimal
+
 - appveyor-retry dotnet restore .\tests\WebSocketListener.UnitTests -v Minimal
+
 - appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -PackagesDirectory packages
+- appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.Deflate.csproj -PackagesDirectory packages
+- appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.Rfc6455.csproj -PackagesDirectory packages
 
 - dotnet build .\src\vtortola.Core.WebSocketListener\project.json -c %CONFIGURATION%
+- dotnet build .\src\vtortola.Core.WebSockets\project.json -c %CONFIGURATION%
+- dotnet build .\src\vtortola.Core.WebSockets.Deflate\project.json -c %CONFIGURATION%
+- dotnet build .\src\vtortola.Core.WebSockets.Rfc6455\project.json -c %CONFIGURATION%
+
 - dotnet build .\tests\WebSocketListener.UnitTests\project.json -c %CONFIGURATION%
+
 - cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
+- cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.Deflate.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
+- cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.Rfc6455.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
 
 - dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\src\vtortola.Core.WebSocketListener\project.json
 
