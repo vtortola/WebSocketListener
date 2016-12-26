@@ -39,7 +39,7 @@ build_script:
 
 - cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
 - cmd: msbuild .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
-- cmd: msbuild .\vtortola.WebSockets.Rfc645\vtortola.WebSockets.Rfc6455.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
+- cmd: msbuild .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
 
 - dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\src\vtortola.Core.WebSocketListener\project.json
 
