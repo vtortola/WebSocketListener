@@ -34,18 +34,16 @@ namespace WebSocketListenerTests
         }
 
         [TestMethod]
-        public void With_WebSocketFrameHeaderFlags_Can_CreateMediumMaxHeader() // Stef : Length 10 is returned instead of 4 ???
+        public void With_WebSocketFrameHeaderFlags_Can_CreateMediumMaxHeader()
         {
             var header = WebSocketFrameHeader.Create(UInt16.MaxValue, true, false, WebSocketFrameOption.Text, new WebSocketExtensionFlags());
-            Assert.AreEqual(10, header.HeaderLength);
-
-            //Assert.AreEqual(4, header.HeaderLength);
-            //Byte[] buffer = new Byte[4];
-            //header.ToBytes(buffer, 0);
-            //Assert.AreEqual(129, buffer[0]);
-            //Assert.AreEqual(126, buffer[1]);
-            //Assert.AreEqual(255, buffer[2]);
-            //Assert.AreEqual(255, buffer[3]);
+            Assert.AreEqual(4, header.HeaderLength);
+            Byte[] buffer = new Byte[4];
+            header.ToBytes(buffer, 0);
+            Assert.AreEqual(129, buffer[0]);
+            Assert.AreEqual(126, buffer[1]);
+            Assert.AreEqual(255, buffer[2]);
+            Assert.AreEqual(255, buffer[3]);
         }
 
         [TestMethod]
