@@ -102,7 +102,7 @@ namespace vtortola.WebSockets.Rfc6455
             Int32 headerLength;
             if (length <= 125)
                 headerLength = (Int32)length;
-            else if (length < UInt16.MaxValue)
+            else if (length <= UInt16.MaxValue)
                 headerLength = 126;
             else if ((UInt64)length < UInt64.MaxValue)
                 headerLength = 127;

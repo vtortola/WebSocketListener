@@ -48,7 +48,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (this.ContentLength <= 125)
             { // header length is included in the 2b header
             }
-            else if (this.ContentLength < UInt16.MaxValue)
+            else if (this.ContentLength <= UInt16.MaxValue)
                 ((UInt16)this.ContentLength).ToBytesBackwards(segment, offset + 2);
             else if ((UInt64)this.ContentLength <= UInt64.MaxValue)
                 ((UInt64)this.ContentLength).ToBytesBackwards(segment, offset + 2);
@@ -147,7 +147,7 @@ namespace vtortola.WebSockets.Rfc6455
                         
             if (count <= 125)
                 headerLength = 2;
-            else if (count < UInt16.MaxValue)
+            else if (count <= UInt16.MaxValue)
                 headerLength = 4;
             else if ((UInt64)count < UInt64.MaxValue)
                 headerLength = 10;
