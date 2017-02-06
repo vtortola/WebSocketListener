@@ -15,7 +15,7 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It is **extensible**. [More info](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
  * It is **asynchronous**. 
  * It supports **Mono**. [More info] (//github.com/vtortola/WebSocketListener/wiki/Mono-support)
- * It supports **DNX on .NET Core 5.0 (dnxcore50)**, **Universal Windows Platform 10 (uap10.0)** and **DNX on .NET Framework 4.5.1 - 4.6 (dnx451 - dnx46), .NET Framework 4.5 - 4.6 (net45 - net46)**
+ * It supports **.NET Framework 4.5 and up**, **NETStandard 1.3 and up** and **Universal Windows Platform 10 (uap10.0)**.
  * It has the [**Ping/Pong** functionality](http://tools.ietf.org/html/rfc6455#section-5.5.2) **built-in**.
  * It can measure **connection latency**. [More info](//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency)
  * It can work with **cookies and custom HTTP response statuses**. [More info](//github.com/vtortola/WebSocketListener/wiki/Hooking-into-the-HTTP-negotiation)

@@ -65,7 +65,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="vtortola.Core.WebSocketListener">
-      <HintPath>..\..\..\src\vtortola.Core.WebSocketListener\bin\$(Configuration)\net452\vtortola.Core.WebSocketListener.dll</HintPath>
+      <HintPath>..\..\..\src\vtortola.Core.WebSocketListener\bin\$(Configuration)\net45\vtortola.Core.WebSocketListener.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

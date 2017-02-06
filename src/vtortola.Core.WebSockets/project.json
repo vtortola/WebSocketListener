@@ -1,5 +1,5 @@
 {
-    "version": "2.2.2.1",
+    "version": "2.2.2.2",
     "description": "vtortola.Core.WebSockets Class Library",
     "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
 
@@ -14,7 +14,7 @@
         "projectUrl": "https://github.com/StefH/WebSocketListener",
         "licenseUrl": "https://opensource.org/licenses/MIT",
         "iconUrl": "http://vtortola.github.io/WebSocketListener/images/WSOrange_small.png",
-        "releaseNotes": "latest dotnet standard"
+        "releaseNotes": "Support for NETStandard 1.3, UAP and NET 4.5 and up"
     },
 
     "dependencies": {
@@ -50,57 +50,6 @@
                 "System.Threading": "4.0.0.0",
                 "System.Threading.Tasks": "4.0.0.0",
                 "System.Web": "4.0.0.0"
-            },
-            "dependencies": {
-                "System.Threading.Tasks.Dataflow": "4.5.25"
-            }
-        },
-        "net451": {
-            "frameworkAssemblies": {
-                "System": "4.0.0.0",
-                "System.Core": "4.0.0.0",
-                "System.Net": "4.0.0.0",
-                "System.Net.Http": "4.0.0.0",
-                "System.Runtime": "4.0.10.0",
-                "System.ServiceModel": "4.0.0.0",
-                "System.ServiceModel.Channels": "4.0.0.0",
-                "System.Threading": "4.0.0.0",
-                "System.Threading.Tasks": "4.0.0.0",
-                "System.Web": "4.0.0.0"
-            },
-            "dependencies": {
-                "System.Threading.Tasks.Dataflow": "4.5.25"
-            }
-        },
-        "net452": {
-            "frameworkAssemblies": {
-                "System": "4.0.0.0",
-                "System.Core": "4.0.0.0",
-                "System.Net": "4.0.0.0",
-                "System.Net.Http": "4.0.0.0",
-                "System.Runtime": "4.0.10.0",
-                "System.ServiceModel": "4.0.0.0",
-                "System.ServiceModel.Channels": "4.0.0.0",
-                "System.Threading": "4.0.0.0",
-                "System.Threading.Tasks": "4.0.0.0",
-                "System.Web": "4.0.0.0"
-            },
-            "dependencies": {
-                "System.Threading.Tasks.Dataflow": "4.5.25"
-            }
-        },
-        "net46": {
-            "frameworkAssemblies": {
-                "System": "",
-                "System.Core": "",
-                "System.Net": "",
-                "System.Net.Http": "",
-                "System.Runtime": "",
-                "System.ServiceModel": "",
-                "System.ServiceModel.Channels": "",
-                "System.Threading": "",
-                "System.Threading.Tasks": "",
-                "System.Web": ""
             },
             "dependencies": {
                 "System.Threading.Tasks.Dataflow": "4.5.25"
