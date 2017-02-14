@@ -16,13 +16,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2A05E065
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{7409CB61-BF7E-4E54-9CEE-15551DDF3EC6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerminalServer.CliServer", "samples\TerminalServer\TerminalServer.CliServer\TerminalServer.CliServer.csproj", "{A65FE92A-29C0-4F73-8870-E1A008D92BAD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerminalServer.CliServer", "Samples\TerminalServer\TerminalServer.CliServer\TerminalServer.CliServer.csproj", "{A65FE92A-29C0-4F73-8870-E1A008D92BAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketEventListenerSample", "samples\WebSocketEventListener\WebSocketEventListenerSample.csproj", "{48051799-D0AB-45AF-ABAD-432949BDDE08}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketEventListenerSample", "Samples\WebSocketEventListener\WebSocketEventListenerSample.csproj", "{48051799-D0AB-45AF-ABAD-432949BDDE08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RxWebsocketChatServer", "samples\RxWebSocketChat\RxWebSocketChatServer\RxWebsocketChatServer.csproj", "{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RxWebsocketChatServer", "Samples\RxWebSocketChat\RxWebSocketChatServer\RxWebsocketChatServer.csproj", "{D28A87C6-3ED0-43B8-9A66-0AE814D72D38}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketChatClient", "samples\RxWebSocketChat\WebSocketChatClientMVC\WebSocketChatClient.csproj", "{F55E5E30-332A-4252-A02F-2FD9C7A43D60}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketChatClient", "Samples\RxWebSocketChat\WebSocketChatClientMVC\WebSocketChatClient.csproj", "{F55E5E30-332A-4252-A02F-2FD9C7A43D60}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets", "vtortola.WebSockets\vtortola.WebSockets.csproj", "{1BD8E3C1-EF7D-4D58-89E2-33E5EC7C9406}"
 EndProject
@@ -30,9 +30,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets.Deflate
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vtortola.WebSockets.Rfc6455", "vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj", "{72114F0D-EC56-43D5-8C13-43FB013C0C1D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "samples\EchoServer\EchoServer.csproj", "{9586718A-CBF0-4E42-9FAC-81C09B59DF47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "Samples\EchoServer\EchoServer.csproj", "{9586718A-CBF0-4E42-9FAC-81C09B59DF47}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerService", "samples\WebSocketListenerService\WebSocketListenerService.csproj", "{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerService", "Samples\WebSocketListenerService\WebSocketListenerService.csproj", "{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "vtortola.Core.WebSocketListener", "Core\vtortola.Core.WebSocketListener\vtortola.Core.WebSocketListener.xproj", "{A700B041-FCAB-4753-90D2-FE001231439E}"
 EndProject
