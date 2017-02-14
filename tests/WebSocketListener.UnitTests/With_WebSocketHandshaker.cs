@@ -4,10 +4,10 @@ using System.Net;
 using System.IO;
 using System.Text;
 using System.Linq;
-using Moq;
 using System.Collections.Generic;
-using TestToolsToXunitProxy;
 using vtortola.WebSockets.Rfc6455;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace WebSocketListenerTests.UnitTests
 {
@@ -20,6 +20,7 @@ namespace WebSocketListenerTests.UnitTests
             _factories = new WebSocketFactoryCollection();
             _factories.RegisterStandard(new WebSocketFactoryRfc6455());
         }
+
         [TestMethod]
         public void WebSocketHandshaker_CanParseCookies()
         {

@@ -1,12 +1,12 @@
-﻿using System.IO;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
-using Xunit;
 
-namespace WebSocketListenerTests
+namespace WebSocketListener.Core.Tests
 {
     public class Tests
     {
@@ -58,7 +58,7 @@ namespace WebSocketListenerTests
                 ws.WriteStringAsync(msg, cancellationToken).Wait(cancellationToken);
             }
 
-            Assert.Equal(new byte[] { 1, 2, 48, 49, 128, 0, 136, 2, 3, 232 }, ms.ToArray());
+            Assert.AreEqual(new byte[] { 1, 2, 48, 49, 128, 0, 136, 2, 3, 232 }, ms.ToArray());
         }
 
         private WebSocketHandshake GenerateSimpleHandshake(WebSocketFactoryCollection factories)

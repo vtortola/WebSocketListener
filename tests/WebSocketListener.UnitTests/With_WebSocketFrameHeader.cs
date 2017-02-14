@@ -1,5 +1,5 @@
-﻿using System;
-using TestToolsToXunitProxy;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
 
@@ -240,7 +240,6 @@ namespace WebSocketListenerTests
         }
 
         [TestMethod]
-        //[ExpectedException(typeof(WebSocketException))]
         public void With_WebSocketFrameHeaderFlags_Fail_ParseBigHeader_When_Overflows_Int64()
         {
             Byte[] buffer = new Byte[10];
@@ -256,7 +255,7 @@ namespace WebSocketListenerTests
             {
                 WebSocketFrameHeader header;
                 Assert.IsTrue(WebSocketFrameHeader.TryParse(buffer, 0, 10, new ArraySegment<byte>(new Byte[4], 0, 4), out header));
-                //Assert.AreEqual(10, header.HeaderLength);
+                Assert.AreEqual(10, header.HeaderLength);
             }
             catch (WebSocketException)
             {
