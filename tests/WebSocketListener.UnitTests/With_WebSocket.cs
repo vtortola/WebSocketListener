@@ -4,8 +4,8 @@ using System.IO;
 using System.Text;
 using System.Net;
 using System.Threading;
-using TestToolsToXunitProxy;
 using vtortola.WebSockets.Rfc6455;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace WebSocketListenerTests
 {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NUnitLite;
 
-namespace WebSockets.Tests
+namespace WebSocketListener.Core.Tests
 {
     public class Program
     {

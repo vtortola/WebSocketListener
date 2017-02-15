@@ -1,0 +1,29 @@
+﻿{
+  "authors": [ "Pierre" ],
+  "commands": {
+    "WebSockets.Tests": "WebSockets.Tests"
+  },
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+  "dependencies": {
+    "vtortola.Core.WebSockets": "",
+    "vtortola.Core.WebSockets.Deflate": "",
+    "vtortola.Core.WebSockets.Rfc6455": "",
+
+    "Moq": "4.2.1510.2205",
+    "NUnitLite": "3.0.0"
+  },
+  "description": "WebSockets.Tests Console Application",
+  "frameworks": {
+    "dnx452": {
+      "frameworkAssemblies": {
+        "System.Runtime": "4.0.0.0"
+      }
+    }
+  },
+  "licenseUrl": "",
+  "projectUrl": "",
+  "tags": [ "" ],
+  "version": "1.0.0-*"
+}
