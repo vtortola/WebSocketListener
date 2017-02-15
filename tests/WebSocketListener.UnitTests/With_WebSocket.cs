@@ -5,7 +5,11 @@ using System.Text;
 using System.Net;
 using System.Threading;
 using vtortola.WebSockets.Rfc6455;
+#if NETSTANDARD
+using TestToolsToXunitProxy;
+#else
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+#endif
 
 namespace WebSocketListenerTests
 {

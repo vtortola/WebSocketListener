@@ -6,8 +6,12 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using vtortola.WebSockets.Rfc6455;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+#if NETSTANDARD
+using TestToolsToXunitProxy;
+#else
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#endif
 
 namespace WebSocketListenerTests.UnitTests
 {

@@ -1,7 +1,11 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
+#if NETSTANDARD
+using TestToolsToXunitProxy;
+#else
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#endif
 
 namespace WebSocketListenerTests
 {

@@ -1,29 +1,39 @@
 ﻿{
-  "authors": [ "Pierre" ],
-  "commands": {
-    "WebSockets.Tests": "WebSockets.Tests"
-  },
-  "compilationOptions": {
-    "emitEntryPoint": true
-  },
-  "dependencies": {
-    "vtortola.Core.WebSockets": "",
-    "vtortola.Core.WebSockets.Deflate": "",
-    "vtortola.Core.WebSockets.Rfc6455": "",
+    "version": "1.0.0-*",
+    "authors": [ "Stef Heyenrath" ],
+    "dependencies": {
+        "Newtonsoft.Json": "9.0.1",
+        "vtortola.Core.WebSocketListener": { "target": "project" },
+        "dotnet-test-xunit": "2.2.0-preview2-build1029",
+        "xunit": "2.2.0-beta2-build3300",
+        "TestToolsToXunitProxy": "0.0.3",
+        "Moq": "4.6.38-alpha"
+    },
 
-    "Moq": "4.2.1510.2205",
-    "NUnitLite": "3.0.0"
-  },
-  "description": "WebSockets.Tests Console Application",
-  "frameworks": {
-    "dnx452": {
-      "frameworkAssemblies": {
-        "System.Runtime": "4.0.0.0"
-      }
-    }
-  },
-  "licenseUrl": "",
-  "projectUrl": "",
-  "tags": [ "" ],
-  "version": "1.0.0-*"
+    "buildOptions": {
+        "define": [ "NETSTANDARD" ],
+        "compile": {
+            "include": [
+                "../WebSocketListener.UnitTests/*.cs"
+            ]
+        }
+    },
+
+    "frameworks": {
+        "netcoreapp1.0": {
+            "imports": [
+                "dnxcore50",
+                "dotnet5.4",
+                "portable-net451+win8"
+            ],
+            "dependencies": {
+                "Microsoft.NETCore.App": {
+                    "type": "platform",
+                    "version": "1.1.0"
+                }
+            }
+        }
+    },
+
+    "testRunner": "xunit"
 }
