@@ -122,6 +122,8 @@ namespace WebSocketListenerTests.UnitTests
                 var cookie = result.Request.Cookies["key"];
                 Assert.AreEqual("key", cookie.Name);
                 Assert.AreEqual(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
+                Assert.IsNotNull(result.Request.LocalEndpoint);
+                Assert.IsNotNull(result.Request.RemoteEndpoint);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -137,6 +139,36 @@ namespace WebSocketListenerTests.UnitTests
                     var s = sr.ReadToEnd();
                     Assert.AreEqual(sb.ToString(), s);
                 }
+            }
+        }
+
+        [TestMethod]
+        public void WebSocketHandshaker_CanDoSimpleHandshake_with_Endpoints()
+        {
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions());
+
+            using (var ms = new MemoryStream())
+            {
+                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                {
+                    sw.WriteLine(@"GET /chat HTTP/1.1");
+                    sw.WriteLine(@"Host: server.example.com");
+                    sw.WriteLine(@"Upgrade: websocket");
+                    sw.WriteLine(@"Connection: Upgrade");
+                    sw.WriteLine(@"Cookie: key=W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5;");
+                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
+                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
+                    sw.WriteLine(@"Origin: http://example.com");
+                }
+
+                var position = ms.Position;
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(ms, new IPEndPoint(IPAddress.Parse("10.0.0.1"), 8888), new IPEndPoint(IPAddress.Parse("192.168.0.2"), 9999)).Result;
+                Assert.AreEqual("10.0.0.1", result.Request.LocalEndpoint.Address.ToString());
+                Assert.AreEqual(8888, result.Request.LocalEndpoint.Port);
+                Assert.AreEqual("192.168.0.2", result.Request.RemoteEndpoint.Address.ToString());
+                Assert.AreEqual(9999, result.Request.RemoteEndpoint.Port);
             }
         }
 

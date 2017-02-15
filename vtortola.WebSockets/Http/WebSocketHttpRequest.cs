@@ -7,6 +7,8 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketHttpRequest
     {
+        public IPEndPoint LocalEndpoint { get; private set; }
+        public IPEndPoint RemoteEndpoint { get; private set; }
         public Uri RequestUri { get; internal set; }
         public Version HttpVersion { get; internal set; }
         public CookieCollection Cookies { get; private set; }
@@ -18,11 +20,16 @@ namespace vtortola.WebSockets
         {
             WebSocketExtensions = new ReadOnlyCollection<WebSocketExtension>(extensions);
         }
-        public WebSocketHttpRequest()
+
+        static readonly IPEndPoint _none = new IPEndPoint(IPAddress.None, 0);
+
+        public WebSocketHttpRequest(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
         {
             Headers = new HttpHeadersCollection();
             Cookies = new CookieCollection();
             Items = new Dictionary<String, Object>();
+            LocalEndpoint = localEndpoint ?? _none;
+            RemoteEndpoint = remoteEndpoint ?? _none;
         }
     }
 }
