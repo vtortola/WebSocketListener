@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketChatClient", "Samp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerminalServer.CliServer", "Samples\TerminalServer\TerminalServer.CliServer\TerminalServer.CliServer.csproj", "{A65FE92A-29C0-4F73-8870-E1A008D92BAD}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "TerminalServer.Web", "Samples\TerminalServer\TerminalServer.Web\", "{476B1CA6-27C3-4EBA-8DD7-C473653C562A}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "TerminalServer.Web", "samples\TerminalServer\TerminalServer.Web\", "{476B1CA6-27C3-4EBA-8DD7-C473653C562A}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_60146"
@@ -73,6 +73,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketEventListenerSample", "Samples\WebSocketEventListener\WebSocketEventListenerSample.csproj", "{48051799-D0AB-45AF-ABAD-432949BDDE08}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketListenerService", "Samples\WebSocketListenerService\WebSocketListenerService.csproj", "{407E0F3E-F6D7-44F0-84B4-3F89E0ECAEB7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A700B041-FCAB-4753-90D2-FE001231439E} = {A700B041-FCAB-4753-90D2-FE001231439E}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
