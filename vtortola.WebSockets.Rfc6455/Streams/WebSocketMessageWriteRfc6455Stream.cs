@@ -20,7 +20,7 @@ namespace vtortola.WebSockets.Rfc6455
             _webSocket = webSocket;
         }
         public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 client, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
-            :this(client,messageType)
+            : this(client, messageType)
         {
             ExtensionFlags.Rsv1 = extensionFlags.Rsv1;
             ExtensionFlags.Rsv2 = extensionFlags.Rsv2;
@@ -70,7 +70,7 @@ namespace vtortola.WebSockets.Rfc6455
                 {
                     await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken).ConfigureAwait(false);
                     _internalUsedBufferLength = 0;
-                    _isHeaderSent = true;                
+                    _isHeaderSent = true;
                 }
             }
         }
@@ -80,13 +80,18 @@ namespace vtortola.WebSockets.Rfc6455
             _internalUsedBufferLength = 0;
             _isHeaderSent = true;
         }
+#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override void Close()
+#else
+        // NETSTANDARD, UAP10_0 and DOTNET5_4 don't support Close, so just override Dispose(bool disposing).
+        protected override void Dispose(bool disposing)
+#endif
         {
             if (!_isFinished)
             {
                 _isFinished = true;
                 _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
-                _webSocket.Connection.EndWritting();
+                _webSocket.Connection.EndWriting();
             }
         }
 
@@ -96,7 +101,7 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 _isFinished = true;
                 await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags, cancellation).ConfigureAwait(false);
-                _webSocket.Connection.EndWritting();
+                _webSocket.Connection.EndWriting();
             }
         }
     }

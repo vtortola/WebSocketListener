@@ -25,14 +25,18 @@ namespace vtortola.WebSockets
         public Stream ExtendConnection(Stream stream)
         {
             var ssl = new SslStream(stream, false, _validation);
-            ssl.AuthenticateAsServer(_certificate, _validation != null, SslProtocols.Default, false);
+#if (UAP10_0  || NETSTANDARD || NETSTANDARDAPP)
+            ssl.AuthenticateAsServerAsync(_certificate, _validation != null, SslProtocols.Tls12, false).Wait();
+#else
+            ssl.AuthenticateAsServer(_certificate, _validation != null, SslProtocols.Tls12, false);
+#endif
             return ssl;
         }
 
         public async Task<Stream> ExtendConnectionAsync(Stream stream)
         {
             var ssl = new SslStream(stream, false, _validation);
-            await ssl.AuthenticateAsServerAsync(_certificate, _validation != null, SslProtocols.Default, false).ConfigureAwait(false);
+            await ssl.AuthenticateAsServerAsync(_certificate, _validation != null, SslProtocols.Tls12, false).ConfigureAwait(false);
             return ssl;
         }
     }

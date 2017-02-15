@@ -73,7 +73,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (!Connection.IsConnected)
                 throw new WebSocketException("The connection is closed");
 
-            Connection.BeginWritting();
+            Connection.BeginWriting();
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);
 
             foreach (var extension in _extensions)

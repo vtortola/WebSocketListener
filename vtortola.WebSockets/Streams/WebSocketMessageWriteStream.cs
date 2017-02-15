@@ -18,9 +18,13 @@ namespace vtortola.WebSockets
         {
             ExtensionFlags = new WebSocketExtensionFlags();
         }
-        public override sealed IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#if (NET45 || NET451 || NET452 || NET46)
+        public sealed override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#elif (DNX451 || DNX452 || DNX46 || NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+#endif
         {
-            var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count),state);
+            var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count), state);
             wrapper.Task.ContinueWith(t =>
             {
                 if (callback != null)
@@ -28,7 +32,13 @@ namespace vtortola.WebSockets
             });
             return wrapper;
         }
-        public override sealed void EndWrite(IAsyncResult asyncResult)
+#if (NET45 || NET451 || NET452 || NET46)
+        public sealed override void EndWrite(IAsyncResult asyncResult)
+#elif (NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
+        public void EndWrite(IAsyncResult asyncResult)
+#elif (DNX451 || DNX452 || DNX46)
+        public override void EndWrite(IAsyncResult asyncResult)
+#endif
         {
             try
             {

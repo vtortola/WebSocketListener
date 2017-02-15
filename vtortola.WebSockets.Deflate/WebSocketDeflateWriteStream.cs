@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateWriteStream: WebSocketMessageWriteStream
+    public sealed class WebSocketDeflateWriteStream : WebSocketMessageWriteStream
     {
         readonly static Byte[] _BFINAL = new Byte[] { 0 };
         readonly WebSocketMessageWriteStream _inner;
@@ -38,22 +38,32 @@ namespace vtortola.WebSockets.Deflate
                 return;
 
             _isClosed = true;
+#if (NET45 || NET451 || NET452 || NET46 || NET46)
             _deflate.Close();
+#endif
             _inner.Write(_BFINAL, 0, 1);
             await _inner.CloseAsync(cancellation).ConfigureAwait(false);
         }
 
+#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         public override void Close()
+#else
+        public void Close()
+#endif
         {
             if (_isClosed)
                 return;
 
             _isClosed = true;
-            _deflate.Close();
+#if (NET45 || NET451 || NET452 || NET46)
+            _deflate.Close(); 
+#endif
             _inner.Write(_BFINAL, 0, 1);
-            _inner.Close();
+#if (NET45 || NET451 || NET452 || NET46)
+            _inner.Close(); 
+#endif
         }
-        
+
         protected override void Dispose(Boolean disposing)
         {
             SafeEnd.Dispose(_deflate);

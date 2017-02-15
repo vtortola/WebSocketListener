@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Web;
+
 
 namespace vtortola.WebSockets
 {
@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
         }
         private Cookie CreateCookie(String key, String value)
         {
-            return new Cookie(key.Trim(), HttpUtility.UrlDecode(value.Trim()));
+            return new Cookie(key.Trim(), WebUtility.UrlDecode(value.Trim()));
         }
     }
 }

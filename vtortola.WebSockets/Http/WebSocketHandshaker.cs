@@ -6,7 +6,6 @@ using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
@@ -65,7 +64,7 @@ namespace vtortola.WebSockets
                     try { WriteHttpResponse(handshake, clientStream); }
                     catch(Exception ex2) 
                     {
-                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse)", ex2);
+                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writing error esponse)", ex2);
                     };
                 }
             }
@@ -77,7 +76,7 @@ namespace vtortola.WebSockets
             return handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Host) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Upgrade) &&
                    "websocket".Equals(handShake.Request.Headers[WebSocketHeaders.Upgrade],
-                                             StringComparison.InvariantCultureIgnoreCase) &&
+                                             StringComparison.OrdinalIgnoreCase) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Connection) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Key) &&
                    !String.IsNullOrWhiteSpace(handShake.Request.Headers[WebSocketHeaders.Key]) &&
@@ -102,15 +101,18 @@ namespace vtortola.WebSockets
 
         private void SelectExtensions(WebSocketHandshake handshake)
         {
-            IWebSocketMessageExtensionContext context;
-            WebSocketExtension extensionResponse;
             foreach (var extRequest in handshake.Request.WebSocketExtensions)
             {
-                var extension = handshake.Factory.MessageExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
-                if (extension != null && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
+                var extension = handshake.Factory.MessageExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.OrdinalIgnoreCase));
+                if (extension != null)
                 {
-                    handshake.NegotiatedMessageExtensions.Add(context);
-                    handshake.Response.WebSocketExtensions.Add(extensionResponse);
+                    IWebSocketMessageExtensionContext context;
+                    WebSocketExtension extensionResponse;
+                    if (extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
+                    {
+                        handshake.NegotiatedMessageExtensions.Add(context);
+                        handshake.Response.WebSocketExtensions.Add(extensionResponse);
+                    }
                 }
             }
         }
@@ -265,7 +267,7 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
-            writer.Write(HttpWorkerRequest.GetStatusDescription(intCode));
+            writer.Write(HttpStatusDescription.Get(code));
             writer.Write("\r\n\r\n");
         }
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)

@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace vtortola.WebSockets
 {
     public static class Guard
     {
-        public static void ParameterCannotBeNull<T>(T obj, String paramenterName)
+        /// <summary>
+        /// TODO : replace this by something like https://github.com/StefH/System.Linq.Dynamic.Core/tree/master/src/System.Linq.Dynamic.Core/Validation
+        /// </summary>
+        public static void ParameterCannotBeNull<T>([NoEnumeration] [CanBeNull] T obj, [InvokerParameterName] [NotNull] string parameterName)
         {
             if (obj == null)
             {
-                throw new ArgumentNullException(paramenterName);
+                throw new ArgumentNullException(parameterName);
             }
         }
     }

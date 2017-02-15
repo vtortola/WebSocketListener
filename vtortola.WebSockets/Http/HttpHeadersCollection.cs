@@ -16,7 +16,7 @@ namespace vtortola.WebSockets
 
         public HttpHeadersCollection()
         {
-            _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase); 
+            _headers = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase); 
         }
 
         public String this[HttpRequestHeader header]
