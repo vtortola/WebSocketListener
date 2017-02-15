@@ -8,7 +8,7 @@ using Xunit;
 
 namespace WebSocketListener.Core.UnitTests
 {
-    public class Tests
+    public class CoreTests
     {
         [Fact]
         public void With_WebSocket_CanWriteString()
