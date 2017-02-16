@@ -1,6 +1,6 @@
 os: Visual Studio 2015
 
-version: 2.2.2.{build}
+version: 3.0.0.{build}
 
 configuration:
 - Debug
@@ -24,7 +24,7 @@ build_script:
 - appveyor-retry dotnet restore .\Core\vtortola.Core.WebSockets.Deflate -v Minimal
 - appveyor-retry dotnet restore .\Core\vtortola.Core.WebSockets.Rfc6455 -v Minimal
 
-- appveyor-retry dotnet restore .\Test\WebSocketListener.UnitTests -v Minimal
+- appveyor-retry dotnet restore .\Tests\WebSocketListener.Core.UnitTests -v Minimal
 
 - appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -PackagesDirectory packages
 - appveyor-retry nuget restore .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj -PackagesDirectory packages
@@ -44,7 +44,7 @@ build_script:
 - dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\src\vtortola.Core.WebSocketListener\project.json
 
 test_script:
-- dotnet test -c %CONFIGURATION% --no-build .\Tests\WebSocketListener.UnitTests
+- dotnet test -c %CONFIGURATION% --no-build .\Tests\WebSocketListener.Core.UnitTests
 
 artifacts:
 - path: artifacts\**\*.*
