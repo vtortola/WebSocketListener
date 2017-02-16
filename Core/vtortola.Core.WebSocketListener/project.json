@@ -1,6 +1,6 @@
 {
     "title": "vtortola.WebSocketListener.Core",
-    "version": "2.2.2.3",
+    "version": "3.0.0",
     "description": "Lightweight and highly scalable asynchronous WebSocket listener, compliant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.",
     "authors": [ "vtortola", "Pierre", "Stef Heyenrath" ],
 

@@ -24,9 +24,9 @@ namespace vtortola.WebSockets
             _options = options;
         }
 
-        public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream)
+        public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, IPEndPoint localEndpoint=null, IPEndPoint remoteEndpoint=null)
         {
-            WebSocketHandshake handshake = new WebSocketHandshake();
+            WebSocketHandshake handshake = new WebSocketHandshake(localEndpoint, remoteEndpoint);
             try
             {
                 ReadHttpRequest(clientStream, handshake);

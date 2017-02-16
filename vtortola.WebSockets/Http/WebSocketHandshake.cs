@@ -27,9 +27,9 @@ namespace vtortola.WebSockets
         public WebSocketFactory Factory { get; internal set; }
         public ExceptionDispatchInfo Error { get; set; }
         public Boolean  IsResponseSent { get; internal set; }
-        public WebSocketHandshake()
+        public WebSocketHandshake(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
         {
-            Request = new WebSocketHttpRequest();
+            Request = new WebSocketHttpRequest(localEndpoint, remoteEndpoint);
             Response = new WebSocketHttpResponse();
             NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
             _invalidated = false;

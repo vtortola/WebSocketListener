@@ -92,7 +92,7 @@ namespace vtortola.WebSockets.Http
                     stream = await extTask;
                 }
 
-                var handshakeTask = _handShaker.HandshakeAsync(stream);
+                var handshakeTask = _handShaker.HandshakeAsync(stream, client.LocalEndPoint as IPEndPoint, client.RemoteEndPoint as IPEndPoint);
                 await Task.WhenAny(timeoutTask, handshakeTask).ConfigureAwait(false);
                 if (timeoutTask.IsCompleted)
                     throw new WebSocketException("Negotiation timeout");
