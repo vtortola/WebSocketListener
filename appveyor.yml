@@ -26,6 +26,7 @@ build_script:
 
 - appveyor-retry dotnet restore .\Tests\WebSocketListener.Core.UnitTests -v Minimal
 
+- appveyor-retry nuget restore .\Tests\WebSocketListener.UnitTests -PackagesDirectory packages
 - appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -PackagesDirectory packages
 - appveyor-retry nuget restore .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj -PackagesDirectory packages
 - appveyor-retry nuget restore .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj -PackagesDirectory packages
