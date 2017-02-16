@@ -122,6 +122,7 @@ namespace WebSocketListenerTests.UnitTests
                 var cookie = result.Request.Cookies["key"];
                 Assert.AreEqual("key", cookie.Name);
                 Assert.AreEqual(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
+
                 Assert.IsNotNull(result.Request.LocalEndpoint);
                 Assert.IsNotNull(result.Request.RemoteEndpoint);
 
@@ -173,7 +174,7 @@ namespace WebSocketListenerTests.UnitTests
         }
 
         [TestMethod]
-        public void WebSocketHandshaker_CanDoSimpleHandshakeVerifyCaseInsensitive()
+       public void WebSocketHandshaker_CanDoSimpleHandshakeVerifyCaseInsensitive()
         {
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions());
 
