@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
         {
             try
             {
-                ((AsyncResultTask)asyncResult).Task.Wait();
+                ((Task)asyncResult).Wait();
             }
             catch (AggregateException ex)
             {
