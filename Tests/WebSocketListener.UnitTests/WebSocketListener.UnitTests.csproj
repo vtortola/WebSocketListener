@@ -53,12 +53,13 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework" />
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework"/>
       </ItemGroup>
     </Otherwise>
   </Choose>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="With_HttpFallback.cs" />
     <Compile Include="With_WebSocket.cs" />
     <Compile Include="With_WebSocketFrameHeader.cs" />
     <Compile Include="With_WebSocketFrameHeaderFlags.cs" />

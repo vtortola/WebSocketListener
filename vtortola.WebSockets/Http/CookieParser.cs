@@ -5,9 +5,9 @@ using System.Net;
 
 namespace vtortola.WebSockets
 {
-    public class CookieParser
+    public static class CookieParser
     {
-        public IEnumerable<Cookie> Parse(String cookieString)
+        public static IEnumerable<Cookie> Parse(String cookieString)
         {
             if (String.IsNullOrWhiteSpace(cookieString))
                 yield break;
@@ -40,7 +40,7 @@ namespace vtortola.WebSockets
                 yield return CreateCookie(name, part);
             }
         }
-        private Cookie CreateCookie(String key, String value)
+        static Cookie CreateCookie(String key, String value)
         {
             return new Cookie(key.Trim(), WebUtility.UrlDecode(value.Trim()));
         }

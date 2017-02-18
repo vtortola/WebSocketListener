@@ -28,15 +28,13 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_CanParseCookies()
         {
-            CookieParser parser = new CookieParser();
-
-            var parsed = parser.Parse("cookie1=uno").ToArray();
+            var parsed = CookieParser.Parse("cookie1=uno").ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(1, parsed.Length);
             Assert.AreEqual("cookie1", parsed[0].Name);
             Assert.AreEqual("uno", parsed[0].Value);
 
-            parsed = parser.Parse("cookie1=uno;cookie2=dos").ToArray();
+            parsed = CookieParser.Parse("cookie1=uno;cookie2=dos").ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(2, parsed.Length);
             Assert.AreEqual("cookie1", parsed[0].Name);
@@ -44,7 +42,7 @@ namespace WebSocketListenerTests.UnitTests
             Assert.AreEqual("cookie2", parsed[1].Name);
             Assert.AreEqual("dos", parsed[1].Value);
 
-            parsed = parser.Parse("cookie1=uno; cookie2=dos ").ToArray();
+            parsed = CookieParser.Parse("cookie1=uno; cookie2=dos ").ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(2, parsed.Length);
             Assert.AreEqual("cookie1", parsed[0].Name);
@@ -52,7 +50,7 @@ namespace WebSocketListenerTests.UnitTests
             Assert.AreEqual("cookie2", parsed[1].Name);
             Assert.AreEqual("dos", parsed[1].Value);
 
-            parsed = parser.Parse("cookie1=uno; cookie2===dos== ").ToArray();
+            parsed = CookieParser.Parse("cookie1=uno; cookie2===dos== ").ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(2, parsed.Length);
             Assert.AreEqual("cookie1", parsed[0].Name);
@@ -60,7 +58,7 @@ namespace WebSocketListenerTests.UnitTests
             Assert.AreEqual("cookie2", parsed[1].Name);
             Assert.AreEqual("==dos==", parsed[1].Value);
 
-            parsed = parser.Parse("language=ru; _ym_uid=1111111111111; _ym_isad=2; __test; settings=%7B%22market_730_onPage%22%3A24%7D; timezoneOffset=10800").ToArray();
+            parsed = CookieParser.Parse("language=ru; _ym_uid=1111111111111; _ym_isad=2; __test; settings=%7B%22market_730_onPage%22%3A24%7D; timezoneOffset=10800").ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(6, parsed.Length);
             Assert.AreEqual("language", parsed[0].Name);
@@ -76,15 +74,15 @@ namespace WebSocketListenerTests.UnitTests
             Assert.AreEqual("timezoneOffset", parsed[5].Name);
             Assert.AreEqual("10800", parsed[5].Value);
 
-            parsed = parser.Parse(null).ToArray();
+            parsed = CookieParser.Parse(null).ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(0, parsed.Length);
 
-            parsed = parser.Parse(String.Empty).ToArray();
+            parsed = CookieParser.Parse(String.Empty).ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(0, parsed.Length);
 
-            parsed = parser.Parse("   ").ToArray();
+            parsed = CookieParser.Parse("   ").ToArray();
             Assert.IsNotNull(parsed);
             Assert.AreEqual(0, parsed.Length);
         }
@@ -471,7 +469,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.IsNull(result.Error);
-                Assert.IsTrue(result.IsValid);
+                Assert.IsTrue(result.IsValidWebSocketRequest);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -518,7 +516,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.IsNull(result.Error);
-                Assert.IsTrue(result.IsValid);
+                Assert.IsTrue(result.IsValidWebSocketRequest);
                 Assert.IsNull(result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -859,7 +857,7 @@ namespace WebSocketListenerTests.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.IsNotNull(result);
-                Assert.IsFalse(result.IsValid);
+                Assert.IsFalse(result.IsValidWebSocketRequest);
                 Assert.IsNotNull(result.Error);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -904,7 +902,7 @@ namespace WebSocketListenerTests.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.IsNotNull(result);
-                Assert.IsTrue(result.IsValid);
+                Assert.IsTrue(result.IsValidWebSocketRequest);
                 Assert.AreEqual(1, result.Request.Cookies.Count);
                 Assert.AreEqual("This is encoded.", result.Request.Cookies["key"].Value);
             }
@@ -940,7 +938,7 @@ namespace WebSocketListenerTests.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.IsNotNull(result);
-                Assert.IsFalse(result.IsValid);
+                Assert.IsFalse(result.IsValidWebSocketRequest);
                 Assert.IsNull(result.Error);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -984,7 +982,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsNotNull(result);
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
-                Assert.IsTrue(result.IsValid);
+                Assert.IsTrue(result.IsValidWebSocketRequest);
                 Assert.IsNull(result.Request.Headers.Origin);
 
                 ms.Seek(position, SeekOrigin.Begin);

@@ -99,23 +99,28 @@ namespace vtortola.WebSockets.Http
 
                 var handshake = await handshakeTask;
 
-                if (handshake.IsValid)
+                if (handshake.IsValidWebSocketRequest)
+                {
                     result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
+                }
+                else if (handshake.IsValidHttpRequest && _options.HttpFallback != null)
+                {
+                    _options.HttpFallback.Post(handshake.Request, stream);
+                    return;
+                }
                 else
                 {
                     SafeEnd.Dispose(client);
                     result = new WebSocketNegotiationResult(handshake.Error);
                 }
+
+                await _negotiations.SendAsync(result, _cancel.Token).ConfigureAwait(false);
+
             }
             catch (Exception ex)
             {
                 SafeEnd.Dispose(client);
-                result= new WebSocketNegotiationResult(ExceptionDispatchInfo.Capture(ex));
-            }
-
-            try
-            {
-                await _negotiations.SendAsync(result, _cancel.Token).ConfigureAwait(false);
+                result = new WebSocketNegotiationResult(ExceptionDispatchInfo.Capture(ex));
             }
             finally
             {

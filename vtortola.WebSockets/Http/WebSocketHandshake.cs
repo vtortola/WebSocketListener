@@ -11,7 +11,7 @@ namespace vtortola.WebSockets
     public class WebSocketHandshake
     {
         Boolean _invalidated;
-        public Boolean IsValid 
+        public Boolean IsValidWebSocketRequest 
         { 
             get 
             { 
@@ -19,6 +19,16 @@ namespace vtortola.WebSockets
             }
             set { _invalidated = !value; }
         }
+
+        public Boolean IsValidHttpRequest
+        {
+            get
+            {
+                return !_invalidated && Error == null;
+            }
+            set { _invalidated = !value; }
+        }
+
         public WebSocketHttpRequest Request { get; private set; }
         public WebSocketHttpResponse Response { get; private set; }
         public List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions { get; private set; }

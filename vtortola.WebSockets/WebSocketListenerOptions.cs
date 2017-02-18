@@ -23,6 +23,7 @@ namespace vtortola.WebSockets
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
         public Boolean? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
+        public IHttpFallback HttpFallback { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
@@ -80,7 +81,8 @@ namespace vtortola.WebSockets
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,
-                PingMode = this.PingMode
+                PingMode = this.PingMode,
+                HttpFallback = this.HttpFallback
             };
         }
     }

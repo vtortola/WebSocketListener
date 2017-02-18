@@ -30,7 +30,7 @@ namespace vtortola.WebSockets
             try
             {
                 ReadHttpRequest(clientStream, handshake);
-                if (!IsHttpHeadersValid(handshake))
+                if (!IsWebSocketRequestValid(handshake))
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
                     return handshake;
@@ -58,7 +58,6 @@ namespace vtortola.WebSockets
             catch(Exception ex)
             {
                 handshake.Error = ExceptionDispatchInfo.Capture(ex);
-                handshake.IsValid = false;
                 if (!handshake.IsResponseSent)
                 {
                     try { WriteHttpResponse(handshake, clientStream); }
@@ -71,7 +70,7 @@ namespace vtortola.WebSockets
             return handshake;
         }
 
-        private static bool IsHttpHeadersValid(WebSocketHandshake handShake)
+        private static bool IsWebSocketRequestValid(WebSocketHandshake handShake)
         {
             return handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Host) &&
                    handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Upgrade) &&
@@ -118,6 +117,9 @@ namespace vtortola.WebSockets
         }
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
+            if (!handshake.IsWebSocketRequest && handshake.IsValidHttpRequest && _options.HttpFallback != null)
+                return;
+
             handshake.IsResponseSent = true;
             using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
@@ -148,7 +150,7 @@ namespace vtortola.WebSockets
                 handshake.Response.Status = HttpStatusCode.UpgradeRequired;
                 SendVersionNegotiationErrorResponse(writer);
             }
-            else if (handshake.IsValid)
+            else if (handshake.IsValidWebSocketRequest)
             {
                 SendNegotiationResponse(handshake, writer);
             }
@@ -168,6 +170,8 @@ namespace vtortola.WebSockets
 
                 while (!String.IsNullOrWhiteSpace(line = sr.ReadLine()))
                     ParseHeader(line, handshake);
+
+                ParseCookies(handshake);
             }
         }
         private void ParseGET(String line, WebSocketHandshake handshake)
@@ -287,8 +291,6 @@ namespace vtortola.WebSockets
 
         private void ConsolidateObjectModel(WebSocketHandshake handshake)
         {
-            ParseCookies(handshake);
-
             ParseWebSocketProtocol(handshake);
 
             ParseWebSocketExtensions(handshake);
@@ -373,8 +375,7 @@ namespace vtortola.WebSockets
                 var cookieString = handshake.Request.Headers[WebSocketHeaders.Cookie];
                 try
                 {
-                    CookieParser parser = new CookieParser();
-                    foreach (var cookie in parser.Parse(cookieString))
+                    foreach (var cookie in CookieParser.Parse(cookieString))
                     {
                         cookie.Domain = handshake.Request.Headers.Host;
                         cookie.Path = String.Empty;
