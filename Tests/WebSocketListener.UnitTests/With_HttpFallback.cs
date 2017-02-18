@@ -11,7 +11,6 @@ using vtortola.WebSockets.Rfc6455;
 using System.Net;
 using Moq;
 using System.Collections.Generic;
-using vtortola.WebSockets.Http;
 
 namespace WebSocketListener.UnitTests
 {
@@ -20,18 +19,13 @@ namespace WebSocketListener.UnitTests
     {
         Mock<IHttpFallback> _fallback;
         List<Tuple<HttpRequest, Stream>> _postedConnections;
-
-
+        
         WebSocketFactoryCollection _factories;
         public With_HttpFallback()
         {
             _factories = new WebSocketFactoryCollection();
             _factories.RegisterStandard(new WebSocketFactoryRfc6455());
-        }
 
-        [TestInitialize]
-        public void Init()
-        {
             _fallback = new Mock<IHttpFallback>();
             _fallback.Setup(x => x.Post(It.IsAny<HttpRequest>(), It.IsAny<Stream>()))
                      .Callback((HttpRequest r, Stream s) => _postedConnections.Add(new Tuple<HttpRequest, Stream>(r, s)));
