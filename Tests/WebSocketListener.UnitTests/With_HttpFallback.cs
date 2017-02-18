@@ -1,5 +1,9 @@
 ﻿using System;
+#if NETSTANDARD
+using TestToolsToXunitProxy;
+#else
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+#endif
 using vtortola.WebSockets;
 using System.IO;
 using System.Text;
