@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets.Tools
+namespace vtortola.WebSockets.Threading
 {
     //http://blog.stephencleary.com/2012/07/async-interop-with-iasyncresult.html
     public sealed class AsyncResultTask<T> : IAsyncResult
@@ -11,7 +11,7 @@ namespace vtortola.WebSockets.Tools
 
         public Task<T> Task
         {
-            get { return _task; }
+            get { return this._task; }
         }
 
         readonly IAsyncResult _ia;
@@ -19,25 +19,25 @@ namespace vtortola.WebSockets.Tools
 
         public AsyncResultTask(Task<T> task, Object state)
         {
-            _task = task;
-            _ia = task;
-            _state = state;
+            this._task = task;
+            this._ia = task;
+            this._state = state;
         }
         public object AsyncState
         {
-            get { return _state; }
+            get { return this._state; }
         }
         public WaitHandle AsyncWaitHandle
         {
-            get { return _ia.AsyncWaitHandle; }
+            get { return this._ia.AsyncWaitHandle; }
         }
         public bool CompletedSynchronously
         {
-            get { return _ia.CompletedSynchronously; }
+            get { return this._ia.CompletedSynchronously; }
         }
         public bool IsCompleted
         {
-            get { return _ia.IsCompleted; }
+            get { return this._ia.IsCompleted; }
         }
     }
 
@@ -47,7 +47,7 @@ namespace vtortola.WebSockets.Tools
 
         public Task Task
         {
-            get { return _task; }
+            get { return this._task; }
         }
 
         readonly IAsyncResult _ia;
@@ -55,25 +55,25 @@ namespace vtortola.WebSockets.Tools
 
         public AsyncResultTask(Task task, Object state)
         {
-            _task = task;
-            _ia = task;
-            _state = state;
+            this._task = task;
+            this._ia = task;
+            this._state = state;
         }
         public object AsyncState
         {
-            get { return _state; }
+            get { return this._state; }
         }
         public WaitHandle AsyncWaitHandle
         {
-            get { return _ia.AsyncWaitHandle; }
+            get { return this._ia.AsyncWaitHandle; }
         }
         public bool CompletedSynchronously
         {
-            get { return _ia.CompletedSynchronously; }
+            get { return this._ia.CompletedSynchronously; }
         }
         public bool IsCompleted
         {
-            get { return _ia.IsCompleted; }
+            get { return this._ia.IsCompleted; }
         }
     }
 
