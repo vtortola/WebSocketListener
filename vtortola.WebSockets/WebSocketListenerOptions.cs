@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ServiceModel.Channels;
 using System.Threading;
 
 namespace vtortola.WebSockets
@@ -10,6 +9,8 @@ namespace vtortola.WebSockets
 
     public sealed class WebSocketListenerOptions
     {
+        public const int DefaultSendBufferSize = 8 * 1024;
+
         public TimeSpan PingTimeout { get; set; }
         public Int32 NegotiationQueueCapacity { get; set; }
         public Int32? TcpBacklog { get; set; }
@@ -34,7 +35,7 @@ namespace vtortola.WebSockets
             NegotiationTimeout = TimeSpan.FromSeconds(5);
             WebSocketSendTimeout = TimeSpan.FromSeconds(5);
             WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
-            SendBufferSize = 8192;
+            SendBufferSize = DefaultSendBufferSize;
             SubProtocols = _noSubProtocols;
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
@@ -46,25 +47,28 @@ namespace vtortola.WebSockets
                 PingTimeout = Timeout.InfiniteTimeSpan;
 
             if (NegotiationQueueCapacity < 0)
-                throw new WebSocketException("NegotiationQueueCapacity must be 0 or more");
+                throw new WebSocketException("NegotiationQueueCapacity must be 0 or more.");
 
             if (TcpBacklog.HasValue && TcpBacklog.Value < 1)
-                throw new WebSocketException("TcpBacklog value must be bigger than 0");
+                throw new WebSocketException("TcpBacklog value must be bigger than 0.");
 
             if (ParallelNegotiations < 1)
-                throw new WebSocketException("ParallelNegotiations cannot be less than 1");
+                throw new WebSocketException("ParallelNegotiations cannot be less than 1.");
 
             if (NegotiationTimeout == TimeSpan.Zero)
                 NegotiationTimeout = Timeout.InfiniteTimeSpan;
-            
+
             if (WebSocketSendTimeout == TimeSpan.Zero)
                 WebSocketSendTimeout = Timeout.InfiniteTimeSpan;
 
             if (WebSocketReceiveTimeout == TimeSpan.Zero)
                 WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
 
-            if(SendBufferSize <= 0)
+            if (SendBufferSize <= 0)
                 throw new WebSocketException("SendBufferSize must be bigger than 0.");
+
+            if(this.BufferManager != null && this.SendBufferSize < this.BufferManager.MaxBufferSize)
+                throw new WebSocketException("BufferManager.MaxBufferSize must be bigger or equals to SendBufferSize.");
         }
         public WebSocketListenerOptions Clone()
         {
@@ -77,7 +81,7 @@ namespace vtortola.WebSockets
                 WebSocketSendTimeout = this.WebSocketSendTimeout,
                 WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
                 SendBufferSize = this.SendBufferSize,
-                SubProtocols = this.SubProtocols??_noSubProtocols,
+                SubProtocols = this.SubProtocols ?? _noSubProtocols,
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,

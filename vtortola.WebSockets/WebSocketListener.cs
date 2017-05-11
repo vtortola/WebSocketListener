@@ -30,7 +30,9 @@ namespace vtortola.WebSockets
             _listener = new TcpListener(endpoint);
             if(_options.UseNagleAlgorithm.HasValue)
                 _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
-
+            if(_options.BufferManager == null)
+                _options.BufferManager = BufferManager.CreateBufferManager(100, this._options.SendBufferSize); // create small buffer pool if not configured
+            
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
             Standards = new WebSocketFactoryCollection(this);
 
