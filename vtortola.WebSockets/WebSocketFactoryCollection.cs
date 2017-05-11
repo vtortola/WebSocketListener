@@ -21,9 +21,9 @@ namespace vtortola.WebSockets
         {
             if (_listener != null && _listener.IsStarted)
                 throw new WebSocketException("Factories cannot be added after the service is started.");
-            if(_factories.ContainsKey(factory.Version))
+            if (_factories.ContainsKey(factory.Version))
                 throw new WebSocketException("There is already a WebSocketFactory registered with that version.");
-           
+
             _factories.Add(factory.Version, factory);
         }
         public int Count
@@ -38,10 +38,12 @@ namespace vtortola.WebSockets
         {
             return _factories.GetEnumerator();
         }
-        public WebSocketFactory GetWebSocketFactory(WebSocketHttpRequest Request)
+        public WebSocketFactory GetWebSocketFactory(WebSocketHttpRequest request)
         {
-            WebSocketFactory factory;
-            if (_factories.TryGetValue(Request.WebSocketVersion, out factory))
+            var webSocketsVersion = default(short);
+            var factory = default(WebSocketFactory);
+
+            if (short.TryParse(request.WebSocketVersion, out webSocketsVersion) && _factories.TryGetValue(webSocketsVersion, out factory))
                 return factory;
             else
                 return null;

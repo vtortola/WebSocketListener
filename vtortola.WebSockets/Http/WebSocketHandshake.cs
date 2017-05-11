@@ -10,17 +10,27 @@ namespace vtortola.WebSockets
 {
     public class WebSocketHandshake
     {
-        Boolean _invalidated;
-        public Boolean IsValidWebSocketRequest 
-        { 
-            get 
-            { 
-                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && Response.Status == HttpStatusCode.SwitchingProtocols; 
+        private bool _invalidated;
+
+        public WebSocketHttpRequest Request { get; private set; }
+        public WebSocketHttpResponse Response { get; private set; }
+
+        public List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions { get; private set; }
+        public bool IsWebSocketRequest { get; internal set; }
+        public bool IsVersionSupported { get; internal set; }
+        public WebSocketFactory Factory { get; internal set; }
+        public ExceptionDispatchInfo Error { get; set; }
+        public bool IsResponseSent { get; internal set; }
+
+        public bool IsValidWebSocketRequest
+        {
+            get
+            {
+                return !_invalidated && Error == null && IsWebSocketRequest && IsVersionSupported && Response.Status == HttpStatusCode.SwitchingProtocols;
             }
             set { _invalidated = !value; }
         }
-
-        public Boolean IsValidHttpRequest
+        public bool IsValidHttpRequest
         {
             get
             {
@@ -29,14 +39,15 @@ namespace vtortola.WebSockets
             set { _invalidated = !value; }
         }
 
-        public WebSocketHttpRequest Request { get; private set; }
-        public WebSocketHttpResponse Response { get; private set; }
-        public List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions { get; private set; }
-        public Boolean IsWebSocketRequest { get; internal set; }
-        public Boolean IsVersionSupported { get; internal set; }
-        public WebSocketFactory Factory { get; internal set; }
-        public ExceptionDispatchInfo Error { get; set; }
-        public Boolean  IsResponseSent { get; internal set; }
+        public WebSocketHandshake(WebSocketHttpRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
+            this.Request = request;
+            this.Response = new WebSocketHttpResponse();
+            this.NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
+            this._invalidated = false;
+        }
         public WebSocketHandshake(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
         {
             Request = new WebSocketHttpRequest(localEndpoint, remoteEndpoint);
@@ -44,10 +55,18 @@ namespace vtortola.WebSockets
             NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
             _invalidated = false;
         }
-        public String GenerateHandshake()
+
+        public string ComputeHandshakeResponse()
         {
-            SHA1 sha1 = SHA1.Create();
-            return Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(Request.Headers[WebSocketHeaders.Key] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
+            var webSocketKey = this.Request.Headers[RequestHeader.WebSocketKey];
+            if (string.IsNullOrEmpty(webSocketKey)) throw new InvalidOperationException($"Missing or wrong {Headers<RequestHeader>.GetHeaderName(RequestHeader.WebSocketKey)} header in request.");
+
+            using (var sha1 = SHA1.Create())
+                return Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(webSocketKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
+        }
+        public string GenerateClientNonce()
+        {
+            return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
         }
     }
 }
