@@ -66,6 +66,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="HeadersTest.cs" />
     <Compile Include="BufferManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HttpFallbackTests.cs" />

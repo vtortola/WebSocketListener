@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using Moq;
 using vtortola.WebSockets;
+using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
 
@@ -53,8 +54,8 @@ namespace WebSocketListener.UnitTests
                 Assert.False(result.IsValidWebSocketRequest);
                 Assert.True(result.IsValidHttpRequest);
                 Assert.False(result.IsVersionSupported);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.Equal("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
+                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
                 Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
@@ -93,8 +94,8 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.True(result.IsVersionSupported);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.Equal("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
+                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
                 Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];

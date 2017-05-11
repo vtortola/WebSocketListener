@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using Moq;
 using vtortola.WebSockets;
+using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
 
@@ -94,8 +95,8 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.True(result.IsVersionSupported);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.Equal("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
+                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
                 Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
@@ -180,8 +181,8 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.True(result.IsVersionSupported);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.Equal("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
+                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
                 Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
@@ -212,10 +213,7 @@ namespace WebSocketListener.UnitTests
             extension.Setup(x => x.Name).Returns("test-extension");
             var ext = new WebSocketExtension("test-extension", new List<WebSocketExtensionOption>(new[]
             {
-                new WebSocketExtensionOption
-                {
-                    ClientAvailableOption = false, Name = "optionA"
-                }
+                new WebSocketExtensionOption("optionA")
             }));
             IWebSocketMessageExtensionContext ctx;
 
@@ -279,10 +277,7 @@ namespace WebSocketListener.UnitTests
             extension.Setup(x => x.Name).Returns("test-extension");
             var ext = new WebSocketExtension("test-extension", new List<WebSocketExtensionOption>(new[]
             {
-                new WebSocketExtensionOption
-                {
-                    ClientAvailableOption = false, Name = "optionA"
-                }
+                new WebSocketExtensionOption("optionA")
             }));
             IWebSocketMessageExtensionContext ctx;
 
@@ -363,7 +358,7 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -429,7 +424,7 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -458,10 +453,7 @@ namespace WebSocketListener.UnitTests
             extension.Setup(x => x.Name).Returns("test-extension");
             var ext = new WebSocketExtension("test-extension", new List<WebSocketExtensionOption>(new[]
             {
-                new WebSocketExtensionOption
-                {
-                    ClientAvailableOption = false, Name = "optionA"
-                }
+                new WebSocketExtensionOption("optionA")
             }));
             IWebSocketMessageExtensionContext ctx;
 
@@ -502,7 +494,7 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -556,7 +548,7 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
-                Assert.Equal(new Uri("http://example.com"), result.Request.Headers.Origin);
+                Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal("superchat", result.Response.WebSocketProtocol);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -671,53 +663,7 @@ namespace WebSocketListener.UnitTests
                 Assert.Equal(2, result.Request.Cookies.Count);
             }
         }
-
-        [Fact]
-        public void ParseNullOrigin()
-        {
-            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions());
-
-            using (var ms = new MemoryStream())
-            {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
-                {
-                    sw.WriteLine(@"GET /chat HTTP/1.1");
-                    sw.WriteLine(@"Host: server.example.com");
-                    sw.WriteLine(@"Upgrade: websocket");
-                    sw.WriteLine(@"Connection: Upgrade");
-                    sw.WriteLine(@"Cookie: key=W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5;");
-                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
-                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
-                    sw.WriteLine(@"Origin: null");
-                }
-
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
-
-                var result = handshaker.HandshakeAsync(ms).Result;
-                Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
-                Assert.True(result.IsValidWebSocketRequest);
-                Assert.Null(result.Request.Headers.Origin);
-
-                ms.Seek(position, SeekOrigin.Begin);
-
-                var sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
-                sb.AppendLine(@"Upgrade: websocket");
-                sb.AppendLine(@"Connection: Upgrade");
-                sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
-                sb.AppendLine();
-
-                using (var sr = new StreamReader(ms))
-                {
-                    var s = sr.ReadToEnd();
-                    Assert.Equal(sb.ToString(), s);
-                }
-            }
-        }
-
+        
         [Fact]
         public void ReturnCookies()
         {
@@ -951,83 +897,13 @@ namespace WebSocketListener.UnitTests
         }
 
         [Fact]
-        public void FailWhenBadExtensionRequest()
-        {
-            var extension = new Mock<IWebSocketMessageExtension>();
-            extension.Setup(x => x.Name).Returns("test-extension");
-            var ext = new WebSocketExtension("test-extension", new List<WebSocketExtensionOption>(new[]
-            {
-                new WebSocketExtensionOption
-                {
-                    ClientAvailableOption = false, Name = "optionA"
-                }
-            }));
-            IWebSocketMessageExtensionContext ctx;
-
-            extension.Setup(x => x.TryNegotiate(It.IsAny<WebSocketHttpRequest>(), out ext, out ctx))
-                     .Returns(true);
-
-            var factory = new WebSocketFactoryRfc6455();
-            factory.MessageExtensions.RegisterExtension(extension.Object);
-            var factories = new WebSocketFactoryCollection();
-            factories.RegisterStandard(factory);
-            var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
-            {
-                SubProtocols = new[]
-                {
-                    "superchat"
-                }
-            });
-
-            using (var ms = new MemoryStream())
-            {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
-                {
-                    sw.WriteLine(@"GET /chat HTTP/1.1");
-                    sw.WriteLine(@"Host: server.example.com");
-                    sw.WriteLine(@"Upgrade: websocket");
-                    sw.WriteLine(@"Connection: Upgrade");
-                    sw.WriteLine(@"Cookie: key=W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5;");
-                    sw.WriteLine(@"Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==");
-                    sw.WriteLine(@"Sec-WebSocket-Protocol: chat, superchat");
-                    sw.WriteLine(@"Sec-WebSocket-Extensions: test-extension;;Dsf,,optionA");
-                    sw.WriteLine(@"Sec-WebSocket-Version: 13");
-                    sw.WriteLine(@"Origin: http://example.com");
-                }
-
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
-
-                var result = handshaker.HandshakeAsync(ms).Result;
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
-                Assert.True(result.NegotiatedMessageExtensions.Count == 0);
-
-                ms.Seek(position, SeekOrigin.Begin);
-
-                var sb = new StringBuilder();
-                sb.AppendLine(@"HTTP/1.1 400 Bad Request");
-                sb.AppendLine();
-
-                using (var sr = new StreamReader(ms))
-                {
-                    var s = sr.ReadToEnd();
-                    Assert.Equal(sb.ToString(), s);
-                }
-            }
-        }
-
-        [Fact]
         public void FailWhenBadRequest()
         {
             var extension = new Mock<IWebSocketMessageExtension>();
             extension.Setup(x => x.Name).Returns("test-extension");
             var ext = new WebSocketExtension("test-extension", new List<WebSocketExtensionOption>(new[]
             {
-                new WebSocketExtensionOption
-                {
-                    ClientAvailableOption = false, Name = "optionA"
-                }
+                new WebSocketExtensionOption("optionA")
             }));
             IWebSocketMessageExtensionContext ctx;
 
