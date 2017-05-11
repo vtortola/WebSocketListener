@@ -1,107 +1,128 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using vtortola.WebSockets;
+using Xunit;
 
 namespace WebSocketListener.UnitTests
 {
-	[TestClass]
-	public class BufferManagerTests
-	{
-		[TestMethod]
-		public void Construct()
-		{
-			var bufferManager = BufferManager.CreateBufferManager(1, 1);
+    public class BufferManagerTests
+    {
+        [Theory, 
+        InlineData(1), 
+        InlineData(2), 
+        InlineData(8), 
+        InlineData(64), 
+        InlineData(256), 
+        InlineData(333), 
+        InlineData(800),
+        InlineData(1024), 
+        InlineData(2047), 
+        InlineData(2048), 
+        InlineData(2049)]
+        public void TakeBuffer(int maxBufferSize)
+        {
+            var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
+            var buffer = bufferManager.TakeBuffer(maxBufferSize);
 
-			Assert.IsNotNull(bufferManager);
-		}
+            Assert.NotNull(buffer);
+            Assert.True(buffer.Length >= maxBufferSize, "buffer.Length >= maxBufferSize");
+        }
 
-		[TestMethod]
-		[ExpectedException(typeof(ArgumentOutOfRangeException))]
-		public void ConstructWithInvalidFirstParameter()
-		{
+        [Theory, 
+        InlineData(1024, 1),
+        InlineData(1024, 2),
+        InlineData(1024, 8),
+        InlineData(1024, 64),
+        InlineData(1024, 256),
+        InlineData(1024, 333),
+        InlineData(1024, 800),
+        InlineData(4096, 1),
+        InlineData(4096, 2),
+        InlineData(4096, 8),
+        InlineData(4096, 64),
+        InlineData(4096, 256),
+        InlineData(4096, 333),
+        InlineData(4096, 800),
+        InlineData(4096, 1024),
+        InlineData(4096, 2047),
+        InlineData(4096, 2048),
+        InlineData(4096, 2049)]
+        public void TakeSmallBuffer(int maxBufferSize, int takeBufferSize)
+        {
+            var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
+            var buffer = bufferManager.TakeBuffer(takeBufferSize);
 
-			BufferManager.CreateBufferManager(-1, 1);
-			Assert.Fail("Should throw exception");
-		}
+            Assert.NotNull(buffer);
+            Assert.True(buffer.Length >= takeBufferSize, "buffer.Length >= maxBufferSize");
+        }
 
-		[TestMethod]
-		[ExpectedException(typeof(ArgumentOutOfRangeException))]
-		public void ConstructWithInvalidSecondParameters()
-		{
+        [Theory, 
+        InlineData(1), 
+        InlineData(2), 
+        InlineData(8), 
+        InlineData(64), 
+        InlineData(256), 
+        InlineData(333), 
+        InlineData(800),
+        InlineData(1024), 
+        InlineData(2047), 
+        InlineData(2048), 
+        InlineData(2049)]
+        public void ReturnBuffer(int maxBufferSize)
+        {
+            var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
+            var buffer = bufferManager.TakeBuffer(maxBufferSize);
 
-			BufferManager.CreateBufferManager(1, -1);
-			Assert.Fail("Should throw exception");
-		}
+            Assert.NotNull(buffer);
 
-		[TestMethod]
-		public void TakeBuffer1024()
-		{
-			var maxBufferSize = 1024;
-			var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
-			var buffer = bufferManager.TakeBuffer(maxBufferSize);
+            bufferManager.ReturnBuffer(buffer);
+        }
 
-			Assert.IsNotNull(buffer);
-			Assert.IsTrue(buffer.Length >= maxBufferSize, "buffer.Length >= maxBufferSize");
-		}
+        [Theory, 
+        InlineData(1024, 1), 
+        InlineData(1024, 2),
+        InlineData(1024, 8),
+        InlineData(1024, 64),
+        InlineData(1024, 256),
+        InlineData(1024, 333), 
+        InlineData(1024, 800),
+        InlineData(4096, 1),
+        InlineData(4096, 2),
+        InlineData(4096, 8),
+        InlineData(4096, 64),
+        InlineData(4096, 256),
+        InlineData(4096, 333),
+        InlineData(4096, 800),
+        InlineData(4096, 1024),
+        InlineData(4096, 2047),
+        InlineData(4096, 2048),
+        InlineData(4096, 2049)]
+        public void ReturnSmallBuffer(int maxBufferSize, int takeBufferSize)
+        {
+            var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
+            var buffer = bufferManager.TakeBuffer(takeBufferSize);
 
+            Assert.NotNull(buffer);
 
-		[TestMethod]
-		public void TakeBuffer812()
-		{
-			var maxBufferSize = 812;
-			var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
-			var buffer = bufferManager.TakeBuffer(maxBufferSize);
+            bufferManager.ReturnBuffer(buffer);
+        }
+        [Fact]
+        public void Construct()
+        {
+            var bufferManager = BufferManager.CreateBufferManager(1, 1);
 
-			Assert.IsNotNull(buffer);
-			Assert.IsTrue(buffer.Length >= maxBufferSize, "buffer.Length >= maxBufferSize");
-		}
+            Assert.NotNull(bufferManager);
+        }
 
-		[TestMethod]
-		public void TakeBuffer10()
-		{
-			var maxBufferSize = 10;
-			var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
-			var buffer = bufferManager.TakeBuffer(maxBufferSize);
+        [Fact]
+        public void ConstructWithInvalidFirstParameter()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => BufferManager.CreateBufferManager(-1, 1));
+        }
 
-			Assert.IsNotNull(buffer);
-			Assert.IsTrue(buffer.Length >= maxBufferSize, "buffer.Length >= maxBufferSize");
-		}
-
-		[TestMethod]
-		public void TakeSmallBuffer()
-		{
-			var maxBufferSize = 1024;
-			var bufferSize = 8;
-			var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
-			var buffer = bufferManager.TakeBuffer(bufferSize);
-
-			Assert.IsNotNull(buffer);
-			Assert.IsTrue(buffer.Length >= bufferSize, "buffer.Length >= bufferSize");
-		}
-
-		[TestMethod]
-		public void ReturnBuffer()
-		{
-			var maxBufferSize = 1024;
-			var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
-			var buffer = bufferManager.TakeBuffer(maxBufferSize);
-
-			Assert.IsNotNull(buffer);
-
-			bufferManager.ReturnBuffer(buffer);
-		}
-
-		[TestMethod]
-		public void ReturnSmallBuffer()
-		{
-			var maxBufferSize = 1024;
-			var bufferSize = 8;
-			var bufferManager = BufferManager.CreateBufferManager(100, maxBufferSize);
-			var buffer = bufferManager.TakeBuffer(bufferSize);
-
-			Assert.IsNotNull(buffer);
-
-			bufferManager.ReturnBuffer(buffer);
-		}
-	}
+        [Fact]
+        public void ConstructWithInvalidSecondParameters()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => BufferManager.CreateBufferManager(1, -1));
+        }
+    }
 }
