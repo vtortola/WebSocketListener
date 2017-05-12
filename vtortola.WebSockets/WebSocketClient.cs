@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define DUAL_MODE
+using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
@@ -120,14 +121,23 @@ namespace vtortola.WebSockets
 
                 // prepare socket
                 var remoteEndpoint = handshake.Request.RemoteEndPoint;
-                var localEndpoint = handshake.Request.LocalEndPoint;
-                var socket = new Socket(remoteEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                socket.NoDelay = !(this.options.UseNagleAlgorithm ?? true);
-                socket.SendTimeout = (int)this.options.WebSocketSendTimeout.TotalMilliseconds;
-                socket.ReceiveTimeout = (int)this.options.WebSocketReceiveTimeout.TotalMilliseconds;
-                socket.Bind(localEndpoint);
+                var addressFamily = remoteEndpoint.AddressFamily;
+#if DUAL_MODE
+                if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
+                    addressFamily = AddressFamily.InterNetworkV6;
+#endif
+                var protocolType = addressFamily == AddressFamily.Unix ? ProtocolType.Unspecified : ProtocolType.Tcp;
+                var socket = new Socket(addressFamily, SocketType.Stream, protocolType)
+                {
+                    NoDelay = !(this.options.UseNagleAlgorithm ?? true),
+                    SendTimeout = (int)this.options.WebSocketSendTimeout.TotalMilliseconds,
+                    ReceiveTimeout = (int)this.options.WebSocketReceiveTimeout.TotalMilliseconds
+                };
+#if DUAL_MODE
+                if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
+                    socket.DualMode = true;
+#endif
                 // prepare connection
-
                 var socketConnectedCondition = new AsyncConditionSource
                 {
                     ContinueOnCapturedContext = false
@@ -343,9 +353,14 @@ namespace vtortola.WebSockets
             if (IPAddress.TryParse(url.Host, out ipAddress))
                 remoteEndpoint = new IPEndPoint(ipAddress, port);
             else
+#if DUAL_MODE
+                remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port, AddressFamily.Unspecified);
+#else
                 remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port, AddressFamily.InterNetwork);
+#endif
 
-            localEndpoint = new IPEndPoint(remoteEndpoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
+            if (localEndpoint == null)
+                localEndpoint = new IPEndPoint(remoteEndpoint.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
             return true;
         }
         private static bool IsSchemeValid(Uri url)
