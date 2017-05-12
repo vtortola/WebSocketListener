@@ -13,18 +13,6 @@ namespace vtortola.WebSockets
         public string StatusDescription;
         public readonly List<WebSocketExtension> WebSocketExtensions;
 
-        public string WebSocketProtocol
-        {
-            get { return this.Headers[ResponseHeader.WebSocketProtocol]; }
-            set
-            {
-                if (string.IsNullOrEmpty(value))
-                    this.Headers.Remove(ResponseHeader.WebSocketProtocol);
-                else
-                    this.Headers[ResponseHeader.WebSocketProtocol] = value;
-            }
-        }
-
         public WebSocketHttpResponse()
         {
             this.Headers = new Headers<ResponseHeader>();

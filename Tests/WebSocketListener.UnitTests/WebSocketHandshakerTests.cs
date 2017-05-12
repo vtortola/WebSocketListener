@@ -148,10 +148,10 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms, new IPEndPoint(IPAddress.Parse("10.0.0.1"), 8888),
                                            new IPEndPoint(IPAddress.Parse("192.168.0.2"), 9999))
                                        .Result;
-                Assert.Equal("10.0.0.1", result.Request.LocalEndpoint.Address.ToString());
-                Assert.Equal(8888, result.Request.LocalEndpoint.Port);
-                Assert.Equal("192.168.0.2", result.Request.RemoteEndpoint.Address.ToString());
-                Assert.Equal(9999, result.Request.RemoteEndpoint.Port);
+                Assert.Equal("10.0.0.1", ((IPEndPoint)result.Request.LocalEndpoint).Address.ToString());
+                Assert.Equal(8888, ((IPEndPoint)result.Request.LocalEndpoint).Port);
+                Assert.Equal("192.168.0.2", ((IPEndPoint)result.Request.RemoteEndpoint).Address.ToString());
+                Assert.Equal(9999, ((IPEndPoint)result.Request.RemoteEndpoint).Port);
             }
         }
 
@@ -359,7 +359,7 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.WebSocketProtocol);
+                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -425,7 +425,7 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.WebSocketProtocol);
+                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -495,7 +495,7 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.WebSocketProtocol);
+                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -549,7 +549,7 @@ namespace WebSocketListener.UnitTests
                 Assert.NotNull(result);
                 Assert.True(result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.WebSocketProtocol);
+                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -830,7 +830,7 @@ namespace WebSocketListener.UnitTests
                 Assert.True(result.IsVersionSupported);
                 Assert.Null(result.Error);
                 Assert.True(result.IsValidWebSocketRequest);
-                Assert.Null(result.Response.WebSocketProtocol);
+                Assert.True(string.IsNullOrEmpty(result.Response.Headers[ResponseHeader.WebSocketProtocol]));
 
                 ms.Seek(position, SeekOrigin.Begin);
 

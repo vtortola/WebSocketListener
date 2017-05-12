@@ -4,25 +4,26 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455 : WebSocket
     {
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-        readonly IPEndPoint _remoteEndpoint, _localEndpoint;
+        readonly EndPoint _remoteEndpoint, _localEndpoint;
         readonly String _subprotocol;
 
         internal WebSocketConnectionRfc6455 Connection { get; private set; }
 
-        public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
-        public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
+        public override EndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
+        public override EndPoint LocalEndpoint { get { return _localEndpoint; } }
         public override Boolean IsConnected { get { return Connection.IsConnected; } }
         public override TimeSpan Latency { get { return Connection.Latency; } }
         public override String SubProtocol { get { return _subprotocol; } }
 
-        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
-            :base(httpRequest, httpResponse)
+        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, EndPoint local, EndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+            : base(httpRequest, httpResponse)
         {
             Guard.ParameterCannotBeNull(clientStream, "clientStream");
             Guard.ParameterCannotBeNull(options, "options");
@@ -36,7 +37,8 @@ namespace vtortola.WebSockets.Rfc6455
 
             Connection = new WebSocketConnectionRfc6455(clientStream, options);
             _extensions = extensions;
-            _subprotocol = httpResponse.WebSocketProtocol;
+            _subprotocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
+                httpResponse.Headers[ResponseHeader.WebSocketProtocol] : default(string);
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {

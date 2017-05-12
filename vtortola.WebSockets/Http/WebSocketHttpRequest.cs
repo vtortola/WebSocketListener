@@ -7,19 +7,6 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketHttpRequest : HttpRequest
     {
-        public string WebSocketProtocol
-        {
-            get { return this.Headers[RequestHeader.WebSocketProtocol]; }
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                    this.Headers.Remove(RequestHeader.WebSocketProtocol);
-                else
-                    this.Headers.Set(RequestHeader.WebSocketProtocol, value);
-            }
-        }
-        public string WebSocketVersion => this.Headers[RequestHeader.WebSocketVersion];
-
         public IReadOnlyList<WebSocketExtension> WebSocketExtensions { get; private set; }
 
         internal void SetExtensions(List<WebSocketExtension> extensions)
@@ -27,7 +14,7 @@ namespace vtortola.WebSockets
             WebSocketExtensions = new ReadOnlyCollection<WebSocketExtension>(extensions);
         }
 
-        public WebSocketHttpRequest(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
+        public WebSocketHttpRequest(EndPoint localEndpoint, EndPoint remoteEndpoint)
             : base(localEndpoint, remoteEndpoint)
         {
         }

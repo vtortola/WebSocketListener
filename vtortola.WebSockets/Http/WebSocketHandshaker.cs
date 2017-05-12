@@ -210,10 +210,10 @@ namespace vtortola.WebSockets
               subprotocols, it MUST NOT send back a |Sec-WebSocket-Protocol|
               header field in its response).
              */
-            if (handshake.Response.WebSocketProtocol != null)
+            if (handshake.Response.Headers.Contains(ResponseHeader.WebSocketProtocol))
             {
                 writer.Write("\r\nSec-WebSocket-Protocol: ");
-                writer.Write(handshake.Response.WebSocketProtocol);
+                writer.Write(handshake.Response.Headers[ResponseHeader.WebSocketProtocol]);
             }
 
             WriteHandshakeCookies(handshake, writer);
@@ -298,7 +298,7 @@ namespace vtortola.WebSockets
                 {
                     if (_options.SubProtocols.Contains(protocol, StringComparer.OrdinalIgnoreCase) == false) continue;
 
-                    handshake.Response.WebSocketProtocol = protocol;
+                    handshake.Response.Headers[ResponseHeader.WebSocketProtocol] = protocol;
                     break;
                 }
             }

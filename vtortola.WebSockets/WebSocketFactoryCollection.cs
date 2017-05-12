@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
@@ -43,7 +44,7 @@ namespace vtortola.WebSockets
             var webSocketsVersion = default(short);
             var factory = default(WebSocketFactory);
 
-            if (short.TryParse(request.WebSocketVersion, out webSocketsVersion) && _factories.TryGetValue(webSocketsVersion, out factory))
+            if (short.TryParse(request.Headers[RequestHeader.WebSocketVersion], out webSocketsVersion) && _factories.TryGetValue(webSocketsVersion, out factory))
                 return factory;
             else
                 return null;

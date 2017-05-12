@@ -18,6 +18,7 @@ namespace vtortola.WebSockets
         public readonly long Id;
         public readonly WebSocketHttpRequest Request;
         public readonly WebSocketHttpResponse Response;
+        public readonly CancellationToken Cancellation;
         public readonly List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions;
 
         public bool IsWebSocketRequest { get; internal set; }
@@ -45,7 +46,7 @@ namespace vtortola.WebSockets
             set { _invalidated = !value; }
         }
 
-        public WebSocketHandshake(WebSocketHttpRequest request)
+        public WebSocketHandshake(WebSocketHttpRequest request, CancellationToken cancellation)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
@@ -53,9 +54,10 @@ namespace vtortola.WebSockets
             this.Request = request;
             this.Response = new WebSocketHttpResponse();
             this.NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
+            this.Cancellation = cancellation;
         }
         public WebSocketHandshake(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
-            : this(new WebSocketHttpRequest(localEndpoint, remoteEndpoint))
+            : this(new WebSocketHttpRequest(localEndpoint, remoteEndpoint), CancellationToken.None)
         {
 
         }
