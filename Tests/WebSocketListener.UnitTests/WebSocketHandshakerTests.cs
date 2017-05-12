@@ -9,17 +9,21 @@ using vtortola.WebSockets;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace WebSocketListener.UnitTests
 {
     public class WebSocketHandshakerTests
     {
-        public WebSocketHandshakerTests()
+        private readonly ILogger logger;
+        private readonly WebSocketFactoryCollection factories;
+
+        public WebSocketHandshakerTests(ITestOutputHelper output)
         {
+            this.logger = new TestLogger(output);
             this.factories = new WebSocketFactoryCollection();
             this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
         }
-        private readonly WebSocketFactoryCollection factories;
 
         [Fact]
         public void DetectReturnCookieErrors()
@@ -27,6 +31,7 @@ namespace WebSocketListener.UnitTests
             var handshaker = new WebSocketHandshaker(this.factories,
                 new WebSocketListenerOptions
                 {
+                    Logger = this.logger,
                     OnHttpNegotiation = (req, res) =>
                     {
                         throw new Exception("dummy");
@@ -72,7 +77,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void DoSimpleHandshake()
         {
-            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
             using (var ms = new MemoryStream())
             {
@@ -126,7 +131,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void DoSimpleHandshakeWithEndpoints()
         {
-            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
             using (var ms = new MemoryStream())
             {
@@ -158,7 +163,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void DoSimpleHandshakeVerifyCaseInsensitive()
         {
-            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
             using (var ms = new MemoryStream())
             {
@@ -226,6 +231,7 @@ namespace WebSocketListener.UnitTests
             factories.RegisterStandard(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"
@@ -290,6 +296,7 @@ namespace WebSocketListener.UnitTests
             factories.RegisterStandard(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"
@@ -330,6 +337,7 @@ namespace WebSocketListener.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"
@@ -396,6 +404,7 @@ namespace WebSocketListener.UnitTests
             factories.RegisterStandard(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"
@@ -466,6 +475,7 @@ namespace WebSocketListener.UnitTests
             factories.RegisterStandard(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"
@@ -521,6 +531,7 @@ namespace WebSocketListener.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"
@@ -637,8 +648,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void ParseMultipleCookie()
         {
-            var handshaker = new WebSocketHandshaker(this.factories,
-                new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
             using (var ms = new MemoryStream())
             {
@@ -663,13 +673,14 @@ namespace WebSocketListener.UnitTests
                 Assert.Equal(2, result.Request.Cookies.Count);
             }
         }
-        
+
         [Fact]
         public void ReturnCookies()
         {
             var handshaker = new WebSocketHandshaker(this.factories,
                 new WebSocketListenerOptions
                 {
+                    Logger = this.logger,
                     OnHttpNegotiation = (request, response) =>
                     {
                         response.Cookies.Add(new Cookie("name1", "value1"));
@@ -722,6 +733,7 @@ namespace WebSocketListener.UnitTests
             var handshaker = new WebSocketHandshaker(this.factories,
                 new WebSocketListenerOptions
                 {
+                    Logger = this.logger,
                     OnHttpNegotiation = (req, res) =>
                     {
                         res.Status = HttpStatusCode.Unauthorized;
@@ -767,8 +779,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void UnderstandEncodedCookies()
         {
-            var handshaker = new WebSocketHandshaker(this.factories,
-                new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
             using (var ms = new MemoryStream())
             {
@@ -800,6 +811,7 @@ namespace WebSocketListener.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat2", "text"
@@ -852,7 +864,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void DoNotFailWhenSubProtocolRequestedButNotOffered()
         {
-            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
             using (var ms = new MemoryStream())
             {
@@ -916,6 +928,7 @@ namespace WebSocketListener.UnitTests
             factories.RegisterStandard(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
+                Logger = this.logger,
                 SubProtocols = new[]
                 {
                     "superchat"

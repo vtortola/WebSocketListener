@@ -66,6 +66,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="TestLogger.cs" />
     <Compile Include="WebSocketClientTest.cs" />
     <Compile Include="HttpHelperTest.cs" />
     <Compile Include="HeadersTest.cs" />

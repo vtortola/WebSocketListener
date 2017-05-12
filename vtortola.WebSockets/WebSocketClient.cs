@@ -43,6 +43,8 @@ namespace vtortola.WebSockets
             if (this.options.BufferManager == null)
                 this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize); // create small buffer pool if not configured
 
+            options.CheckCoherence();
+
             this.standards.SetUsed(true);
             foreach (var standard in this.standards)
                 standard.MessageExtensions.SetUsed(true);

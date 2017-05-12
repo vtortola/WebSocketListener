@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
@@ -9,67 +10,79 @@ namespace vtortola.WebSockets
 
     public sealed class WebSocketListenerOptions
     {
-        public const int DefaultSendBufferSize = 8 * 1024;
+        public const int DEFAULT_SEND_BUFFER_SIZE = 8 * 1024;
+        public static readonly string[] NoSubProtocols = new string[0];
 
         public TimeSpan PingTimeout { get; set; }
-        public Int32 NegotiationQueueCapacity { get; set; }
-        public Int32? TcpBacklog { get; set; }
-        public Int32 ParallelNegotiations { get; set; }
+        public int NegotiationQueueCapacity { get; set; }
+        public int? TcpBacklog { get; set; }
+        public int ParallelNegotiations { get; set; }
         public TimeSpan NegotiationTimeout { get; set; }
         public TimeSpan WebSocketSendTimeout { get; set; }
         public TimeSpan WebSocketReceiveTimeout { get; set; }
-        public Int32 SendBufferSize { get; set; }
-        public String[] SubProtocols { get; set; }
+        public int SendBufferSize { get; set; }
+        public string[] SubProtocols { get; set; }
         public BufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
-        public Boolean? UseNagleAlgorithm { get; set; }
+        public bool? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
         public IHttpFallback HttpFallback { get; set; }
+        public ILogger Logger { get; set; }
 
-        static readonly String[] _noSubProtocols = new String[0];
         public WebSocketListenerOptions()
         {
-            PingTimeout = TimeSpan.FromSeconds(5);
-            NegotiationQueueCapacity = Environment.ProcessorCount * 10;
-            ParallelNegotiations = Environment.ProcessorCount * 2;
-            NegotiationTimeout = TimeSpan.FromSeconds(5);
-            WebSocketSendTimeout = TimeSpan.FromSeconds(5);
-            WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
-            SendBufferSize = DefaultSendBufferSize;
-            SubProtocols = _noSubProtocols;
-            OnHttpNegotiation = null;
-            UseNagleAlgorithm = true;
-            PingMode = PingModes.LatencyControl;
+            this.PingTimeout = TimeSpan.FromSeconds(5);
+            this.NegotiationQueueCapacity = Environment.ProcessorCount * 10;
+            this.ParallelNegotiations = Environment.ProcessorCount * 2;
+            this.NegotiationTimeout = TimeSpan.FromSeconds(5);
+            this.WebSocketSendTimeout = TimeSpan.FromSeconds(5);
+            this.WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
+            this.SendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
+            this.SubProtocols = NoSubProtocols;
+            this.OnHttpNegotiation = null;
+            this.UseNagleAlgorithm = true;
+            this.PingMode = PingModes.LatencyControl;
+#if DEBUG
+            this.Logger = DebugLogger.Instance;
+#else
+            Logger = NullLogger.Instance;
+#endif
+
         }
+
         public void CheckCoherence()
         {
-            if (PingTimeout == TimeSpan.Zero)
-                PingTimeout = Timeout.InfiniteTimeSpan;
+            if (this.PingTimeout == TimeSpan.Zero)
+                this.PingTimeout = Timeout.InfiniteTimeSpan;
 
-            if (NegotiationQueueCapacity < 0)
+            if (this.NegotiationQueueCapacity < 0)
                 throw new WebSocketException("NegotiationQueueCapacity must be 0 or more.");
 
-            if (TcpBacklog.HasValue && TcpBacklog.Value < 1)
+            if (this.TcpBacklog.HasValue && this.TcpBacklog.Value < 1)
                 throw new WebSocketException("TcpBacklog value must be bigger than 0.");
 
-            if (ParallelNegotiations < 1)
+            if (this.ParallelNegotiations < 1)
                 throw new WebSocketException("ParallelNegotiations cannot be less than 1.");
 
-            if (NegotiationTimeout == TimeSpan.Zero)
-                NegotiationTimeout = Timeout.InfiniteTimeSpan;
+            if (this.NegotiationTimeout == TimeSpan.Zero)
+                this.NegotiationTimeout = Timeout.InfiniteTimeSpan;
 
-            if (WebSocketSendTimeout == TimeSpan.Zero)
-                WebSocketSendTimeout = Timeout.InfiniteTimeSpan;
+            if (this.WebSocketSendTimeout == TimeSpan.Zero)
+                this.WebSocketSendTimeout = Timeout.InfiniteTimeSpan;
 
-            if (WebSocketReceiveTimeout == TimeSpan.Zero)
-                WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
+            if (this.WebSocketReceiveTimeout == TimeSpan.Zero)
+                this.WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
 
-            if (SendBufferSize <= 0)
+            if (this.SendBufferSize <= 0)
                 throw new WebSocketException("SendBufferSize must be bigger than 0.");
 
-            if(this.BufferManager != null && this.SendBufferSize < this.BufferManager.MaxBufferSize)
+            if (this.BufferManager != null && this.SendBufferSize < this.BufferManager.MaxBufferSize)
                 throw new WebSocketException("BufferManager.MaxBufferSize must be bigger or equals to SendBufferSize.");
+
+            if (this.Logger == null)
+                throw new WebSocketException("Logger should be set.");
         }
+
         public WebSocketListenerOptions Clone()
         {
             return new WebSocketListenerOptions()
@@ -81,7 +94,7 @@ namespace vtortola.WebSockets
                 WebSocketSendTimeout = this.WebSocketSendTimeout,
                 WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
                 SendBufferSize = this.SendBufferSize,
-                SubProtocols = this.SubProtocols ?? _noSubProtocols,
+                SubProtocols = this.SubProtocols ?? NoSubProtocols,
                 BufferManager = this.BufferManager,
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,

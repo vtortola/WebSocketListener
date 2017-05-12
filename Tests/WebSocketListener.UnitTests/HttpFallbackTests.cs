@@ -1,20 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Text;
 using Moq;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace WebSocketListener.UnitTests
 {
     public class HttpFallbackTests
     {
-        public HttpFallbackTests()
+        private readonly Mock<IHttpFallback> fallback;
+        private readonly List<Tuple<HttpRequest, Stream>> postedConnections;
+        private readonly WebSocketFactoryCollection factories;
+        private readonly ILogger logger;
+
+        public HttpFallbackTests(ITestOutputHelper output)
         {
+            this.logger = new TestLogger(output);
             this.factories = new WebSocketFactoryCollection();
             this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
 
@@ -23,15 +29,11 @@ namespace WebSocketListener.UnitTests
                 .Callback((HttpRequest r, Stream s) => this.postedConnections.Add(new Tuple<HttpRequest, Stream>(r, s)));
             this.postedConnections = new List<Tuple<HttpRequest, Stream>>();
         }
-        private readonly Mock<IHttpFallback> fallback;
-        private readonly List<Tuple<HttpRequest, Stream>> postedConnections;
-
-        private readonly WebSocketFactoryCollection factories;
 
         [Fact]
         public void HttpFallback()
         {
-            var options = new WebSocketListenerOptions();
+            var options = new WebSocketListenerOptions { Logger = this.logger };
             options.HttpFallback = this.fallback.Object;
             var handshaker = new WebSocketHandshaker(this.factories, options);
 
@@ -69,7 +71,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void SimpleHandshakeIgnoringFallback()
         {
-            var options = new WebSocketListenerOptions();
+            var options = new WebSocketListenerOptions { Logger = this.logger };
             options.HttpFallback = this.fallback.Object;
             var handshaker = new WebSocketHandshaker(this.factories, options);
 

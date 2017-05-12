@@ -6,6 +6,7 @@ using System.Threading;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace WebSocketListener.UnitTests
 {
@@ -14,12 +15,14 @@ namespace WebSocketListener.UnitTests
         private readonly WebSocketFactoryCollection factories;
         private readonly WebSocketListenerOptions options;
 
-        public WebSocketTests()
+        public WebSocketTests(ITestOutputHelper output)
         {
+            var logger = new TestLogger(output);
             this.factories = new WebSocketFactoryCollection();
             this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
             this.options = new WebSocketListenerOptions
             {
+                Logger = logger,
                 PingTimeout = Timeout.InfiniteTimeSpan,
                 BufferManager = BufferManager.CreateBufferManager(10, 512),
                 SendBufferSize = 512
