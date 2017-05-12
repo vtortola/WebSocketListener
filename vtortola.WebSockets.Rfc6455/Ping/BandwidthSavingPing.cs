@@ -11,8 +11,9 @@ namespace vtortola.WebSockets.Rfc6455
 
         DateTime _lastActivity;
         TimeSpan _pingInterval;
-        
-        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
+
+        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer, ILogger logger)
+            : base(logger)
         {
             Guard.ParameterCannotBeNull(connection, "connection");
 
@@ -43,9 +44,11 @@ namespace vtortola.WebSockets.Rfc6455
                         _connection.WriteInternal(_pingBuffer, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception pingError)
                 {
-                    DebugLog.Fail("BandwidthSavingPing.StartPing", ex);
+                    if (this.Log.IsWarningEnabled)
+                        this.Log.Warning("An error occurred while sending ping.", pingError);
+
                     _connection.Close(WebSocketCloseReasons.ProtocolError);
                 }
             }

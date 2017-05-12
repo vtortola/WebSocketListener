@@ -12,7 +12,8 @@ namespace vtortola.WebSockets.Rfc6455
         DateTime _lastPong;
         TimeSpan _pingInterval;
 
-        internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
+        internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer, ILogger logger)
+            : base(logger)
         {
             Guard.ParameterCannotBeNull(connection, "connection");
 
@@ -43,9 +44,11 @@ namespace vtortola.WebSockets.Rfc6455
                         _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception pingError)
                 {
-                    DebugLog.Fail("LatencyControlPing.StartPing", ex);
+                    if (this.Log.IsWarningEnabled)
+                        this.Log.Warning("An error occurred while sending ping.", pingError);
+
                     _connection.Close(WebSocketCloseReasons.ProtocolError);
                 }
             }

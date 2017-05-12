@@ -13,17 +13,17 @@ namespace vtortola.WebSockets.Tools
         /// <inheritdoc />
         public bool IsErrorEnabled => false;
         /// <inheritdoc />
-        public void LogDebug(string message, Exception error = null)
+        public void Debug(string message, Exception error = null)
         {
 
         }
         /// <inheritdoc />
-        public void LogWarning(string message, Exception error = null)
+        public void Warning(string message, Exception error = null)
         {
 
         }
         /// <inheritdoc />
-        public void LogError(string message, Exception error = null)
+        public void Error(string message, Exception error = null)
         {
 
         }

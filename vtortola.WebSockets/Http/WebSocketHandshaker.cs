@@ -13,21 +13,23 @@ namespace vtortola.WebSockets
 {
     public class WebSocketHandshaker
     {
-        readonly WebSocketListenerOptions options;
-        readonly WebSocketFactoryCollection factories;
+        private readonly ILogger log;
+        private readonly WebSocketListenerOptions options;
+        private readonly WebSocketFactoryCollection factories;
 
         public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
         {
             Guard.ParameterCannotBeNull(factories, nameof(factories));
             Guard.ParameterCannotBeNull(options, nameof(options));
 
+            this.log = options.Logger;
             this.factories = factories;
             this.options = options;
         }
 
         public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, IPEndPoint localEndpoint = null, IPEndPoint remoteEndpoint = null)
         {
-            WebSocketHandshake handshake = new WebSocketHandshake(localEndpoint, remoteEndpoint);
+            var handshake = new WebSocketHandshake(localEndpoint, remoteEndpoint);
             try
             {
                 ReadHttpRequest(clientStream, handshake);
@@ -57,16 +59,20 @@ namespace vtortola.WebSockets
 
                 await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception handshakeError)
             {
-                handshake.Error = ExceptionDispatchInfo.Capture(ex);
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("Failed to handshake request.", handshakeError);
+
+                handshake.Error = ExceptionDispatchInfo.Capture(handshakeError);
                 if (!handshake.IsResponseSent)
                 {
                     try { WriteHttpResponse(handshake, clientStream); }
-                    catch (Exception ex2)
+                    catch (Exception writeResponseError)
                     {
-                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writing error esponse)", ex2);
-                    };
+                        if (this.log.IsDebugEnabled)
+                            this.log.Debug("Failed to write error response.", writeResponseError);
+                    }
                 }
             }
             return handshake;

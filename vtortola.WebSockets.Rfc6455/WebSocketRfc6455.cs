@@ -10,6 +10,7 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455 : WebSocket
     {
+        private readonly ILogger log;
         readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
         readonly EndPoint _remoteEndpoint, _localEndpoint;
         readonly String _subprotocol;
@@ -31,6 +32,8 @@ namespace vtortola.WebSockets.Rfc6455
             Guard.ParameterCannotBeNull(remote, "remote");
             Guard.ParameterCannotBeNull(extensions, "extensions");
             Guard.ParameterCannotBeNull(httpRequest, "httpRequest");
+
+            this.log = options.Logger;
 
             _remoteEndpoint = remote;
             _localEndpoint = local;
@@ -89,7 +92,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override void Dispose()
         {
-            SafeEnd.Dispose(Connection);
+            SafeEnd.Dispose(Connection, this.log);
         }
     }
 }

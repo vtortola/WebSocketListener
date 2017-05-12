@@ -99,7 +99,8 @@ namespace vtortola.WebSockets
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,
                 PingMode = this.PingMode,
-                HttpFallback = this.HttpFallback
+                HttpFallback = this.HttpFallback,
+                Logger = this.Logger
             };
         }
     }

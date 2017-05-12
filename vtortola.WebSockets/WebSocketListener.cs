@@ -9,6 +9,7 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketListener : IDisposable
     {
+        private readonly ILogger log;
         readonly TcpListener _listener;
         readonly HttpNegotiationQueue _negotiationQueue;
         readonly CancellationTokenSource _cancel;
@@ -95,6 +96,9 @@ namespace vtortola.WebSockets
 
                 if (result.Error != null)
                 {
+                    if (this.log.IsDebugEnabled)
+                        this.log.Debug($"{nameof(this.AcceptWebSocketAsync)} is complete with error.", result.Error.SourceException);
+
                     result.Error.Throw();
                     return null;
                 }
@@ -111,15 +115,15 @@ namespace vtortola.WebSockets
             this.Stop();
 
             if (_listener != null)
-                SafeEnd.Dispose(_listener.Server);
+                SafeEnd.Dispose(_listener.Server, this.log);
 
             if (_cancel != null)
             {
                 _cancel.Cancel();
-                SafeEnd.Dispose(_cancel);
+                SafeEnd.Dispose(_cancel, this.log);
             }
 
-            SafeEnd.Dispose(_negotiationQueue);
+            SafeEnd.Dispose(_negotiationQueue, this.log);
         }
     }
 }

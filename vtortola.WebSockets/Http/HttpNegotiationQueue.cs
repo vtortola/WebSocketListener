@@ -6,11 +6,13 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Http
 {
-    public sealed class HttpNegotiationQueue:IDisposable
+    public sealed class HttpNegotiationQueue : IDisposable
     {
+        private readonly ILogger log;
         readonly BufferBlock<Socket> _sockets;
         readonly BufferBlock<WebSocketNegotiationResult> _negotiations;
         readonly CancellationTokenSource _cancel;
@@ -25,47 +27,52 @@ namespace vtortola.WebSockets.Http
             Guard.ParameterCannotBeNull(extensions, "extensions");
             Guard.ParameterCannotBeNull(options, "options");
 
+            this.log = options.Logger;
             _options = options;
             _extensions = extensions;
             _cancel = new CancellationTokenSource();
             _semaphore = new SemaphoreSlim(options.ParallelNegotiations);
-            
-            _sockets = new BufferBlock<Socket>(new DataflowBlockOptions()
+
+            _sockets = new BufferBlock<Socket>(new DataflowBlockOptions
             {
                 BoundedCapacity = options.NegotiationQueueCapacity,
                 CancellationToken = _cancel.Token
             });
+            _sockets.Completion.LogFault(this.log);
 
             _negotiations = new BufferBlock<WebSocketNegotiationResult>(new DataflowBlockOptions()
             {
                 BoundedCapacity = options.NegotiationQueueCapacity,
                 CancellationToken = _cancel.Token,
             });
+            this._negotiations.Completion.LogFault(this.log);
 
             _cancel.Token.Register(_sockets.Complete);
             _cancel.Token.Register(_negotiations.Complete);
 
             _handShaker = new WebSocketHandshaker(standards, _options);
 
-            Task.Run((Func<Task>)WorkAsync);
+            WorkAsync().LogFault(this.log);
         }
 
         private async Task WorkAsync()
         {
+            await Task.Yield();
             while (!_cancel.IsCancellationRequested)
             {
                 try
                 {
                     await _semaphore.WaitAsync(_cancel.Token).ConfigureAwait(false);
                     var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
-                    Task.Run(() => NegotiateWebSocket(socket));
+                    NegotiateWebSocket(socket).LogFault(this.log);
                 }
                 catch (TaskCanceledException)
                 {
                 }
-                catch (Exception ex)
+                catch (Exception negotiateError)
                 {
-                    DebugLog.Fail("HttpNegotiationQueue.WorkAsync", ex);
+                    if (this.log.IsWarningEnabled)
+                        this.log.Warning("Negotiation task error occurred.", negotiateError);
                     _cancel.Cancel();
                 }
             }
@@ -73,6 +80,8 @@ namespace vtortola.WebSockets.Http
 
         private async Task NegotiateWebSocket(Socket client)
         {
+            await Task.Yield();
+
             WebSocketNegotiationResult result;
             try
             {
@@ -110,7 +119,7 @@ namespace vtortola.WebSockets.Http
                 }
                 else
                 {
-                    SafeEnd.Dispose(client);
+                    SafeEnd.Dispose(client, this.log);
                     result = new WebSocketNegotiationResult(handshake.Error);
                 }
 
@@ -119,7 +128,7 @@ namespace vtortola.WebSockets.Http
             }
             catch (Exception ex)
             {
-                SafeEnd.Dispose(client);
+                SafeEnd.Dispose(client, this.log);
                 result = new WebSocketNegotiationResult(ExceptionDispatchInfo.Capture(ex));
             }
             finally
@@ -131,7 +140,7 @@ namespace vtortola.WebSockets.Http
         public void Queue(Socket socket)
         {
             if (!_sockets.Post(socket))
-                SafeEnd.Dispose(socket);
+                SafeEnd.Dispose(socket, this.log);
         }
 
         public Task<WebSocketNegotiationResult> DequeueAsync(CancellationToken cancel)
@@ -141,7 +150,7 @@ namespace vtortola.WebSockets.Http
 
         public void Dispose()
         {
-            SafeEnd.Dispose(_semaphore);
+            SafeEnd.Dispose(_semaphore, this.log);
 
             if (_cancel != null)
             {

@@ -8,8 +8,8 @@ namespace vtortola.WebSockets
         bool IsWarningEnabled { get; }
         bool IsErrorEnabled { get; }
 
-        void LogDebug(string message, Exception error = null);
-        void LogWarning(string message, Exception error = null);
-        void LogError(string message, Exception error = null);
+        void Debug(string message, Exception error = null);
+        void Warning(string message, Exception error = null);
+        void Error(string message, Exception error = null);
     }
 }

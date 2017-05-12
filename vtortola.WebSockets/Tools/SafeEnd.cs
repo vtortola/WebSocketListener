@@ -1,27 +1,37 @@
 ﻿using System;
 using System.Threading;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
     public static class SafeEnd
     {
-        public static void Dispose<T>(T disposable)
-            where T:IDisposable
+        public static void Dispose<T>(T disposable, ILogger log = null) where T : IDisposable
         {
-            if (disposable != null)
+            if (disposable == null)
+                return;
+
+            if (log == null)
             {
-                try
-                {
-                    disposable.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    DebugLog.Fail(typeof(T).Name + ".Dispose", ex);
-                }
+#if DEBUG
+                log = DebugLogger.Instance;
+#else
+                log = NullLogger.Instance;
+#endif
+            }
+
+            try
+            {
+                disposable.Dispose();
+            }
+            catch (Exception disposeError)
+            {
+                if (log.IsDebugEnabled)
+                    log.Debug($"{typeof(T)} dispose cause error.", disposeError);
             }
         }
 
-        public static void ReleaseSemaphore(SemaphoreSlim semaphore)
+        public static void ReleaseSemaphore(SemaphoreSlim semaphore, ILogger log = null)
         {
             try
             {
@@ -32,9 +42,10 @@ namespace vtortola.WebSockets
                 // Held threads may try to release an already
                 // disposed semaphore
             }
-            catch (Exception ex)
+            catch (Exception releaseError)
             {
-                DebugLog.Fail("SemaphoreSlim.Release: ", ex);
+                if (log?.IsDebugEnabled ?? false)
+                    log.Debug("Semaphore release cause error.", releaseError);
             }
         }
     }

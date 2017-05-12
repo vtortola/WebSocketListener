@@ -23,6 +23,7 @@ namespace vtortola.WebSockets
     {
         private const string WEB_SOCKET_HTTP_VERSION = "HTTP/1.1";
 
+        private readonly ILogger log;
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
         private readonly ConcurrentDictionary<WebSocketHandshake, WebSocketRequestCompletion> pendingRequests;
@@ -36,6 +37,7 @@ namespace vtortola.WebSockets
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (standards.Count == 0) throw new ArgumentException("Empty list of WebSocket standards.", nameof(standards));
 
+            this.log = options.Logger;
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
             this.standards = standards.Clone();
             this.options = options.Clone();
@@ -112,7 +114,7 @@ namespace vtortola.WebSockets
         {
             this.connectionBlock.Complete();
             var completion = Task.WhenAll(this.connectionBlock.Completion, this.negotiationBlock.Completion, this.dispatchBlock.Completion);
-            completion.ContinueWith(_ => SafeEnd.Dispose(this), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            completion.ContinueWith(_ => SafeEnd.Dispose(this, this.log), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             return completion;
         }
 
@@ -224,8 +226,8 @@ namespace vtortola.WebSockets
             {
                 if (handshake.Error != null)
                 {
-                    SafeEnd.Dispose(socket);
-                    SafeEnd.Dispose(stream);
+                    SafeEnd.Dispose(socket, this.log);
+                    SafeEnd.Dispose(stream, this.log);
                 }
             }
         }
@@ -241,7 +243,8 @@ namespace vtortola.WebSockets
             {
                 if (this.pendingRequests.TryRemove(handshake, out resultPromise) == false)
                 {
-                    // TODO log?
+                    if (this.log.IsDebugEnabled)
+                        this.log.Debug("Failed to retrieve pending request. Probably client is disposed.");
                     return; // failed to retrieve pending request
                 }
 
@@ -266,7 +269,8 @@ namespace vtortola.WebSockets
             }
             catch (Exception completionError) when (completionError is ThreadAbortException == false)
             {
-                // TODO log?
+                if (this.log.IsWarningEnabled)
+                    this.log.Warning("Failed to complete pending request.", completionError);
                 resultPromise?.TrySetException(completionError.Unwrap());
             }
             finally

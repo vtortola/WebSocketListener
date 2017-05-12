@@ -24,7 +24,7 @@ namespace vtortola.WebSockets
 
         public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
         {
-            return CompletedTasks.Void;
+            return TaskHelper.CompletedTask;
         }
 
         public override sealed int ReadByte()

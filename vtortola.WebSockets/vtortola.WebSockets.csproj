@@ -89,12 +89,11 @@
     <Compile Include="Threading\AsyncConditionSource.cs" />
     <Compile Include="Threading\AsyncResultTask.cs" />
     <Compile Include="Tools\ArraySegmentExtension.cs" />
-    <Compile Include="Tools\CompletedTasks.cs" />
+    <Compile Include="Tools\TaskHelper.cs" />
     <Compile Include="Tools\ConsoleLogger.cs" />
     <Compile Include="Tools\DebugLogger.cs" />
     <Compile Include="Tools\ExceptionExtentions.cs" />
     <Compile Include="Tools\HeadersHelper.cs" />
-    <Compile Include="Tools\DebugLog.cs" />
     <Compile Include="Tools\DelegateHelper.cs" />
     <Compile Include="Tools\EnumHelpers.cs" />
     <Compile Include="Tools\Guard.cs" />

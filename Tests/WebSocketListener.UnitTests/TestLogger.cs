@@ -22,7 +22,7 @@ namespace WebSocketListener.UnitTests
         }
 
         /// <inheritdoc />
-        public void LogDebug(string message, Exception error = null)
+        public void Debug(string message, Exception error = null)
         {
             if (!string.IsNullOrEmpty(message))
                 this.output.WriteLine(message);
@@ -30,7 +30,7 @@ namespace WebSocketListener.UnitTests
                 this.output.WriteLine(error.ToString());
         }
         /// <inheritdoc />
-        public void LogWarning(string message, Exception error = null)
+        public void Warning(string message, Exception error = null)
         {
             if (!string.IsNullOrEmpty(message))
                 this.output.WriteLine("[WARN] " + message);
@@ -38,7 +38,7 @@ namespace WebSocketListener.UnitTests
                 this.output.WriteLine(error.ToString());
         }
         /// <inheritdoc />
-        public void LogError(string message, Exception error = null)
+        public void Error(string message, Exception error = null)
         {
             if (!string.IsNullOrEmpty("[ERROR] " + message))
                 this.output.WriteLine(message);

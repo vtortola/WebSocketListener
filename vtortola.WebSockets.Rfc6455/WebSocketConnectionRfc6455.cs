@@ -12,6 +12,7 @@ namespace vtortola.WebSockets.Rfc6455
         readonly ArraySegment<Byte> _headerBuffer, _pingBuffer, _pongBuffer, _controlBuffer, _keyBuffer, _closeBuffer;
         internal readonly ArraySegment<Byte> SendBuffer;
 
+        private readonly ILogger log;
         readonly SemaphoreSlim _writeSemaphore;
         readonly Stream _clientStream;
         readonly WebSocketListenerOptions _options;
@@ -52,6 +53,8 @@ namespace vtortola.WebSockets.Rfc6455
             const int KEY_SEGMENT_SIZE = 4;
             const int CLOSE_SEGMENT_SIZE = 2;
 
+            this.log = options.Logger;
+
             _writeSemaphore = new SemaphoreSlim(1);
             _options = options;
 
@@ -79,11 +82,11 @@ namespace vtortola.WebSockets.Rfc6455
             switch (options.PingMode)
             {
                 case PingModes.BandwidthSaving:
-                    _ping = new BandwidthSavingPing(this, _options.PingTimeout, _pingBuffer);
+                    _ping = new BandwidthSavingPing(this, _options.PingTimeout, _pingBuffer, this.log);
                     break;
                 case PingModes.LatencyControl:
                 default:
-                    _ping = new LatencyControlPing(this, _options.PingTimeout, _pingBuffer);
+                    _ping = new LatencyControlPing(this, _options.PingTimeout, _pingBuffer, this.log);
                     break;
             }
         }
@@ -117,13 +120,15 @@ namespace vtortola.WebSockets.Rfc6455
                     ParseHeader(readed);
                 }
             }
-            catch (InvalidOperationException)
+            catch (Exception awaitHeaderError)
             {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while sync awaiting header from WebSocket.", awaitHeaderError);
+
                 Close(WebSocketCloseReasons.ProtocolError);
-            }
-            catch (IOException)
-            {
-                Close(WebSocketCloseReasons.ProtocolError);
+
+                if (awaitHeaderError is IOException == false && awaitHeaderError is InvalidOperationException == false)
+                    throw;
             }
         }
         internal async Task AwaitHeaderAsync(CancellationToken cancellation)
@@ -145,18 +150,15 @@ namespace vtortola.WebSockets.Rfc6455
                     ParseHeader(readed);
                 }
             }
-            catch (InvalidOperationException)
+            catch (Exception awaitHeaderError)
             {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while async awaiting header from WebSocket.", awaitHeaderError);
+
                 Close(WebSocketCloseReasons.ProtocolError);
-            }
-            catch (IOException)
-            {
-                Close(WebSocketCloseReasons.ProtocolError);
-            }
-            catch
-            {
-                Close(WebSocketCloseReasons.ProtocolError);
-                throw;
+
+                if (awaitHeaderError is IOException == false && awaitHeaderError is InvalidOperationException == false)
+                    throw;
             }
         }
         internal void DisposeCurrentHeaderIfFinished()
@@ -166,20 +168,18 @@ namespace vtortola.WebSockets.Rfc6455
         }
         internal async Task<Int32> ReadInternalAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
         {
-            CancellationTokenRegistration reg = cancellationToken.Register(this.Close, false);
+            var reg = cancellationToken.Register(this.Close, false);
             try
             {
                 var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
                 CurrentHeader.DecodeBytes(buffer, offset, readed);
                 return readed;
             }
-            catch (InvalidOperationException)
+            catch (Exception readError) when (readError is IOException || readError is InvalidOperationException)
             {
-                this.Close(WebSocketCloseReasons.UnexpectedCondition);
-                return 0;
-            }
-            catch (IOException)
-            {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while async reading from WebSocket.", readError);
+
                 this.Close(WebSocketCloseReasons.UnexpectedCondition);
                 return 0;
             }
@@ -196,13 +196,11 @@ namespace vtortola.WebSockets.Rfc6455
                 CurrentHeader.DecodeBytes(buffer, offset, readed);
                 return readed;
             }
-            catch (InvalidOperationException)
+            catch (Exception readError) when (readError is IOException || readError is InvalidOperationException)
             {
-                this.Close(WebSocketCloseReasons.UnexpectedCondition);
-                return 0;
-            }
-            catch (IOException)
-            {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while sync reading from WebSocket.", readError);
+
                 this.Close(WebSocketCloseReasons.UnexpectedCondition);
                 return 0;
             }
@@ -327,23 +325,20 @@ namespace vtortola.WebSockets.Rfc6455
                     throw new WebSocketException("Write timeout");
                 _clientStream.Write(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength);
             }
-            catch (InvalidOperationException)
+            catch (Exception writeError)
             {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while sync writing to WebSocket.", writeError);
+
                 Close(WebSocketCloseReasons.UnexpectedCondition);
-            }
-            catch (IOException)
-            {
-                Close(WebSocketCloseReasons.UnexpectedCondition);
-            }
-            catch (Exception ex)
-            {
-                Close(WebSocketCloseReasons.UnexpectedCondition);
-                throw new WebSocketException("Cannot write on WebSocket", ex);
+
+                if (writeError is IOException == false && writeError is InvalidOperationException == false)
+                    throw new WebSocketException("Cannot write on WebSocket", writeError);
             }
             finally
             {
                 if (_isClosed == 0)
-                    SafeEnd.ReleaseSemaphore(_writeSemaphore);
+                    SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
             }
         }
         private async Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
@@ -358,24 +353,21 @@ namespace vtortola.WebSockets.Rfc6455
                     throw new WebSocketException("Write timeout");
                 await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation).ConfigureAwait(false);
             }
-            catch (InvalidOperationException)
+            catch (Exception writeError)
             {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while async writing to WebSocket.", writeError);
+
                 Close(WebSocketCloseReasons.UnexpectedCondition);
-            }
-            catch (IOException)
-            {
-                Close(WebSocketCloseReasons.UnexpectedCondition);
-            }
-            catch (Exception ex)
-            {
-                Close(WebSocketCloseReasons.UnexpectedCondition);
-                throw new WebSocketException("Cannot write on WebSocket", ex);
+
+                if (writeError is IOException == false && writeError is InvalidOperationException == false)
+                    throw new WebSocketException("Cannot write on WebSocket", writeError);
             }
             finally
             {
                 reg.Dispose();
                 if (_isClosed == 0)
-                    SafeEnd.ReleaseSemaphore(_writeSemaphore);
+                    SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
             }
         }
         internal void Close(WebSocketCloseReasons reason)
@@ -391,9 +383,10 @@ namespace vtortola.WebSockets.Rfc6455
                 _clientStream.Close();
 #endif
             }
-            catch (Exception ex)
+            catch (Exception closeError)
             {
-                DebugLog.Fail("WebSocketConnectionRfc6455.Close", ex);
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while closing connection.", closeError);
             }
         }
 
@@ -403,14 +396,18 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 this.Close();
             }
-            catch { }
+            catch (Exception closeError)
+            {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while closing connection.", closeError);
+            }
             finally
             {
                 _options.BufferManager.ReturnBuffer(this.SendBuffer.Array);
                 _options.BufferManager.ReturnBuffer(this._closeBuffer.Array);
             }
-            SafeEnd.Dispose(_writeSemaphore);
-            SafeEnd.Dispose(_clientStream);
+            SafeEnd.Dispose(_writeSemaphore, this.log);
+            SafeEnd.Dispose(_clientStream, this.log);
         }
     }
 

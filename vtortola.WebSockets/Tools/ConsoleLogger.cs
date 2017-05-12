@@ -22,7 +22,7 @@ namespace vtortola.WebSockets.Tools
         }
 
         /// <inheritdoc />
-        public void LogDebug(string message, Exception error = null)
+        public void Debug(string message, Exception error = null)
         {
             if (this.IsDebugEnabled == false)
                 return;
@@ -34,25 +34,25 @@ namespace vtortola.WebSockets.Tools
                 Console.WriteLine(error);
         }
         /// <inheritdoc />
-        public void LogWarning(string message, Exception error = null)
+        public void Warning(string message, Exception error = null)
         {
             if (this.IsWarningEnabled == false)
                 return;
 
             if (string.IsNullOrEmpty(message) == false)
-                Debug.WriteLine("[WARN] " + message);
+                System.Diagnostics.Debug.WriteLine("[WARN] " + message);
 
             if (error != null)
                 Console.WriteLine(error);
         }
         /// <inheritdoc />
-        public void LogError(string message, Exception error = null)
+        public void Error(string message, Exception error = null)
         {
             if (this.IsErrorEnabled == false)
                 return;
 
             if (string.IsNullOrEmpty(message) == false)
-                Debug.WriteLine("[ERROR] " + message);
+                System.Diagnostics.Debug.WriteLine("[ERROR] " + message);
 
             if (error != null)
                 Console.WriteLine(error);

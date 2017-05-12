@@ -84,6 +84,9 @@ namespace WebSocketListener.UnitTests
                     {
                         using (var readStream = await webSocket.ReadMessageAsync(cancellation).ConfigureAwait(false))
                         {
+                            if (readStream == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+                            
+                            Assert.NotNull(readStream);
                             var actualMessage = await new StreamReader(readStream, Encoding.UTF8).ReadToEndAsync().ConfigureAwait(false);
                             Assert.Equal(expectedMessage, actualMessage);
                         }
@@ -151,6 +154,9 @@ namespace WebSocketListener.UnitTests
                     {
                         using (var readStream = await webSocket.ReadMessageAsync(cancellation).ConfigureAwait(false))
                         {
+                            if(readStream == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+
+                            Assert.NotNull(readStream);
                             var actualMessage = await new StreamReader(readStream, Encoding.UTF8).ReadToEndAsync().ConfigureAwait(false);
                             Assert.Equal(expectedMessage, actualMessage);
                         }
