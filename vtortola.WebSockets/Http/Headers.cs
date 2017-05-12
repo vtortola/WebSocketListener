@@ -243,34 +243,34 @@ namespace vtortola.WebSockets.Http
                 return false; // header is invalid
 
             var headerStartIndex = 0;
-            var headerEndIndex = separatorIndex - 1;
-            TrimInPlace(header, ref headerStartIndex, ref headerEndIndex);
+            var headerLength = separatorIndex - headerStartIndex;
+            HeadersHelper.TrimInPlace(header, ref headerStartIndex, ref headerLength);
 
             var valueStartIndex = separatorIndex + 1;
-            var valueEndIndex = header.Length - 1;
-            TrimInPlace(header, ref valueStartIndex, ref valueEndIndex);
+            var valueLength = header.Length - valueStartIndex;
+            HeadersHelper.TrimInPlace(header, ref valueStartIndex, ref valueLength);
 
-            if (headerStartIndex - headerEndIndex == 0 || valueEndIndex - valueStartIndex == 0)
+            if (headerLength == 0 || valueLength == 0)
                 return false; // header name or value is empty
 
-            var headerName = header.Substring(headerStartIndex, headerEndIndex - headerStartIndex + 1);
+            var headerName = header.Substring(headerStartIndex, headerLength);
             var knownHeaderValue = GetKnownHeaderValue(headerName);
             if (knownHeaderValue >= 0)
             {
-                var value = header.Substring(valueStartIndex, valueEndIndex - valueStartIndex + 1);
+                var value = header.Substring(valueStartIndex, valueLength);
                 if (KnownHeaderFlags[knownHeaderValue]) // it is atomic header, so don't split it
                 {
                     this.Add(FromInt(knownHeaderValue), value);
                 }
                 else
                 {
-                    foreach (var headerValue in TrimAndSplit(header, valueStartIndex, valueEndIndex - valueStartIndex))
+                    foreach (var headerValue in TrimAndSplit(header, valueStartIndex, valueLength))
                         this.Add(headerName, headerValue);
                 }
             }
             else
             {
-                foreach (var headerValue in TrimAndSplit(header, valueStartIndex, valueEndIndex - valueStartIndex))
+                foreach (var headerValue in TrimAndSplit(header, valueStartIndex, valueLength))
                     this.Add(headerName, headerValue);
             }
             return true;
@@ -288,40 +288,25 @@ namespace vtortola.WebSockets.Http
             var values = new ValueCollection();
 
             var valueStartIndex = startIndex;
-            var valueEndIndex = startIndex + count;
-            var valueSeparatorIndex = valueString.IndexOf(VALUE_SEPARATOR, valueStartIndex, valueEndIndex - valueStartIndex);
+            var valueLength = count;
+            var valueSeparatorIndex = valueString.IndexOf(VALUE_SEPARATOR, valueStartIndex, count);
             while (valueSeparatorIndex >= 0)
             {
-                valueEndIndex = valueSeparatorIndex - 1;
-                TrimInPlace(valueString, ref valueStartIndex, ref valueEndIndex);
-                if (valueEndIndex - valueStartIndex > 0)
-                    values += new ValueCollection(valueString.Substring(valueStartIndex, valueEndIndex - valueStartIndex + 1));
+                valueLength = valueSeparatorIndex - valueStartIndex;
+                HeadersHelper.TrimInPlace(valueString, ref valueStartIndex, ref valueLength);
+                if (valueLength > 0)
+                    values += new ValueCollection(valueString.Substring(valueStartIndex, valueLength));
                 valueStartIndex = valueSeparatorIndex + 1;
-                valueEndIndex = startIndex + count;
-                valueSeparatorIndex = valueString.IndexOf(VALUE_SEPARATOR, valueStartIndex, valueEndIndex - valueStartIndex);
+                valueLength = startIndex + count - valueStartIndex;
+                valueSeparatorIndex = valueString.IndexOf(VALUE_SEPARATOR, valueStartIndex, valueLength);
             }
-            TrimInPlace(valueString, ref valueStartIndex, ref valueEndIndex);
-            values += new ValueCollection(valueString.Substring(valueStartIndex, valueEndIndex - valueStartIndex + 1));
+            HeadersHelper.TrimInPlace(valueString, ref valueStartIndex, ref valueLength);
+            if (valueLength > 0)
+                values += new ValueCollection(valueString.Substring(valueStartIndex, valueLength));
 
             return values;
         }
-        private static void TrimInPlace(string valueString, ref int startIndex, ref int endIndex)
-        {
-            if (valueString == null) throw new ArgumentNullException(nameof(valueString));
-            if (startIndex < 0 || startIndex >= valueString.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
-            if (endIndex < 0 || endIndex >= valueString.Length) throw new ArgumentOutOfRangeException(nameof(endIndex));
 
-            if (endIndex < startIndex)
-            {
-                endIndex = startIndex;
-                return;
-            }
-
-            while (startIndex <= endIndex && char.IsWhiteSpace(valueString[startIndex]))
-                startIndex++;
-            while (endIndex > startIndex && char.IsWhiteSpace(valueString[endIndex]))
-                endIndex--;
-        }
 
         public string Get(string headerName)
         {

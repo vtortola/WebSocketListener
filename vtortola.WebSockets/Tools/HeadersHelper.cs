@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -124,24 +125,36 @@ namespace vtortola.WebSockets.Tools
             return count;
         }
 
-        private static void TrimInPlace(string str, ref int startFrom, ref int count)
+        public static void TrimInPlace(string value, ref int startIndex, ref int length)
         {
-            if (count <= 0)
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (startIndex < 0 || startIndex > value.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
+            if (length < 0 || startIndex + length > value.Length) throw new ArgumentOutOfRangeException(nameof(length));
+
+            if (length == 0)
                 return;
 
-            while (char.IsWhiteSpace(str[startFrom]) && count > 0)
+            while (char.IsWhiteSpace(value[startIndex]) && length > 0)
             {
-                startFrom++;
-                count--;
+                startIndex++;
+                length--;
             }
-            ;
-            if (count == 0) return;
-            var end = startFrom + count - 1;
-            while (char.IsWhiteSpace(str[end]) && count > 0)
+
+            if (length == 0) return;
+            var end = startIndex + length - 1;
+            while (char.IsWhiteSpace(value[end]) && length > 0)
             {
                 end--;
-                count--;
+                length--;
             }
+        }
+        public static void Skip(string value, ref int startIndex, UnicodeCategory category)
+        {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (startIndex < 0 || startIndex > value.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
+
+            while (startIndex < value.Length && char.GetUnicodeCategory(value[startIndex]) == category)
+                startIndex++;
         }
     }
 }
