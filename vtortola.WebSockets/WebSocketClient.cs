@@ -14,7 +14,7 @@ using vtortola.WebSockets.Tools;
 
 using ConnectedRequest = System.Tuple<System.Net.Sockets.Socket, vtortola.WebSockets.WebSocketHandshake>;
 using NegotiatedRequest = System.Tuple<vtortola.WebSockets.WebSocket, vtortola.WebSockets.WebSocketHandshake>;
-
+using WebSocketRequestCompletion = System.Threading.Tasks.TaskCompletionSource<vtortola.WebSockets.WebSocket>;
 namespace vtortola.WebSockets
 {
     internal sealed class WebSocketClient
@@ -23,7 +23,7 @@ namespace vtortola.WebSockets
 
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
-        private readonly Dictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>> pendingRequests;
+        private readonly Dictionary<WebSocketHandshake, WebSocketRequestCompletion> pendingRequests;
         private readonly TransformBlock<WebSocketHandshake, ConnectedRequest> connectionBlock;
         private readonly TransformBlock<ConnectedRequest, NegotiatedRequest> negotiationBlock;
         private readonly ActionBlock<NegotiatedRequest> dispatchBlock;
@@ -65,25 +65,52 @@ namespace vtortola.WebSockets
             });
         }
 
-        private async Task<ConnectedRequest> OpenConnectionAsync(WebSocketHandshake handshake)
+        public Task<WebSocket> ConnectAsync(Uri address, CancellationToken cancellation)
         {
-            var remoteEndpoint = default(EndPoint);
-            var localEndpoint = default(EndPoint);
+            var completion = new WebSocketRequestCompletion();
 
             try
             {
-                var url = handshake.Request.RequestUri;
-                if (IsSchemeValid(url) == false)
-                    throw new WebSocketException($"Invalid request url '{url}' or schema '{url?.Scheme}'.");
+                cancellation.ThrowIfCancellationRequested();
 
-                if (TryPrepareEndpoints(url, ref remoteEndpoint, ref localEndpoint) == false)
-                    throw new WebSocketException($"Failed to resolve remote endpoint for '{url}' address.");
+                if (IsSchemeValid(address) == false)
+                    throw new WebSocketException($"Invalid request url '{address}' or scheme '{address?.Scheme}'.");
 
+                var remoteEndpoint = default(EndPoint);
+                var localEndpoint = default(EndPoint);
+                if (TryPrepareEndpoints(address, ref remoteEndpoint, ref localEndpoint) == false)
+                    throw new WebSocketException($"Failed to resolve remote endpoint for '{address}' address.");
+
+                var handshake = new WebSocketHandshake(new WebSocketHttpRequest(localEndpoint, remoteEndpoint), cancellation);
+                this.pendingRequests.Add(handshake, completion);
+                this.connectionBlock.Post(handshake);
+            }
+            catch (Exception connectionError) when (connectionError is ThreadAbortException == false)
+            {
+                if (connectionError is WebSocketException)
+                    completion.TrySetException(connectionError);
+                else
+                    completion.TrySetException(new WebSocketException($"An unknown error occurred while connection to '{address}'. More detailed information in inner exception.", connectionError));
+            }
+            return completion.Task;
+        }
+
+        private async Task<ConnectedRequest> OpenConnectionAsync(WebSocketHandshake handshake)
+        {
+            try
+            {
+                handshake.Cancellation.ThrowIfCancellationRequested();
+
+                // prepare socket
+                var remoteEndpoint = handshake.Request.RemoteEndpoint;
+                var localEndpoint = handshake.Request.LocalEndpoint;
                 var socket = new Socket(remoteEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 socket.NoDelay = !(this.options.UseNagleAlgorithm ?? true);
                 socket.SendTimeout = (int)this.options.WebSocketSendTimeout.TotalMilliseconds;
                 socket.ReceiveTimeout = (int)this.options.WebSocketReceiveTimeout.TotalMilliseconds;
                 socket.Bind(localEndpoint);
+                // prepare connection
+
                 var socketConnectedCondition = new AsyncConditionSource
                 {
                     ContinueOnCapturedContext = false
@@ -93,17 +120,28 @@ namespace vtortola.WebSockets
                     RemoteEndPoint = remoteEndpoint,
                     UserToken = socketConnectedCondition
                 };
+                // connect                
                 socketAsyncEventArgs.Completed += (_, e) => ((AsyncConditionSource)e.UserToken).Set();
-                if (socket.ConnectAsync(socketAsyncEventArgs) == false)
-                    socketConnectedCondition.Set();
+                // interrupt connection when cancellation token is set
+                var connectInterruptRegistration = handshake.Cancellation.CanBeCanceled ?
+                    // ReSharper disable once ImpureMethodCallOnReadonlyValueField
+                    handshake.Cancellation.Register(s => ((AsyncConditionSource)s).Interrupt(new OperationCanceledException()), socketConnectedCondition) :
+                    default(CancellationTokenRegistration);
+                using (connectInterruptRegistration)
+                {
+                    if (socket.ConnectAsync(socketAsyncEventArgs) == false)
+                        socketConnectedCondition.Set();
 
-                await socketConnectedCondition;
+                    await socketConnectedCondition;
+                }
+                handshake.Cancellation.ThrowIfCancellationRequested();
 
+                // check connection result
                 if (socketAsyncEventArgs.ConnectByNameError != null)
                     throw socketAsyncEventArgs.ConnectByNameError;
 
                 if (socketAsyncEventArgs.SocketError != SocketError.Success)
-                    throw new WebSocketException($"Failed to open socket to '{url}' due error '{socketAsyncEventArgs.SocketError}'.", new SocketException((int)socketAsyncEventArgs.SocketError));
+                    throw new WebSocketException($"Failed to open socket to '{handshake.Request.RequestUri}' due error '{socketAsyncEventArgs.SocketError}'.", new SocketException((int)socketAsyncEventArgs.SocketError));
 
                 return Tuple.Create(socket, handshake);
             }
@@ -124,10 +162,17 @@ namespace vtortola.WebSockets
                 if (handshake.Error != null)
                     return Tuple.Create(default(WebSocket), handshake);
 
+                handshake.Cancellation.ThrowIfCancellationRequested();
+
                 stream = new NetworkStream(socket, ownsSocket: true);
 
                 await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
+
+                handshake.Cancellation.ThrowIfCancellationRequested();
+
                 await this.ReadResponseAsync(handshake, stream).ConfigureAwait(false);
+
+                handshake.Cancellation.ThrowIfCancellationRequested();
 
                 var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request.LocalEndpoint, handshake.Request.RemoteEndpoint,
                     handshake.Request,
@@ -151,7 +196,7 @@ namespace vtortola.WebSockets
         }
         private void DispatchRequest(NegotiatedRequest negotiatedRequest)
         {
-            var resultPromise = default(TaskCompletionSource<WebSocket>);
+            var resultPromise = default(WebSocketRequestCompletion);
             var handshake = negotiatedRequest.Item2;
             var webSocket = negotiatedRequest.Item1;
             var error = handshake.Error;
@@ -168,7 +213,14 @@ namespace vtortola.WebSockets
                 if (webSocket == null && error == null)
                 {
                     // this is done for stack trace
-                    try { throw new WebSocketException("Client negotiation failed with unknown error."); }
+                    try { throw new WebSocketException($"An unknown error occurred while negotiating with '{handshake.Request.RequestUri}'."); }
+                    catch (Exception negotiationFailedError) { error = ExceptionDispatchInfo.Capture(negotiationFailedError); }
+                }
+
+                if (error.SourceException is WebSocketException == false && error.SourceException is OperationCanceledException == false)
+                {
+                    // this is done for stack trace
+                    try { throw new WebSocketException($"An unknown error occurred while negotiating with '{handshake.Request.RequestUri}'. More detailed information in inner exception.", error.SourceException); }
                     catch (Exception negotiationFailedError) { error = ExceptionDispatchInfo.Capture(negotiationFailedError); }
                 }
 
