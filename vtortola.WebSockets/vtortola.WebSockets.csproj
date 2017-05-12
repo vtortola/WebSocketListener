@@ -87,11 +87,13 @@
     <Compile Include="Threading\AsyncConditionSource.cs" />
     <Compile Include="Threading\AsyncResultTask.cs" />
     <Compile Include="Tools\CompletedTasks.cs" />
+    <Compile Include="Tools\ExceptionExtentions.cs" />
     <Compile Include="Tools\HeadersHelper.cs" />
     <Compile Include="Tools\DebugLog.cs" />
     <Compile Include="Tools\DelegateHelper.cs" />
     <Compile Include="Tools\EnumHelpers.cs" />
     <Compile Include="Tools\Guard.cs" />
+    <Compile Include="Tools\HttpHelper.cs" />
     <Compile Include="Tools\ObjectPool.cs" />
     <Compile Include="Tools\SafeEnd.cs" />
     <Compile Include="WebSocket.cs" />

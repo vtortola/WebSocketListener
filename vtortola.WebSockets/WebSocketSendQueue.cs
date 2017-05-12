@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Threading;
+using vtortola.WebSockets.Tools;
 
 using ConnectedRequest = System.Tuple<System.Net.Sockets.Socket, vtortola.WebSockets.WebSocketHandshake>;
 using NegotiatedRequest = System.Tuple<vtortola.WebSockets.WebSocket, vtortola.WebSockets.WebSocketHandshake>;
@@ -21,44 +23,47 @@ namespace vtortola.WebSockets
 
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
-        private readonly CancellationToken cancellation;
+        private readonly Dictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>> pendingRequests;
         private readonly TransformBlock<WebSocketHandshake, ConnectedRequest> connectionBlock;
         private readonly TransformBlock<ConnectedRequest, NegotiatedRequest> negotiationBlock;
-
-        /// <inheritdoc />
-        public Task Completion { get; }
+        private readonly ActionBlock<NegotiatedRequest> dispatchBlock;
 
         public WebSocketSendQueue(WebSocketFactoryCollection standards, WebSocketListenerOptions options, CancellationToken cancellation)
         {
             if (standards == null) throw new ArgumentNullException(nameof(standards));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
+            this.pendingRequests = new Dictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
             this.standards = standards;
             this.options = options.Clone();
 
             if (options.BufferManager == null)
                 options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize); // create small buffer pool if not configured
 
-            this.cancellation = cancellation;
             this.connectionBlock = new TransformBlock<WebSocketHandshake, ConnectedRequest>((Func<WebSocketHandshake, Task<ConnectedRequest>>)this.OpenConnectionAsync, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = cancellation,
-                MaxDegreeOfParallelism = Environment.ProcessorCount,
                 TaskScheduler = TaskScheduler.Default
             });
             this.negotiationBlock = new TransformBlock<ConnectedRequest, NegotiatedRequest>((Func<ConnectedRequest, Task<NegotiatedRequest>>)this.NegotiatedRequestAsync, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = cancellation,
-                MaxDegreeOfParallelism = Environment.ProcessorCount,
+                TaskScheduler = TaskScheduler.Default
+            });
+            this.dispatchBlock = new ActionBlock<NegotiatedRequest>((Action<NegotiatedRequest>)this.DispatchRequest, new ExecutionDataflowBlockOptions
+            {
+                CancellationToken = cancellation,
                 TaskScheduler = TaskScheduler.Default
             });
             this.connectionBlock.LinkTo(this.negotiationBlock, new DataflowLinkOptions
             {
                 PropagateCompletion = true
             });
-            this.Completion = Task.WhenAll(this.connectionBlock.Completion, this.negotiationBlock.Completion);
+            this.negotiationBlock.LinkTo(this.dispatchBlock, new DataflowLinkOptions
+            {
+                PropagateCompletion = true
+            });
         }
-
 
         private async Task<ConnectedRequest> OpenConnectionAsync(WebSocketHandshake handshake)
         {
@@ -104,23 +109,90 @@ namespace vtortola.WebSockets
             }
             catch (Exception error)
             {
-                handshake.Error = ExceptionDispatchInfo.Capture(error);
+                handshake.Error = ExceptionDispatchInfo.Capture(error.Unwrap());
                 return Tuple.Create(default(Socket), handshake);
             }
-
         }
         private async Task<NegotiatedRequest> NegotiatedRequestAsync(ConnectedRequest connectedRequest)
         {
             var socket = connectedRequest.Item1;
             var handshake = connectedRequest.Item2;
+            var stream = default(NetworkStream);
 
-            if (handshake.Error != null)
+            try
+            {
+                if (handshake.Error != null)
+                    return Tuple.Create(default(WebSocket), handshake);
+
+                stream = new NetworkStream(socket, ownsSocket: true);
+
+                await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
+                await this.ReadResponseAsync(handshake, stream).ConfigureAwait(false);
+
+                var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request.LocalEndpoint, handshake.Request.RemoteEndpoint,
+                    handshake.Request,
+                    handshake.Response, handshake.NegotiatedMessageExtensions);
+
+                return Tuple.Create(webSocket, handshake);
+            }
+            catch (Exception error) when (error is ThreadAbortException == false)
+            {
+                handshake.Error = ExceptionDispatchInfo.Capture(error.Unwrap());
                 return Tuple.Create(default(WebSocket), handshake);
+            }
+            finally
+            {
+                if (handshake.Error != null)
+                {
+                    SafeEnd.Dispose(socket);
+                    SafeEnd.Dispose(stream);
+                }
+            }
+        }
+        private void DispatchRequest(NegotiatedRequest negotiatedRequest)
+        {
+            var resultPromise = default(TaskCompletionSource<WebSocket>);
+            var handshake = negotiatedRequest.Item2;
+            var webSocket = negotiatedRequest.Item1;
+            var error = handshake.Error;
+            var completeSuccessful = false;
 
+            try
+            {
+                if (this.pendingRequests.TryGetValue(handshake, out resultPromise) == false)
+                {
+                    // TODO log?
+                    return; // failed to retrieve pending request
+                }
+
+                if (webSocket == null && error == null)
+                {
+                    // this is done for stack trace
+                    try { throw new WebSocketException("Client negotiation failed with unknown error."); }
+                    catch (Exception negotiationFailedError) { error = ExceptionDispatchInfo.Capture(negotiationFailedError); }
+                }
+
+                if (error != null)
+                    completeSuccessful = resultPromise.TrySetException(error.SourceException);
+                else
+                    completeSuccessful = resultPromise.TrySetResult(webSocket);
+            }
+            catch (Exception completionError) when (completionError is ThreadAbortException == false)
+            {
+                // TODO log?
+                resultPromise?.TrySetException(completionError.Unwrap());
+            }
+            finally
+            {
+                if (!completeSuccessful)
+                    SafeEnd.Dispose(webSocket);
+            }
+        }
+
+        private async Task WriteRequestAsync(WebSocketHandshake handshake, NetworkStream stream)
+        {
             var url = handshake.Request.RequestUri;
             var nonce = handshake.GenerateClientNonce();
-
-            var stream = new NetworkStream(socket, ownsSocket: true);
             var bufferSize = this.options.BufferManager.MaxBufferSize;
             using (var writer = new StreamWriter(stream, Encoding.ASCII, bufferSize, leaveOpen: true))
             {
@@ -146,8 +218,13 @@ namespace vtortola.WebSockets
                         await writer.WriteLineAsync(value).ConfigureAwait(false);
                     }
                 }
+
                 await writer.WriteLineAsync().ConfigureAwait(false);
             }
+        }
+        private async Task ReadResponseAsync(WebSocketHandshake handshake, NetworkStream stream)
+        {
+            var bufferSize = this.options.BufferManager.MaxBufferSize;
             using (var reader = new StreamReader(stream, Encoding.ASCII, false, bufferSize, leaveOpen: true))
             {
                 var responseHeaders = handshake.Response.Headers;
@@ -155,7 +232,7 @@ namespace vtortola.WebSockets
                 var headline = await reader.ReadLineAsync().ConfigureAwait(false);
                 if (!headline.Equals($"{WebSocketHttpVersion} 101 Web Socket Protocol Handshake"))
                 {
-                    ParseHttpResponse(headline, handshake.Response);
+                    HttpHelper.TryParseHttpResponse(headline, out handshake.Response.Status, out handshake.Response.StatusDescription);
                     throw new WebSocketException($"Invalid handshake response: {headline}.");
                 }
 
@@ -166,62 +243,12 @@ namespace vtortola.WebSockets
                 while (string.IsNullOrEmpty(headerLine) == false)
                     responseHeaders.TryParseAndAdd(headerLine);
 
-                var upgrade = responseHeaders[ResponseHeader.Upgrade];
-                if (string.Equals("websocket", upgrade, StringComparison.OrdinalIgnoreCase) == false)
-                    throw new WebSocketException($"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.Upgrade)} header in response.");
-
-                if (responseHeaders.GetValues(ResponseHeader.Connection).Contains("Upgrade", StringComparison.OrdinalIgnoreCase) == false)
-                    throw new WebSocketException($"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.Connection)} header in response.");
-                
-                var acceptResult = responseHeaders[ResponseHeader.WebSocketAccept];
-                if (string.Equals(handshake.ComputeHandshakeResponse(), acceptResult, StringComparison.OrdinalIgnoreCase) == false)
-                    throw new WebSocketException($"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.WebSocketAccept)} header in response.");
-
-                if (string.IsNullOrEmpty(responseHeaders[ResponseHeader.WebSocketExtensions]))
-                    throw new WebSocketException($"Missing {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.WebSocketExtensions)} header in response.");
+                handshake.Response.ThrowIfInvalid(handshake.ComputeHandshake());
             }
 
-            throw new NotImplementedException();
+            handshake.Factory = this.standards.GetWebSocketFactory(handshake.Request);
         }
 
-        private static void ParseHttpResponse(string headline, WebSocketHttpResponse response)
-        {
-            if (headline.StartsWith(WebSocketHttpVersion, StringComparison.OrdinalIgnoreCase) == false)
-            {
-                response.Status = 0;
-                response.StatusDescription = "Malformed Response";
-                return;
-            }
-
-            var responseCodeStart = WebSocketHttpVersion.Length;
-            var responseCodeEnd = -1;
-            for (var i = responseCodeStart; i < headline.Length; i++)
-            {
-                if (char.IsWhiteSpace(headline[i]) && responseCodeEnd == -1)
-                    responseCodeStart++;
-                else if (char.IsWhiteSpace(headline[i]))
-                    break;
-                else
-                    responseCodeEnd = i;
-            }
-
-            if (responseCodeEnd == -1)
-            {
-                response.Status = 0;
-                response.StatusDescription = "Missing Response Code";
-                return;
-            }
-            var responseStatus = int.Parse(headline.Substring(responseCodeStart, responseCodeEnd - responseCodeStart));
-
-            var descriptionStart = responseCodeEnd;
-            for (var i = descriptionStart; Char.IsWhiteSpace(headline[i]) && i < headline.Length; i++)
-                descriptionStart++;
-
-            var responseStatusDescription = headline.Substring(descriptionStart);
-
-            response.Status = (HttpStatusCode)responseStatus;
-            response.StatusDescription = responseStatusDescription;
-        }
         private static bool TryPrepareEndpoints(Uri url, ref EndPoint remoteEndpoint, ref EndPoint localEndpoint)
         {
             var isSecure = string.Equals(url.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
