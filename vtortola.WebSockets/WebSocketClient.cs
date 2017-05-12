@@ -17,7 +17,7 @@ using NegotiatedRequest = System.Tuple<vtortola.WebSockets.WebSocket, vtortola.W
 
 namespace vtortola.WebSockets
 {
-    internal sealed class WebSocketSendQueue
+    internal sealed class WebSocketClient
     {
         private static readonly string WebSocketHttpVersion = "HTTP/1.1";
 
@@ -28,7 +28,7 @@ namespace vtortola.WebSockets
         private readonly TransformBlock<ConnectedRequest, NegotiatedRequest> negotiationBlock;
         private readonly ActionBlock<NegotiatedRequest> dispatchBlock;
 
-        public WebSocketSendQueue(WebSocketFactoryCollection standards, WebSocketListenerOptions options, CancellationToken cancellation)
+        public WebSocketClient(WebSocketFactoryCollection standards, WebSocketListenerOptions options, CancellationToken cancellation)
         {
             if (standards == null) throw new ArgumentNullException(nameof(standards));
             if (options == null) throw new ArgumentNullException(nameof(options));
