@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using vtortola.WebSockets.Http;
 
@@ -66,6 +67,11 @@ namespace vtortola.WebSockets
 #pragma warning restore 420
         }
 
+        internal WebSocketFactory GetLast()
+        {
+            return this.factoryByVersion[this.factoryByVersion.Keys.Max()];
+        }
+
         public bool TryGetWebSocketFactory(WebSocketHttpRequest request, out WebSocketFactory factory)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -76,6 +82,6 @@ namespace vtortola.WebSockets
                 return true;
             else
                 return false;
-        }
+        }        
     }
 }

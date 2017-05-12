@@ -333,7 +333,6 @@ namespace vtortola.WebSockets
 
                     extensionList.Add(new WebSocketExtension(extensionName, extensionOptions));
                 }
-
             }
             handshake.Request.SetExtensions(extensionList);
         }

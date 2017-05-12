@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace vtortola.WebSockets {
+namespace vtortola.WebSockets
+{
     public class WebSocketExtensionOption
     {
-        public string Name { get; set; }
-        public string Value { get; set; }
-        public bool ClientAvailableOption { get; set; }
+        public readonly string Name;
+        public readonly string Value;
+        public readonly bool ClientAvailableOption;
 
         public WebSocketExtensionOption(string name)
         {
@@ -31,10 +33,11 @@ namespace vtortola.WebSockets {
         /// <inheritdoc />
         public override string ToString()
         {
-            if (this.ClientAvailableOption)
+            if (string.IsNullOrEmpty(this.Value))
                 return this.Name;
             else
                 return $"{this.Name}={this.Value}";
         }
+
     }
 }

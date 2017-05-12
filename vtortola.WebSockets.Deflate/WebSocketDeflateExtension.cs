@@ -1,16 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using Options = System.Collections.ObjectModel.ReadOnlyCollection<vtortola.WebSockets.WebSocketExtensionOption>;
 
 namespace vtortola.WebSockets.Deflate
 {
     public sealed class WebSocketDeflateExtension : IWebSocketMessageExtension
     {
-        private static readonly List<WebSocketExtensionOption> DefaultOptions = new List<WebSocketExtensionOption>(new[] { new WebSocketExtensionOption("client_no_context_takeover") });
-        private static readonly WebSocketExtension DefaultResponse = new WebSocketExtension("permessage-deflate", DefaultOptions);
+        public const string EXTENSION_NAME = "permessage-deflate";
 
-        public string Name => "permessage-deflate";
+        private static readonly Options DefaultOptions = new Options(new[] { new WebSocketExtensionOption("client_no_context_takeover") });
+        private static readonly WebSocketExtension DefaultResponse = new WebSocketExtension(EXTENSION_NAME, DefaultOptions);
+
+        public string Name => EXTENSION_NAME;
 
         public bool TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketMessageExtensionContext context)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
             extensionResponse = DefaultResponse;
             context = new WebSocketDeflateContext();
             return true;
@@ -25,7 +30,7 @@ namespace vtortola.WebSockets.Deflate
         /// <inheritdoc />
         public override string ToString()
         {
-            return this.Name;
+            return DefaultResponse.ToString();
         }
     }
 }

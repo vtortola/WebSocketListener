@@ -34,6 +34,7 @@ namespace vtortola.WebSockets
         {
             if (standards == null) throw new ArgumentNullException(nameof(standards));
             if (options == null) throw new ArgumentNullException(nameof(options));
+            if (standards.Count == 0) throw new ArgumentException("Empty list of WebSocket standards.", nameof(standards));
 
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
             this.standards = standards.Clone();
@@ -196,6 +197,8 @@ namespace vtortola.WebSockets
 
                 stream = new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);
 
+                handshake.Factory = this.standards.GetLast();
+
                 await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
 
                 handshake.Cancellation.ThrowIfCancellationRequested();
@@ -283,9 +286,11 @@ namespace vtortola.WebSockets
                 requestHeaders[RequestHeader.Upgrade] = "websocket";
                 requestHeaders[RequestHeader.Connection] = "keep-alive, Upgrade";
                 requestHeaders[RequestHeader.WebSocketKey] = nonce;
-                requestHeaders[RequestHeader.WebSocketVersion] = "13";
+                requestHeaders[RequestHeader.WebSocketVersion] = handshake.Factory.Version.ToString();
                 requestHeaders[RequestHeader.CacheControl] = "no-cache";
                 requestHeaders[RequestHeader.Pragma] = "no-cache";
+                foreach (var extension in handshake.Factory.MessageExtensions)
+                    requestHeaders.Add(RequestHeader.WebSocketExtensions, extension.ToString());
 
                 writer.NewLine = "\r\n";
                 await writer.WriteAsync("GET ").ConfigureAwait(false);
@@ -336,12 +341,6 @@ namespace vtortola.WebSockets
 
                 handshake.Response.ThrowIfInvalid(handshake.ComputeHandshake());
             }
-
-            var factory = default(WebSocketFactory);
-            if (this.standards.TryGetWebSocketFactory(handshake.Request, out factory) == false)
-                throw new WebSocketException("Failed to negotiate WebSocket protocol version.");
-
-            handshake.Factory = factory;
         }
 
         private static bool TryPrepareEndpoints(Uri url, ref EndPoint remoteEndpoint, ref EndPoint localEndpoint)
