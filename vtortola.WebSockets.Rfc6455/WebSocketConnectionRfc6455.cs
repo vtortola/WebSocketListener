@@ -42,8 +42,8 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(clientStream, "clientStream");
-            Guard.ParameterCannotBeNull(options, "options");
+            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             const int HEADER_SEGMENT_SIZE = 14;
             const int CONTROL_SEGMENT_SIZE = 125;
@@ -64,7 +64,7 @@ namespace vtortola.WebSockets.Rfc6455
                 KEY_SEGMENT_SIZE +
                 CLOSE_SEGMENT_SIZE;
 
-            var smallBuffer = options.BufferManager.TakeBuffer(smallBufferSize);
+            var smallBuffer = _options.BufferManager.TakeBuffer(smallBufferSize);
             _headerBuffer = new ArraySegment<Byte>(smallBuffer, 0, HEADER_SEGMENT_SIZE);
             _controlBuffer = _headerBuffer.NextSegment(CONTROL_SEGMENT_SIZE);
             _pongBuffer = _controlBuffer.NextSegment(PONG_SEGMENT_SIZE);
@@ -72,8 +72,8 @@ namespace vtortola.WebSockets.Rfc6455
             _keyBuffer = _pingBuffer.NextSegment(KEY_SEGMENT_SIZE);
             _closeBuffer = _keyBuffer.NextSegment(CLOSE_SEGMENT_SIZE);
 
-            var sendBuffer = options.BufferManager.TakeBuffer(this._options.SendBufferSize);
-            SendBuffer = new ArraySegment<Byte>(sendBuffer, 0, _options.SendBufferSize);
+            var sendBuffer = _options.BufferManager.TakeBuffer(this._options.SendBufferSize);
+            SendBuffer = new ArraySegment<Byte>(sendBuffer, 10, _options.SendBufferSize - 10);
 
 
             switch (options.PingMode)
