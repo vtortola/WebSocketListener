@@ -4,23 +4,29 @@ using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketHandshake
+    public class WebSocketHandshake : IComparable<WebSocketHandshake>, IEquatable<WebSocketHandshake>
     {
+        private static long LastId = 1;
+
         private bool _invalidated;
 
-        public WebSocketHttpRequest Request { get; private set; }
-        public WebSocketHttpResponse Response { get; private set; }
+        public readonly long Id;
+        public readonly WebSocketHttpRequest Request;
+        public readonly WebSocketHttpResponse Response;
+        public readonly List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions;
 
-        public List<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions { get; private set; }
         public bool IsWebSocketRequest { get; internal set; }
         public bool IsVersionSupported { get; internal set; }
-        public WebSocketFactory Factory { get; internal set; }
-        public ExceptionDispatchInfo Error { get; set; }
         public bool IsResponseSent { get; internal set; }
+
+        public WebSocketFactory Factory { get; internal set; }
+
+        public ExceptionDispatchInfo Error { get; internal set; }
 
         public bool IsValidWebSocketRequest
         {
@@ -43,20 +49,18 @@ namespace vtortola.WebSockets
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
+            this.Id = Interlocked.Increment(ref LastId);
             this.Request = request;
             this.Response = new WebSocketHttpResponse();
             this.NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
-            this._invalidated = false;
         }
         public WebSocketHandshake(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
+            : this(new WebSocketHttpRequest(localEndpoint, remoteEndpoint))
         {
-            Request = new WebSocketHttpRequest(localEndpoint, remoteEndpoint);
-            Response = new WebSocketHttpResponse();
-            NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
-            _invalidated = false;
+
         }
 
-        public string ComputeHandshakeResponse()
+        public string ComputeHandshake()
         {
             var webSocketKey = this.Request.Headers[RequestHeader.WebSocketKey];
             if (string.IsNullOrEmpty(webSocketKey)) throw new InvalidOperationException($"Missing or wrong {Headers<RequestHeader>.GetHeaderName(RequestHeader.WebSocketKey)} header in request.");
@@ -67,6 +71,37 @@ namespace vtortola.WebSockets
         public string GenerateClientNonce()
         {
             return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+        }
+
+        /// <inheritdoc />
+        public int CompareTo(WebSocketHandshake other)
+        {
+            if (other == null) return 1;
+            return this.Id.CompareTo(other.Id);
+        }
+        /// <inheritdoc />
+        public bool Equals(WebSocketHandshake other)
+        {
+            if (ReferenceEquals(other, null)) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return this.Id == other.Id;
+        }
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as WebSocketHandshake);
+        }
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return this.Id.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"Handshake, id: {this.Id}, request: {this.Request}, response: {this.Response}";
         }
     }
 }
