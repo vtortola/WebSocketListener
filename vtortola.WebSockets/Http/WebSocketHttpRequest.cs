@@ -31,5 +31,14 @@ namespace vtortola.WebSockets
             : base(localEndpoint, remoteEndpoint)
         {
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            if (this.RequestUri != null)
+                return this.RequestUri.ToString();
+            else
+                return $"{this.LocalEndpoint}->{this.RemoteEndpoint}";
+        }
     }
 }

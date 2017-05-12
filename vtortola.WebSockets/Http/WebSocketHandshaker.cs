@@ -197,7 +197,7 @@ namespace vtortola.WebSockets
                 }
             }
             writer.Write("Sec-WebSocket-Accept: ");
-            writer.Write(handshake.ComputeHandshakeResponse());
+            writer.Write(handshake.ComputeHandshake());
 
             // https://tools.ietf.org/html/rfc6455#section-4.2.2
             /* 

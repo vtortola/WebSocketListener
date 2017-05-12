@@ -7,20 +7,56 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketHttpResponse
     {
-        public CookieCollection Cookies { get; private set; }
-        public Headers<ResponseHeader> Headers { get; private set; }
-        public HttpStatusCode Status { get; set; }
-        public string StatusDescription { get; set; }
-        public List<WebSocketExtension> WebSocketExtensions { get; private set; }
-        public String WebSocketProtocol { get; internal set; }
+        public readonly CookieCollection Cookies;
+        public readonly Headers<ResponseHeader> Headers;
+        public HttpStatusCode Status;
+        public string StatusDescription;
+        public readonly List<WebSocketExtension> WebSocketExtensions;
+
+        public string WebSocketProtocol
+        {
+            get { return this.Headers[ResponseHeader.WebSocketProtocol]; }
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                    this.Headers.Remove(ResponseHeader.WebSocketProtocol);
+                else
+                    this.Headers[ResponseHeader.WebSocketProtocol] = value;
+            }
+        }
 
         public WebSocketHttpResponse()
         {
-            Headers = new Headers<ResponseHeader>();
-            Cookies = new CookieCollection();
-            WebSocketExtensions = new List<WebSocketExtension>();
-            Status = HttpStatusCode.SwitchingProtocols;
-            StatusDescription = "Web Socket Protocol Handshake";
+            this.Headers = new Headers<ResponseHeader>();
+            this.Cookies = new CookieCollection();
+            this.WebSocketExtensions = new List<WebSocketExtension>();
+            this.Status = HttpStatusCode.SwitchingProtocols;
+            this.StatusDescription = "Web Socket Protocol Handshake";
+        }
+        public void ThrowIfInvalid(string computedHandshake)
+        {
+            if (computedHandshake == null) throw new ArgumentNullException(nameof(computedHandshake));
+
+            var upgrade = this.Headers[ResponseHeader.Upgrade];
+            if (string.Equals("websocket", upgrade, StringComparison.OrdinalIgnoreCase) == false)
+                throw new WebSocketException($"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.Upgrade)} header in response.");
+
+            if (this.Headers.GetValues(ResponseHeader.Connection).Contains("Upgrade", StringComparison.OrdinalIgnoreCase) == false)
+                throw new WebSocketException($"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.Connection)} header in response.");
+
+            var acceptResult = this.Headers[ResponseHeader.WebSocketAccept];
+            if (string.Equals(computedHandshake, acceptResult, StringComparison.OrdinalIgnoreCase) == false)
+                throw new WebSocketException(
+                    $"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.WebSocketAccept)} header in response.");
+
+            if (string.IsNullOrEmpty(this.Headers[ResponseHeader.WebSocketExtensions]))
+                throw new WebSocketException($"Missing {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.WebSocketExtensions)} header in response.");
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{this.Status} {this.StatusDescription}";
         }
     }
 }
