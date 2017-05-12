@@ -9,26 +9,26 @@ namespace vtortola.WebSockets.Tools
         public static readonly string WebSocketHttp10Version = "HTTP/1.0";
         public static readonly string WebSocketHttp11Version = "HTTP/1.1";
 
-        public static bool TryParseHttpResponse(string headline, out HttpStatusCode statusCode, out string statusCodeDescription)
+        public static bool TryParseHttpResponse(string responseLine, out HttpStatusCode statusCode, out string statusCodeDescription)
         {
-            if (headline == null) throw new ArgumentNullException(nameof(headline));
+            if (responseLine == null) throw new ArgumentNullException(nameof(responseLine));
 
-            var headlineStartIndex = 0;
-            var headlineLength = headline.Length;
-            HeadersHelper.TrimInPlace(headline, ref headlineStartIndex, ref headlineLength);
+            var responseLineStartIndex = 0;
+            var responseLineLength = responseLine.Length;
+            HeadersHelper.TrimInPlace(responseLine, ref responseLineStartIndex, ref responseLineLength);
 
-            if (string.CompareOrdinal(headline, headlineStartIndex, WebSocketHttp11Version, 0, WebSocketHttp11Version.Length) != 0 &&
-                string.CompareOrdinal(headline, headlineStartIndex, WebSocketHttp10Version, 0, WebSocketHttp11Version.Length) != 0)
+            if (string.CompareOrdinal(responseLine, responseLineStartIndex, WebSocketHttp11Version, 0, WebSocketHttp11Version.Length) != 0 &&
+                string.CompareOrdinal(responseLine, responseLineStartIndex, WebSocketHttp10Version, 0, WebSocketHttp11Version.Length) != 0)
             {
                 statusCode = 0;
                 statusCodeDescription = "Malformed Response";
                 return false;
             }
 
-            var responseCodeStartIndex = Math.Min(headlineStartIndex + WebSocketHttp11Version.Length + 1, headline.Length);
-            HeadersHelper.Skip(headline, ref responseCodeStartIndex, UnicodeCategory.SpaceSeparator);
+            var responseCodeStartIndex = Math.Min(responseLineStartIndex + WebSocketHttp11Version.Length + 1, responseLine.Length);
+            HeadersHelper.Skip(responseLine, ref responseCodeStartIndex, UnicodeCategory.SpaceSeparator);
             var responseCodeEndIndex = responseCodeStartIndex;
-            HeadersHelper.Skip(headline, ref responseCodeEndIndex, UnicodeCategory.DecimalDigitNumber);
+            HeadersHelper.Skip(responseLine, ref responseCodeEndIndex, UnicodeCategory.DecimalDigitNumber);
 
             if (responseCodeEndIndex == responseCodeStartIndex)
             {
@@ -36,15 +36,15 @@ namespace vtortola.WebSockets.Tools
                 statusCodeDescription = "Missing Response Code";
                 return false;
             }
-            var responseStatus = ushort.Parse(headline.Substring(responseCodeStartIndex, responseCodeEndIndex - responseCodeStartIndex));
+            var responseStatus = ushort.Parse(responseLine.Substring(responseCodeStartIndex, responseCodeEndIndex - responseCodeStartIndex));
 
             var descriptionStartIndex = responseCodeEndIndex;
-            var descriptionLength = headline.Length - descriptionStartIndex;
+            var descriptionLength = responseLine.Length - descriptionStartIndex;
 
-            HeadersHelper.TrimInPlace(headline, ref descriptionStartIndex, ref descriptionLength);
+            HeadersHelper.TrimInPlace(responseLine, ref descriptionStartIndex, ref descriptionLength);
 
             statusCode = (HttpStatusCode)responseStatus;
-            statusCodeDescription = descriptionLength > 0 ? headline.Substring(descriptionStartIndex, descriptionLength) : string.Empty;
+            statusCodeDescription = descriptionLength > 0 ? responseLine.Substring(descriptionStartIndex, descriptionLength) : string.Empty;
             return true;
         }
     }

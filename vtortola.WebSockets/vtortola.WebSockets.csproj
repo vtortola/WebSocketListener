@@ -87,6 +87,7 @@
     <Compile Include="Threading\AsyncCondition.cs" />
     <Compile Include="Threading\AsyncConditionSource.cs" />
     <Compile Include="Threading\AsyncResultTask.cs" />
+    <Compile Include="Tools\ArraySegmentExtension.cs" />
     <Compile Include="Tools\CompletedTasks.cs" />
     <Compile Include="Tools\ExceptionExtentions.cs" />
     <Compile Include="Tools\HeadersHelper.cs" />

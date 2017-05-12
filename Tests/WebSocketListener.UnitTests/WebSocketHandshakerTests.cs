@@ -103,8 +103,8 @@ namespace WebSocketListener.UnitTests
                 Assert.Equal("key", cookie.Name);
                 Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
 
-                Assert.NotNull(result.Request.LocalEndpoint);
-                Assert.NotNull(result.Request.RemoteEndpoint);
+                Assert.NotNull(result.Request.LocalEndPoint);
+                Assert.NotNull(result.Request.RemoteEndPoint);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -148,10 +148,10 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms, new IPEndPoint(IPAddress.Parse("10.0.0.1"), 8888),
                                            new IPEndPoint(IPAddress.Parse("192.168.0.2"), 9999))
                                        .Result;
-                Assert.Equal("10.0.0.1", ((IPEndPoint)result.Request.LocalEndpoint).Address.ToString());
-                Assert.Equal(8888, ((IPEndPoint)result.Request.LocalEndpoint).Port);
-                Assert.Equal("192.168.0.2", ((IPEndPoint)result.Request.RemoteEndpoint).Address.ToString());
-                Assert.Equal(9999, ((IPEndPoint)result.Request.RemoteEndpoint).Port);
+                Assert.Equal("10.0.0.1", ((IPEndPoint)result.Request.LocalEndPoint).Address.ToString());
+                Assert.Equal(8888, ((IPEndPoint)result.Request.LocalEndPoint).Port);
+                Assert.Equal("192.168.0.2", ((IPEndPoint)result.Request.RemoteEndPoint).Address.ToString());
+                Assert.Equal(9999, ((IPEndPoint)result.Request.RemoteEndPoint).Port);
             }
         }
 

@@ -36,9 +36,6 @@ namespace vtortola.WebSockets
             if (string.Equals(computedHandshake, acceptResult, StringComparison.OrdinalIgnoreCase) == false)
                 throw new WebSocketException(
                     $"Missing or wrong {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.WebSocketAccept)} header in response.");
-
-            if (string.IsNullOrEmpty(this.Headers[ResponseHeader.WebSocketExtensions]))
-                throw new WebSocketException($"Missing {Headers<ResponseHeader>.GetHeaderName(ResponseHeader.WebSocketExtensions)} header in response.");
         }
 
         /// <inheritdoc />

@@ -25,7 +25,7 @@ namespace vtortola.WebSockets
             if (this.RequestUri != null)
                 return this.RequestUri.ToString();
             else
-                return $"{this.LocalEndpoint}->{this.RemoteEndpoint}";
+                return $"{this.LocalEndPoint}->{this.RemoteEndPoint}";
         }
     }
 }

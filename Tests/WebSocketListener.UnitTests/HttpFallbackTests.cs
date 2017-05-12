@@ -61,8 +61,8 @@ namespace WebSocketListener.UnitTests
                 var cookie = result.Request.Cookies["key"];
                 Assert.Equal("key", cookie.Name);
                 Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
-                Assert.NotNull(result.Request.LocalEndpoint);
-                Assert.NotNull(result.Request.RemoteEndpoint);
+                Assert.NotNull(result.Request.LocalEndPoint);
+                Assert.NotNull(result.Request.RemoteEndPoint);
             }
         }
 
@@ -101,8 +101,8 @@ namespace WebSocketListener.UnitTests
                 var cookie = result.Request.Cookies["key"];
                 Assert.Equal("key", cookie.Name);
                 Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
-                Assert.NotNull(result.Request.LocalEndpoint);
-                Assert.NotNull(result.Request.RemoteEndpoint);
+                Assert.NotNull(result.Request.LocalEndPoint);
+                Assert.NotNull(result.Request.RemoteEndPoint);
 
                 ms.Seek(position, SeekOrigin.Begin);
 

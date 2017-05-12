@@ -20,7 +20,7 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketClient : IDisposable
     {
-        private static readonly string WebSocketHttpVersion = "HTTP/1.1";
+        private const string WEB_SOCKET_HTTP_VERSION = "HTTP/1.1";
 
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
@@ -38,8 +38,8 @@ namespace vtortola.WebSockets
             this.standards = standards.Clone();
             this.options = options.Clone();
 
-            if (options.BufferManager == null)
-                options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize); // create small buffer pool if not configured
+            if (this.options.BufferManager == null)
+                this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize); // create small buffer pool if not configured
 
             this.standards.SetUsed(true);
             foreach (var standard in this.standards)
@@ -83,7 +83,8 @@ namespace vtortola.WebSockets
                 if (TryPrepareEndpoints(address, ref remoteEndpoint, ref localEndpoint) == false)
                     throw new WebSocketException($"Failed to resolve remote endpoint for '{address}' address.");
 
-                var handshake = new WebSocketHandshake(new WebSocketHttpRequest(localEndpoint, remoteEndpoint), cancellation);
+                var request = new WebSocketHttpRequest(localEndpoint, remoteEndpoint) { RequestUri = address };
+                var handshake = new WebSocketHandshake(request, cancellation);
                 this.pendingRequests.TryAdd(handshake, completion);
 
                 if (this.connectionBlock.Post(handshake) == false)
@@ -118,8 +119,8 @@ namespace vtortola.WebSockets
                 handshake.Cancellation.ThrowIfCancellationRequested();
 
                 // prepare socket
-                var remoteEndpoint = handshake.Request.RemoteEndpoint;
-                var localEndpoint = handshake.Request.LocalEndpoint;
+                var remoteEndpoint = handshake.Request.RemoteEndPoint;
+                var localEndpoint = handshake.Request.LocalEndPoint;
                 var socket = new Socket(remoteEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 socket.NoDelay = !(this.options.UseNagleAlgorithm ?? true);
                 socket.SendTimeout = (int)this.options.WebSocketSendTimeout.TotalMilliseconds;
@@ -159,6 +160,9 @@ namespace vtortola.WebSockets
                 if (socketAsyncEventArgs.SocketError != SocketError.Success)
                     throw new WebSocketException($"Failed to open socket to '{handshake.Request.RequestUri}' due error '{socketAsyncEventArgs.SocketError}'.", new SocketException((int)socketAsyncEventArgs.SocketError));
 
+                handshake.Request.LocalEndPoint = socket.LocalEndPoint;
+                handshake.Request.RemoteEndPoint = socket.RemoteEndPoint;
+
                 return Tuple.Create(socket, handshake);
             }
             catch (Exception error)
@@ -180,7 +184,7 @@ namespace vtortola.WebSockets
 
                 handshake.Cancellation.ThrowIfCancellationRequested();
 
-                stream = new NetworkStream(socket, ownsSocket: true);
+                stream = new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);
 
                 await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
 
@@ -190,7 +194,7 @@ namespace vtortola.WebSockets
 
                 handshake.Cancellation.ThrowIfCancellationRequested();
 
-                var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request.LocalEndpoint, handshake.Request.RemoteEndpoint,
+                var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request.LocalEndPoint, handshake.Request.RemoteEndPoint,
                     handshake.Request,
                     handshake.Response, handshake.NegotiatedMessageExtensions);
 
@@ -233,7 +237,7 @@ namespace vtortola.WebSockets
                     catch (Exception negotiationFailedError) { error = ExceptionDispatchInfo.Capture(negotiationFailedError); }
                 }
 
-                if (error.SourceException is WebSocketException == false && error.SourceException is OperationCanceledException == false)
+                if (error != null && error.SourceException is WebSocketException == false && error.SourceException is OperationCanceledException == false)
                 {
                     // this is done for stack trace
                     try { throw new WebSocketException($"An unknown error occurred while negotiating with '{handshake.Request.RequestUri}'. More detailed information in inner exception.", error.SourceException); }
@@ -275,7 +279,9 @@ namespace vtortola.WebSockets
 
                 writer.NewLine = "\r\n";
                 await writer.WriteAsync("GET ").ConfigureAwait(false);
-                await writer.WriteLineAsync(url.PathAndQuery).ConfigureAwait(false);
+                await writer.WriteAsync(url.PathAndQuery).ConfigureAwait(false);
+                await writer.WriteLineAsync(" " + WEB_SOCKET_HTTP_VERSION).ConfigureAwait(false);
+
                 foreach (var header in requestHeaders)
                 {
                     var headerName = header.Key;
@@ -288,6 +294,7 @@ namespace vtortola.WebSockets
                 }
 
                 await writer.WriteLineAsync().ConfigureAwait(false);
+                await writer.FlushAsync().ConfigureAwait(false);
             }
         }
         private async Task ReadResponseAsync(WebSocketHandshake handshake, NetworkStream stream)
@@ -297,11 +304,14 @@ namespace vtortola.WebSockets
             {
                 var responseHeaders = handshake.Response.Headers;
 
-                var headline = await reader.ReadLineAsync().ConfigureAwait(false);
-                if (!headline.Equals($"{WebSocketHttpVersion} 101 Web Socket Protocol Handshake"))
+                var responseLine = await reader.ReadLineAsync().ConfigureAwait(false) ?? string.Empty;
+                if (responseLine.Equals($"{WEB_SOCKET_HTTP_VERSION} 101 Web Socket Protocol Handshake") == false)
                 {
-                    HttpHelper.TryParseHttpResponse(headline, out handshake.Response.Status, out handshake.Response.StatusDescription);
-                    throw new WebSocketException($"Invalid handshake response: {headline}.");
+                    HttpHelper.TryParseHttpResponse(responseLine, out handshake.Response.Status, out handshake.Response.StatusDescription);
+                    if (string.IsNullOrEmpty(responseLine))
+                        throw new WebSocketException("Empty response. Probably connection is closed by remote party.");
+                    else
+                        throw new WebSocketException($"Invalid handshake response: {responseLine}.");
                 }
 
                 handshake.Response.Status = HttpStatusCode.SwitchingProtocols;
@@ -309,7 +319,10 @@ namespace vtortola.WebSockets
 
                 var headerLine = await reader.ReadLineAsync().ConfigureAwait(false);
                 while (string.IsNullOrEmpty(headerLine) == false)
+                {
                     responseHeaders.TryParseAndAdd(headerLine);
+                    headerLine = await reader.ReadLineAsync().ConfigureAwait(false);
+                }
 
                 handshake.Response.ThrowIfInvalid(handshake.ComputeHandshake());
             }
@@ -330,7 +343,8 @@ namespace vtortola.WebSockets
             if (IPAddress.TryParse(url.Host, out ipAddress))
                 remoteEndpoint = new IPEndPoint(ipAddress, port);
             else
-                remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port);
+                remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port, AddressFamily.InterNetwork);
+
             localEndpoint = new IPEndPoint(remoteEndpoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
             return true;
         }
