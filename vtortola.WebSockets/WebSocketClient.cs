@@ -320,17 +320,16 @@ namespace vtortola.WebSockets
                 var responseHeaders = handshake.Response.Headers;
 
                 var responseLine = await reader.ReadLineAsync().ConfigureAwait(false) ?? string.Empty;
-                if (responseLine.Equals($"{WEB_SOCKET_HTTP_VERSION} 101 Web Socket Protocol Handshake") == false)
+                if (HttpHelper.TryParseHttpResponse(responseLine, out handshake.Response.Status, out handshake.Response.StatusDescription) == false)
                 {
-                    HttpHelper.TryParseHttpResponse(responseLine, out handshake.Response.Status, out handshake.Response.StatusDescription);
                     if (string.IsNullOrEmpty(responseLine))
                         throw new WebSocketException("Empty response. Probably connection is closed by remote party.");
                     else
                         throw new WebSocketException($"Invalid handshake response: {responseLine}.");
                 }
 
-                handshake.Response.Status = HttpStatusCode.SwitchingProtocols;
-                handshake.Response.StatusDescription = "Web Socket Protocol Handshake";
+                if (handshake.Response.Status != HttpStatusCode.SwitchingProtocols)
+                    throw new WebSocketException($"Invalid handshake response: {responseLine}.");
 
                 var headerLine = await reader.ReadLineAsync().ConfigureAwait(false);
                 while (string.IsNullOrEmpty(headerLine) == false)
