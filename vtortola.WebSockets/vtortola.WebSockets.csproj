@@ -57,6 +57,7 @@
     <Compile Include="BufferManager.cs" />
     <Compile Include="Extensibility\IHttpFallback.cs" />
     <Compile Include="Extensibility\IWebSocketConnectionExtension.cs" />
+    <Compile Include="Extensibility\IWebSocketMessageExtensionContext.cs" />
     <Compile Include="Extensibility\WebSocketSecureConnectionExtension.cs" />
     <Compile Include="Extensibility\WebSocketConnectionExtensionCollection.cs" />
     <Compile Include="Extensibility\WebSocketMessageExtensionCollection.cs" />

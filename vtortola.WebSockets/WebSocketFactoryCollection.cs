@@ -1,53 +1,81 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
     public sealed class WebSocketFactoryCollection : IReadOnlyCollection<WebSocketFactory>
     {
-        readonly Dictionary<Int16, WebSocketFactory> _factories;
-        readonly WebSocketListener _listener;
+        private readonly Dictionary<short, WebSocketFactory> factoryByVersion;
+        private volatile int useCounter;
+
+        public int Count => this.factoryByVersion.Count;
+        public bool IsReadOnly => this.useCounter > 0;
+
         public WebSocketFactoryCollection()
         {
-            _factories = new Dictionary<Int16, WebSocketFactory>();
+            this.factoryByVersion = new Dictionary<short, WebSocketFactory>();
         }
-        public WebSocketFactoryCollection(WebSocketListener webSocketListener)
-            : this()
-        {
-            _listener = webSocketListener;
-        }
+
         public void RegisterStandard(WebSocketFactory factory)
         {
-            if (_listener != null && _listener.IsStarted)
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
+
+            if (this.IsReadOnly)
                 throw new WebSocketException("Factories cannot be added after the service is started.");
-            if (_factories.ContainsKey(factory.Version))
+
+            if (this.factoryByVersion.ContainsKey(factory.Version))
                 throw new WebSocketException("There is already a WebSocketFactory registered with that version.");
 
-            _factories.Add(factory.Version, factory);
+            this.factoryByVersion.Add(factory.Version, factory);
         }
-        public int Count
-        {
-            get { return _factories.Count; }
-        }
-        public IEnumerator<WebSocketFactory> GetEnumerator()
-        {
-            return _factories.Values.GetEnumerator();
-        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return _factories.GetEnumerator();
+            return this.factoryByVersion.Values.GetEnumerator();
         }
-        public WebSocketFactory GetWebSocketFactory(WebSocketHttpRequest request)
+        IEnumerator<WebSocketFactory> IEnumerable<WebSocketFactory>.GetEnumerator()
         {
-            var webSocketsVersion = default(short);
-            var factory = default(WebSocketFactory);
+            return this.factoryByVersion.Values.GetEnumerator();
+        }
+        public Dictionary<short, WebSocketFactory>.ValueCollection.Enumerator GetEnumerator()
+        {
+            return this.factoryByVersion.Values.GetEnumerator();
+        }
 
-            if (short.TryParse(request.Headers[RequestHeader.WebSocketVersion], out webSocketsVersion) && _factories.TryGetValue(webSocketsVersion, out factory))
-                return factory;
+        internal WebSocketFactoryCollection Clone()
+        {
+            var cloned = new WebSocketFactoryCollection();
+            foreach (var kv in this.factoryByVersion)
+                cloned.factoryByVersion[kv.Key] = kv.Value.Clone();
+            return cloned;
+        }
+
+        internal void SetUsed(bool isUsed)
+        {
+#pragma warning disable 420
+            var newValue = default(int);
+            if (isUsed)
+                newValue = Interlocked.Increment(ref this.useCounter);
             else
-                return null;
+                newValue = Interlocked.Decrement(ref this.useCounter);
+            if (newValue < 0)
+                throw new InvalidOperationException("The collection is released more than once.");
+#pragma warning restore 420
+        }
+
+        public bool TryGetWebSocketFactory(WebSocketHttpRequest request, out WebSocketFactory factory)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
+            factory = default(WebSocketFactory);
+            var webSocketsVersion = default(short);
+            if (short.TryParse(request.Headers[RequestHeader.WebSocketVersion], out webSocketsVersion) && this.factoryByVersion.TryGetValue(webSocketsVersion, out factory))
+                return true;
+            else
+                return false;
         }
     }
 }

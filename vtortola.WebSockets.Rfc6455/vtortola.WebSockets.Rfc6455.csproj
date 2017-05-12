@@ -49,6 +49,7 @@
     <Compile Include="Streams\WebSocketMessageReadRfc6455Stream.cs" />
     <Compile Include="Streams\WebSocketMessageWriteRfc6455Stream.cs" />
     <Compile Include="WebSocketCloseReasons.cs" />
+    <Compile Include="WebSocketFactoryCollectionExtensions.cs" />
     <Compile Include="WebSocketFactoryRfc6455.cs" />
     <Compile Include="Header\WebSocketFrameHeader.cs" />
     <Compile Include="Header\WebSocketFrameHeaderFlags.cs" />

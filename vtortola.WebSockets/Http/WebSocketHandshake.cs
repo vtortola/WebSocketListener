@@ -24,9 +24,7 @@ namespace vtortola.WebSockets
         public bool IsWebSocketRequest { get; internal set; }
         public bool IsVersionSupported { get; internal set; }
         public bool IsResponseSent { get; internal set; }
-
         public WebSocketFactory Factory { get; internal set; }
-
         public ExceptionDispatchInfo Error { get; internal set; }
 
         public bool IsValidWebSocketRequest

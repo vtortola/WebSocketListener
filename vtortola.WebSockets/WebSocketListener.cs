@@ -7,7 +7,7 @@ using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketListener: IDisposable
+    public sealed class WebSocketListener : IDisposable
     {
         readonly TcpListener _listener;
         readonly HttpNegotiationQueue _negotiationQueue;
@@ -22,29 +22,29 @@ namespace vtortola.WebSockets
         {
             Guard.ParameterCannotBeNull(endpoint, "endpoint");
             Guard.ParameterCannotBeNull(options, "options");
-            
+
             options.CheckCoherence();
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
 
             _listener = new TcpListener(endpoint);
-            if(_options.UseNagleAlgorithm.HasValue)
+            if (_options.UseNagleAlgorithm.HasValue)
                 _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
-            if(_options.BufferManager == null)
+            if (_options.BufferManager == null)
                 _options.BufferManager = BufferManager.CreateBufferManager(100, this._options.SendBufferSize); // create small buffer pool if not configured
-            
+
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
-            Standards = new WebSocketFactoryCollection(this);
+            Standards = new WebSocketFactoryCollection();
 
             _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, options);
         }
         public WebSocketListener(IPEndPoint endpoint)
-            :this(endpoint,new WebSocketListenerOptions())
+            : this(endpoint, new WebSocketListenerOptions())
         {
         }
         private async Task StartAccepting()
         {
-            while(IsStarted)
+            while (IsStarted)
             {
                 var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
                 if (client != null)
@@ -65,6 +65,9 @@ namespace vtortola.WebSockets
                 _listener.Start(_options.TcpBacklog.Value);
             else
                 _listener.Start();
+            this.Standards.SetUsed(true);
+            foreach (var standard in this.Standards)
+                standard.MessageExtensions.SetUsed(true);
 
             Task.Run((Func<Task>)StartAccepting);
         }
@@ -72,10 +75,13 @@ namespace vtortola.WebSockets
         {
             IsStarted = false;
             _listener.Stop();
+            this.Standards.SetUsed(false);
+            foreach (var standard in this.Standards)
+                standard.MessageExtensions.SetUsed(false);
         }
         private void ConfigureSocket(Socket client)
         {
-            if(_options.UseNagleAlgorithm.HasValue)
+            if (_options.UseNagleAlgorithm.HasValue)
                 client.NoDelay = !_options.UseNagleAlgorithm.Value;
             client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
             client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);

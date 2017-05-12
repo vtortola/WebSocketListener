@@ -13,16 +13,16 @@ namespace vtortola.WebSockets
 {
     public class WebSocketHandshaker
     {
-        readonly WebSocketListenerOptions _options;
-        readonly WebSocketFactoryCollection _factories;
+        readonly WebSocketListenerOptions options;
+        readonly WebSocketFactoryCollection factories;
 
         public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(factories, "factories");
-            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(factories, nameof(factories));
+            Guard.ParameterCannotBeNull(options, nameof(options));
 
-            _factories = factories;
-            _options = options;
+            this.factories = factories;
+            this.options = options;
         }
 
         public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, IPEndPoint localEndpoint = null, IPEndPoint remoteEndpoint = null)
@@ -39,13 +39,14 @@ namespace vtortola.WebSockets
 
                 handshake.IsWebSocketRequest = true;
 
-                handshake.Factory = _factories.GetWebSocketFactory(handshake.Request);
-                if (handshake.Factory == null)
+                var factory = default(WebSocketFactory);
+                if (this.factories.TryGetWebSocketFactory(handshake.Request, out factory) == false)
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
                     return handshake;
                 }
 
+                handshake.Factory = factory;
                 handshake.IsVersionSupported = true;
 
                 ConsolidateObjectModel(handshake);
@@ -84,11 +85,11 @@ namespace vtortola.WebSockets
 
         private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
         {
-            if (_options.OnHttpNegotiation != null)
+            if (this.options.OnHttpNegotiation != null)
             {
                 try
                 {
-                    _options.OnHttpNegotiation(handshake.Request, handshake.Response);
+                    this.options.OnHttpNegotiation(handshake.Request, handshake.Response);
                 }
                 catch (Exception onNegotiationHandlerError)
                 {
@@ -117,7 +118,7 @@ namespace vtortola.WebSockets
         }
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
-            if (!handshake.IsWebSocketRequest && handshake.IsValidHttpRequest && _options.HttpFallback != null)
+            if (!handshake.IsWebSocketRequest && handshake.IsValidHttpRequest && this.options.HttpFallback != null)
                 return;
 
             handshake.IsResponseSent = true;
@@ -270,7 +271,7 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: ");
 
             Boolean first = true;
-            foreach (var standard in _factories)
+            foreach (var standard in this.factories)
             {
                 if (!first)
                     writer.Write(",");
@@ -289,14 +290,14 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
-            if (!_options.SubProtocols.Any())
+            if (!this.options.SubProtocols.Any())
                 return;
 
             if (handshake.Request.Headers.Contains(RequestHeader.WebSocketProtocol))
             {
                 foreach (var protocol in handshake.Request.Headers.GetValues(RequestHeader.WebSocketProtocol))
                 {
-                    if (_options.SubProtocols.Contains(protocol, StringComparer.OrdinalIgnoreCase) == false) continue;
+                    if (this.options.SubProtocols.Contains(protocol, StringComparer.OrdinalIgnoreCase) == false) continue;
 
                     handshake.Response.Headers[ResponseHeader.WebSocketProtocol] = protocol;
                     break;

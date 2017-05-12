@@ -2,16 +2,30 @@
 
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateExtension:IWebSocketMessageExtension
+    public sealed class WebSocketDeflateExtension : IWebSocketMessageExtension
     {
-        public string Name { get { return "permessage-deflate"; } }
+        private static readonly List<WebSocketExtensionOption> DefaultOptions = new List<WebSocketExtensionOption>(new[] { new WebSocketExtensionOption("client_no_context_takeover") });
+        private static readonly WebSocketExtension DefaultResponse = new WebSocketExtension("permessage-deflate", DefaultOptions);
 
-        static readonly WebSocketExtension _response = new WebSocketExtension("permessage-deflate", new List<WebSocketExtensionOption>(new[] { new WebSocketExtensionOption("client_no_context_takeover") }));
+        public string Name => "permessage-deflate";
+
         public bool TryNegotiate(WebSocketHttpRequest request, out WebSocketExtension extensionResponse, out IWebSocketMessageExtensionContext context)
         {
-            extensionResponse = _response;
+            extensionResponse = DefaultResponse;
             context = new WebSocketDeflateContext();
             return true;
+        }
+
+        public IWebSocketMessageExtension Clone()
+        {
+            var clone = (WebSocketDeflateExtension)this.MemberwiseClone();
+            return clone;
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return this.Name;
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -15,44 +15,46 @@ using vtortola.WebSockets.Tools;
 using ConnectedRequest = System.Tuple<System.Net.Sockets.Socket, vtortola.WebSockets.WebSocketHandshake>;
 using NegotiatedRequest = System.Tuple<vtortola.WebSockets.WebSocket, vtortola.WebSockets.WebSocketHandshake>;
 using WebSocketRequestCompletion = System.Threading.Tasks.TaskCompletionSource<vtortola.WebSockets.WebSocket>;
+
 namespace vtortola.WebSockets
 {
-    internal sealed class WebSocketClient
+    public sealed class WebSocketClient : IDisposable
     {
         private static readonly string WebSocketHttpVersion = "HTTP/1.1";
 
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
-        private readonly Dictionary<WebSocketHandshake, WebSocketRequestCompletion> pendingRequests;
+        private readonly ConcurrentDictionary<WebSocketHandshake, WebSocketRequestCompletion> pendingRequests;
         private readonly TransformBlock<WebSocketHandshake, ConnectedRequest> connectionBlock;
         private readonly TransformBlock<ConnectedRequest, NegotiatedRequest> negotiationBlock;
         private readonly ActionBlock<NegotiatedRequest> dispatchBlock;
 
-        public WebSocketClient(WebSocketFactoryCollection standards, WebSocketListenerOptions options, CancellationToken cancellation)
+        public WebSocketClient(WebSocketFactoryCollection standards, WebSocketListenerOptions options)
         {
             if (standards == null) throw new ArgumentNullException(nameof(standards));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            this.pendingRequests = new Dictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
-            this.standards = standards;
+            this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
+            this.standards = standards.Clone();
             this.options = options.Clone();
 
             if (options.BufferManager == null)
                 options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize); // create small buffer pool if not configured
 
+            this.standards.SetUsed(true);
+            foreach (var standard in this.standards)
+                standard.MessageExtensions.SetUsed(true);
+
             this.connectionBlock = new TransformBlock<WebSocketHandshake, ConnectedRequest>((Func<WebSocketHandshake, Task<ConnectedRequest>>)this.OpenConnectionAsync, new ExecutionDataflowBlockOptions
             {
-                CancellationToken = cancellation,
                 TaskScheduler = TaskScheduler.Default
             });
             this.negotiationBlock = new TransformBlock<ConnectedRequest, NegotiatedRequest>((Func<ConnectedRequest, Task<NegotiatedRequest>>)this.NegotiatedRequestAsync, new ExecutionDataflowBlockOptions
             {
-                CancellationToken = cancellation,
                 TaskScheduler = TaskScheduler.Default
             });
             this.dispatchBlock = new ActionBlock<NegotiatedRequest>((Action<NegotiatedRequest>)this.DispatchRequest, new ExecutionDataflowBlockOptions
             {
-                CancellationToken = cancellation,
                 TaskScheduler = TaskScheduler.Default
             });
             this.connectionBlock.LinkTo(this.negotiationBlock, new DataflowLinkOptions
@@ -82,8 +84,14 @@ namespace vtortola.WebSockets
                     throw new WebSocketException($"Failed to resolve remote endpoint for '{address}' address.");
 
                 var handshake = new WebSocketHandshake(new WebSocketHttpRequest(localEndpoint, remoteEndpoint), cancellation);
-                this.pendingRequests.Add(handshake, completion);
-                this.connectionBlock.Post(handshake);
+                this.pendingRequests.TryAdd(handshake, completion);
+
+                if (this.connectionBlock.Post(handshake) == false)
+                {
+                    var ignoreMe = completion;
+                    this.pendingRequests.TryRemove(handshake, out ignoreMe);
+                    throw new WebSocketException($"Failed to initiate collection to '{address}'. {nameof(WebSocketClient)} is closing or closed.");
+                }
             }
             catch (Exception connectionError) when (connectionError is ThreadAbortException == false)
             {
@@ -93,6 +101,14 @@ namespace vtortola.WebSockets
                     completion.TrySetException(new WebSocketException($"An unknown error occurred while connection to '{address}'. More detailed information in inner exception.", connectionError));
             }
             return completion.Task;
+        }
+
+        public Task CloseAsync()
+        {
+            this.connectionBlock.Complete();
+            var completion = Task.WhenAll(this.connectionBlock.Completion, this.negotiationBlock.Completion, this.dispatchBlock.Completion);
+            completion.ContinueWith(_ => SafeEnd.Dispose(this), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            return completion;
         }
 
         private async Task<ConnectedRequest> OpenConnectionAsync(WebSocketHandshake handshake)
@@ -204,7 +220,7 @@ namespace vtortola.WebSockets
 
             try
             {
-                if (this.pendingRequests.TryGetValue(handshake, out resultPromise) == false)
+                if (this.pendingRequests.TryRemove(handshake, out resultPromise) == false)
                 {
                     // TODO log?
                     return; // failed to retrieve pending request
@@ -298,7 +314,11 @@ namespace vtortola.WebSockets
                 handshake.Response.ThrowIfInvalid(handshake.ComputeHandshake());
             }
 
-            handshake.Factory = this.standards.GetWebSocketFactory(handshake.Request);
+            var factory = default(WebSocketFactory);
+            if (this.standards.TryGetWebSocketFactory(handshake.Request, out factory) == false)
+                throw new WebSocketException("Failed to negotiate WebSocket protocol version.");
+
+            handshake.Factory = factory;
         }
 
         private static bool TryPrepareEndpoints(Uri url, ref EndPoint remoteEndpoint, ref EndPoint localEndpoint)
@@ -320,6 +340,22 @@ namespace vtortola.WebSockets
                                 string.Equals(url?.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
 
             return isValidSchema && url != null;
+        }
+
+        /// <inheritdoc />
+        void IDisposable.Dispose()
+        {
+            var operationCanceledError = default(ExceptionDispatchInfo);
+            try { throw new OperationCanceledException(); }
+            catch (OperationCanceledException error) { operationCanceledError = ExceptionDispatchInfo.Capture(error); }
+
+            this.connectionBlock.Complete();
+            foreach (var kv in this.pendingRequests)
+            {
+                kv.Key.Error = operationCanceledError;
+                kv.Value.TrySetCanceled();
+            }
+            this.pendingRequests.Clear();
         }
     }
 }

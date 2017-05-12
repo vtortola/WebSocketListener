@@ -7,16 +7,25 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketFactory
     {
-        public abstract Int16 Version { get; }
+        public abstract short Version { get; }
+
         public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
-        public WebSocketFactory()
+
+        protected WebSocketFactory()
         {
             MessageExtensions = new WebSocketMessageExtensionCollection();
         }
-        public WebSocketFactory(WebSocketListener listener)
-        {
-            MessageExtensions = new WebSocketMessageExtensionCollection(listener);
-        }
+
         public abstract WebSocket CreateWebSocket(Stream stream, WebSocketListenerOptions options, EndPoint localEndpoint, EndPoint remoteEndpoint, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions);
+
+        /// <inheritdoc />
+        public virtual WebSocketFactory Clone()
+        {
+            var clone = (WebSocketFactory)this.MemberwiseClone();
+            clone.MessageExtensions = new WebSocketMessageExtensionCollection();
+            foreach (var extension in this.MessageExtensions)
+                clone.MessageExtensions.RegisterExtension(extension.Clone());
+            return clone;
+        }
     }
 }
