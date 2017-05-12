@@ -11,16 +11,24 @@ namespace WebSocketListener.UnitTests
 {
     public class WebSocketTests
     {
+        private readonly WebSocketFactoryCollection factories;
+        private readonly WebSocketListenerOptions options;
+
         public WebSocketTests()
         {
             this.factories = new WebSocketFactoryCollection();
             this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
+            this.options = new WebSocketListenerOptions
+            {
+                PingTimeout = Timeout.InfiniteTimeSpan,
+                BufferManager = BufferManager.CreateBufferManager(10, 512),
+                SendBufferSize = 512
+            };
         }
-        private readonly WebSocketFactoryCollection factories;
 
         private WebSocketHandshake GenerateSimpleHandshake()
         {
-            var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions());
+            var handshaker = new WebSocketHandshaker(this.factories, this.options);
 
             using (var ms = new MemoryStream())
             {
@@ -45,11 +53,10 @@ namespace WebSocketListener.UnitTests
         public void DetectHalfOpenConnection()
         {
             var handshake = this.GenerateSimpleHandshake();
+            var options = this.options.Clone();
+            options.PingTimeout = TimeSpan.FromMilliseconds(100);
             using (var ms = new MemoryStream())
-            using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions
-                {
-                    PingTimeout = TimeSpan.FromMilliseconds(100)
-                }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request,
+            using (var ws = new WebSocketRfc6455(ms, options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request,
                 handshake.Response, handshake.NegotiatedMessageExtensions))
             {
                 ws.ReadMessageAsync(CancellationToken.None);
@@ -65,14 +72,7 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (
-                WebSocket ws = new WebSocketRfc6455(ms,
-                    new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    },
-                    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                    handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
                 ms.Write(new byte[]
                 {
@@ -96,27 +96,11 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (
-                WebSocket ws = new WebSocketRfc6455(ms,
-                    new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    },
-                    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                    handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
-                ms.Write(new byte[]
-                {
-                    129, 128, 166, 124, 106, 65
-                }, 0, 6);
-                ms.Write(new byte[]
-                {
-                    129, 128, 166, 124, 106, 65
-                }, 0, 6);
-                ms.Write(new byte[]
-                {
-                    129, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
+                ms.Write(new byte[] { 129, 128, 166, 124, 106, 65 }, 0, 6);
+                ms.Write(new byte[] { 129, 128, 166, 124, 106, 65 }, 0, 6);
+                ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -151,19 +135,9 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (
-                WebSocket ws = new WebSocketRfc6455(ms,
-                    new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    },
-                    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                    handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
-                ms.Write(new byte[]
-                {
-                    129, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
+                ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -176,10 +150,7 @@ namespace WebSocketListener.UnitTests
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);
-                ms.Write(new byte[]
-                {
-                    129, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
+                ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -198,27 +169,11 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (
-                WebSocket ws = new WebSocketRfc6455(ms,
-                    new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    },
-                    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                    handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
-                ms.Write(new byte[]
-                {
-                    1, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
-                ms.Write(new byte[]
-                {
-                    0, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
-                ms.Write(new byte[]
-                {
-                    128, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
+                ms.Write(new byte[] { 1, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Write(new byte[] { 0, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Write(new byte[] { 128, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -237,23 +192,10 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (
-                WebSocket ws = new WebSocketRfc6455(ms,
-                    new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    },
-                    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                    handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
-                ms.Write(new byte[]
-                {
-                    129, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
-                ms.Write(new byte[]
-                {
-                    129, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
+                ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -283,23 +225,10 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (
-                WebSocket ws = new WebSocketRfc6455(ms,
-                    new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    },
-                    new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                    handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
-                ms.Write(new byte[]
-                {
-                    1, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
-                ms.Write(new byte[]
-                {
-                    128, 130, 75, 91, 80, 26, 3, 50
-                }, 0, 8);
+                ms.Write(new byte[] { 1, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                ms.Write(new byte[] { 128, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                 ms.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -318,11 +247,7 @@ namespace WebSocketListener.UnitTests
         {
             var handshake = this.GenerateSimpleHandshake();
             using (var ms = new MemoryStream())
-            using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions
-                {
-                    PingTimeout = Timeout.InfiniteTimeSpan
-                }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request,
-                handshake.Response, handshake.NegotiatedMessageExtensions))
+            using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
             {
                 using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text)) { }
                 using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text)) { }
@@ -336,23 +261,10 @@ namespace WebSocketListener.UnitTests
             Assert.Throws<WebSocketException>(() =>
             {
                 using (var ms = new BufferedStream(new MemoryStream()))
-                using (
-                    WebSocket ws = new WebSocketRfc6455(ms,
-                        new WebSocketListenerOptions
-                        {
-                            PingTimeout = Timeout.InfiniteTimeSpan
-                        },
-                        new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                        handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+                using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
                 {
-                    ms.Write(new byte[]
-                    {
-                        129, 130, 75, 91, 80, 26, 3, 50
-                    }, 0, 8);
-                    ms.Write(new byte[]
-                    {
-                        129, 130, 75, 91, 80, 26, 3, 50
-                    }, 0, 8);
+                    ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
+                    ms.Write(new byte[] { 129, 130, 75, 91, 80, 26, 3, 50 }, 0, 8);
                     ms.Flush();
                     ms.Seek(0, SeekOrigin.Begin);
 
@@ -369,14 +281,7 @@ namespace WebSocketListener.UnitTests
             Assert.Throws<WebSocketException>(() =>
             {
                 using (var ms = new MemoryStream())
-                using (
-                    WebSocket ws = new WebSocketRfc6455(ms,
-                        new WebSocketListenerOptions
-                        {
-                            PingTimeout = Timeout.InfiniteTimeSpan
-                        },
-                        new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2),
-                        handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
+                using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
                 {
                     ms.Write(new byte[]
                     {
@@ -402,16 +307,13 @@ namespace WebSocketListener.UnitTests
             Assert.Throws<WebSocketException>(() =>
             {
                 using (var ms = new MemoryStream())
-                using (WebSocket ws = new WebSocketRfc6455(ms, new WebSocketListenerOptions
-                    {
-                        PingTimeout = Timeout.InfiniteTimeSpan
-                    }, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request,
-                    handshake.Response, handshake.NegotiatedMessageExtensions))
+                using (var ws = new WebSocketRfc6455(ms, this.options, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1), new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2), handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
                 {
                     var writer = ws.CreateMessageWriter(WebSocketMessageType.Text);
                     writer = ws.CreateMessageWriter(WebSocketMessageType.Text);
                 }
             });
         }
+
     }
 }
