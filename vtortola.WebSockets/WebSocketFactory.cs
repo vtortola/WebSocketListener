@@ -16,7 +16,7 @@ namespace vtortola.WebSockets
             MessageExtensions = new WebSocketMessageExtensionCollection();
         }
 
-        public abstract WebSocket CreateWebSocket(Stream stream, WebSocketListenerOptions options, EndPoint localEndpoint, EndPoint remoteEndpoint, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions);
+        public abstract WebSocket CreateWebSocket(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions);
 
         /// <inheritdoc />
         public virtual WebSocketFactory Clone()

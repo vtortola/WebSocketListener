@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Net;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -9,9 +7,9 @@ namespace vtortola.WebSockets.Rfc6455
     {
         public override short Version => 13;
 
-        public override WebSocket CreateWebSocket(Stream stream, WebSocketListenerOptions options, EndPoint localEndpoint, EndPoint remoteEndpoint, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions)
+        public override WebSocket CreateWebSocket(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions)
         {
-            return new WebSocketRfc6455(stream, options, localEndpoint, remoteEndpoint, httpRequest, httpResponse, negotiatedExtensions);
+            return new WebSocketRfc6455(networkStream, options, httpRequest, httpResponse, negotiatedExtensions);
         }
 
         /// <inheritdoc />
