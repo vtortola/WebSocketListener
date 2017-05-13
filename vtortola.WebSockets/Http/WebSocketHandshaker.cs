@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
@@ -32,9 +33,10 @@ namespace vtortola.WebSockets
         {
             var request = new WebSocketHttpRequest(HttpRequestDirection.Incoming) {
                 LocalEndPoint = localEndpoint ?? WebSocketHttpRequest.NoAddress,
-                RemoteEndPoint = remoteEndpoint ?? WebSocketHttpRequest.NoAddress
+                RemoteEndPoint = remoteEndpoint ?? WebSocketHttpRequest.NoAddress,
+                IsSecure = clientStream is SslStream
             };
-            var handshake = new WebSocketHandshake(request, CancellationToken.None);
+            var handshake = new WebSocketHandshake(request);
             try
             {
                 ReadHttpRequest(clientStream, handshake);
