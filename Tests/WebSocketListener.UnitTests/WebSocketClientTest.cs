@@ -30,31 +30,30 @@ namespace WebSocketListener.UnitTests
         }
 
         [Theory]
-        [InlineData("ws://echo.websocket.org", 15)]
-        [InlineData("wss://echo.websocket.org", 15)]
+        [InlineData("ws://echo.websocket.org?encoding=text", 15)]
+        [InlineData("wss://echo.websocket.org?encoding=text", 15)]
         public async Task ConnectToServerAsync(string address, int timeoutSeconds)
         {
             var factories = new WebSocketFactoryCollection()
                 .RegisterRfc6455();
             var options = new WebSocketListenerOptions() { Logger = this.logger };
-            using (var webSocketClient = new WebSocketClient(factories, options))
-            {
-                var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
-                var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
+            var webSocketClient = new WebSocketClient(factories, options);
 
-                if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
-                    throw new TimeoutException();
+            var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
+            var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
 
-                var webSocket = await connectTask.ConfigureAwait(false);
-                webSocket.Close();
-            }
+            if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
+
+            var webSocket = await connectTask.ConfigureAwait(false);
+            webSocket.Close();
         }
 
         [Theory]
-        [InlineData("ws://echo.websocket.org", 15, new[] { "a test message" })]
-        [InlineData("ws://echo.websocket.org", 15, new[] { "a test message", "a second message" })]
-        [InlineData("wss://echo.websocket.org", 15, new[] { "a test message" })]
-        [InlineData("wss://echo.websocket.org", 15, new[] { "a test message", "a second message" })]
+        [InlineData("ws://echo.websocket.org/?encoding=text", 15, new[] { "a test message" })]
+        [InlineData("ws://echo.websocket.org/?encoding=text", 15, new[] { "a test message", "a second message" })]
+        [InlineData("wss://echo.websocket.org?encoding=text", 15, new[] { "a test message" })]
+        [InlineData("wss://echo.websocket.org?encoding=text", 15, new[] { "a test message", "a second message" })]
         public async Task EchoServerAsync(string address, int timeoutSeconds, string[] messages)
         {
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
@@ -62,41 +61,40 @@ namespace WebSocketListener.UnitTests
             var factories = new WebSocketFactoryCollection()
                 .RegisterRfc6455();
             var options = new WebSocketListenerOptions { Logger = this.logger };
-            using (var webSocketClient = new WebSocketClient(factories, options))
+            var webSocketClient = new WebSocketClient(factories, options);
+            var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
+
+            if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
+
+            var webSocket = await connectTask.ConfigureAwait(false);
+
+            var sendReceiveTask = new Func<Task>(async () =>
             {
-                var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
-
-                if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
-                    throw new TimeoutException();
-
-                var webSocket = await connectTask.ConfigureAwait(false);
-
-                var sendReceiveTask = new Func<Task>(async () =>
+                await Task.Yield();
+                foreach (var message in messages)
                 {
-                    await Task.Yield();
-                    foreach (var message in messages)
-                    {
-                        await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
-                        logger.Debug("[CLIENT] -> " + message);
-                    }
+                    await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                    logger.Debug("[CLIENT] -> " + message);
+                    await Task.Delay(100).ConfigureAwait(false);
+                }
 
-                    foreach (var expectedMessage in messages)
-                    {
-                        var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
-                        if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
-                        logger.Debug("[CLIENT] <- " + (actualMessage ?? "<null>"));
-                        Assert.NotNull(actualMessage);
-                        Assert.Equal(expectedMessage, actualMessage);
-                    }
+                foreach (var expectedMessage in messages)
+                {
+                    var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                    if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+                    logger.Debug("[CLIENT] <- " + (actualMessage ?? "<null>"));
+                    Assert.NotNull(actualMessage);
+                    Assert.Equal(expectedMessage, actualMessage);
+                }
 
-                    webSocket.Close();
-                })();
+                webSocket.Close();
+            })();
 
-                if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
-                    throw new TimeoutException();
+            if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
 
-                await sendReceiveTask.ConfigureAwait(false);
-            }
+            await sendReceiveTask.ConfigureAwait(false);
         }
 
         [Theory]
@@ -136,42 +134,39 @@ namespace WebSocketListener.UnitTests
 
             var factories = new WebSocketFactoryCollection()
                 .RegisterRfc6455();
-            using (var webSocketClient = new WebSocketClient(factories, options))
+            var webSocketClient = new WebSocketClient(factories, options);
+            var connectTask = webSocketClient.ConnectAsync(new Uri("ws://127.0.0.1:" + port), CancellationToken.None);
+
+            if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
+
+            var webSocket = await connectTask.ConfigureAwait(false);
+            var sendReceiveTask = new Func<Task>(async () =>
             {
-                var connectTask = webSocketClient.ConnectAsync(new Uri("ws://127.0.0.1:" + port), CancellationToken.None);
-
-                if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
-                    throw new TimeoutException();
-
-                var webSocket = await connectTask.ConfigureAwait(false);
-
-                var sendReceiveTask = new Func<Task>(async () =>
+                await Task.Yield();
+                foreach (var message in messages)
                 {
-                    await Task.Yield();
-                    foreach (var message in messages)
-                    {
-                        await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
-                        logger.Debug("[CLIENT] -> " + message);
+                    await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                    logger.Debug("[CLIENT] -> " + message);
 
-                    }
+                }
 
-                    foreach (var expectedMessage in messages)
-                    {
-                        var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
-                        if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
-                        logger.Debug("[CLIENT] <- " + (actualMessage ?? "<null>"));
-                        Assert.NotNull(actualMessage);
-                        Assert.Equal(expectedMessage, actualMessage);
-                    }
+                foreach (var expectedMessage in messages)
+                {
+                    var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                    if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+                    logger.Debug("[CLIENT] <- " + (actualMessage ?? "<null>"));
+                    Assert.NotNull(actualMessage);
+                    Assert.Equal(expectedMessage, actualMessage);
+                }
 
-                    webSocket.Close();
-                })();
+                webSocket.Close();
+            })();
 
-                if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
-                    throw new TimeoutException();
+            if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
 
-                await sendReceiveTask.ConfigureAwait(false);
-            }
+            await sendReceiveTask.ConfigureAwait(false);
             await acceptSockets.ConfigureAwait(false);
         }
 

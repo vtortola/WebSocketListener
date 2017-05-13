@@ -3,33 +3,32 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
-using System.Runtime.ExceptionServices;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Tools;
 
-using ConnectedRequest = System.Tuple<System.Net.Sockets.Socket, vtortola.WebSockets.WebSocketHandshake>;
-using NegotiatedRequest = System.Tuple<vtortola.WebSockets.WebSocket, vtortola.WebSockets.WebSocketHandshake>;
-using WebSocketRequestCompletion = System.Threading.Tasks.TaskCompletionSource<vtortola.WebSockets.WebSocket>;
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketClient : IDisposable
+    public sealed class WebSocketClient
     {
         private const string WEB_SOCKET_HTTP_VERSION = "HTTP/1.1";
 
         private readonly ILogger log;
+        private readonly AsyncConditionSource closeEvent;
+        private readonly CancellationTokenSource workCancellation;
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
-        private readonly ConcurrentDictionary<WebSocketHandshake, WebSocketRequestCompletion> pendingRequests;
-        private readonly TransformBlock<WebSocketHandshake, ConnectedRequest> connectionBlock;
-        private readonly TransformBlock<ConnectedRequest, NegotiatedRequest> negotiationBlock;
-        private readonly ActionBlock<NegotiatedRequest> dispatchBlock;
+        private readonly ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>> pendingRequests;
+
+        public bool HasPendingRequests => this.pendingRequests.IsEmpty == false;
 
         public WebSocketClient(WebSocketFactoryCollection standards, WebSocketListenerOptions options)
         {
@@ -40,94 +39,100 @@ namespace vtortola.WebSockets
             options.CheckCoherence();
 
             this.log = options.Logger;
-            this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
+            this.closeEvent = new AsyncConditionSource { ContinueOnCapturedContext = false };
+            this.workCancellation = new CancellationTokenSource();
+            this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>>();
             this.standards = standards.Clone();
             this.options = options.Clone();
 
             if (this.options.BufferManager == null)
                 this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize * 2); // create small buffer pool if not configured
 
+            if (this.options.OnRemoteCertificateValidation == null)
+                this.options.OnRemoteCertificateValidation = this.ValidateRemoteCertificate;
+
             this.standards.SetUsed(true);
             foreach (var standard in this.standards)
                 standard.MessageExtensions.SetUsed(true);
 
-            this.connectionBlock = new TransformBlock<WebSocketHandshake, ConnectedRequest>((Func<WebSocketHandshake, Task<ConnectedRequest>>)this.OpenConnectionAsync, new ExecutionDataflowBlockOptions
-            {
-                TaskScheduler = TaskScheduler.Default
-            });
-            this.negotiationBlock = new TransformBlock<ConnectedRequest, NegotiatedRequest>((Func<ConnectedRequest, Task<NegotiatedRequest>>)this.NegotiatedRequestAsync, new ExecutionDataflowBlockOptions
-            {
-                TaskScheduler = TaskScheduler.Default
-            });
-            this.dispatchBlock = new ActionBlock<NegotiatedRequest>((Action<NegotiatedRequest>)this.DispatchRequest, new ExecutionDataflowBlockOptions
-            {
-                TaskScheduler = TaskScheduler.Default
-            });
-            this.connectionBlock.LinkTo(this.negotiationBlock, new DataflowLinkOptions
-            {
-                PropagateCompletion = true
-            });
-            this.negotiationBlock.LinkTo(this.dispatchBlock, new DataflowLinkOptions
-            {
-                PropagateCompletion = true
-            });
         }
 
-        public Task<WebSocket> ConnectAsync(Uri address, CancellationToken cancellation)
+        private bool ValidateRemoteCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            var completion = new WebSocketRequestCompletion();
+            if (sslPolicyErrors == SslPolicyErrors.None)
+                return true;
+            if (this.log.IsWarningEnabled)
+                this.log.Warning($"Certificate validation error: {sslPolicyErrors}.");
 
+            // Do not allow this client to communicate with unauthenticated servers.
+            return false;
+        }
+
+        public async Task<WebSocket> ConnectAsync(Uri address, CancellationToken cancellation)
+        {
             try
             {
                 cancellation.ThrowIfCancellationRequested();
+                if (this.workCancellation.IsCancellationRequested)
+                    throw new WebSocketException("Client is currently closing or closed.");
+
+                if (cancellation.CanBeCanceled == false)
+                    cancellation = this.workCancellation.Token;
+                else
+                    cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.workCancellation.Token).Token;
 
                 if (IsSchemeValid(address) == false)
                     throw new WebSocketException($"Invalid request url '{address}' or scheme '{address?.Scheme}'.");
 
                 var remoteEndpoint = default(EndPoint);
                 var localEndpoint = default(EndPoint);
-                if (TryPrepareEndpoints(address, ref remoteEndpoint, ref localEndpoint) == false)
+                var isSecure = false;
+                if (TryPrepareEndpoints(address, ref remoteEndpoint, ref localEndpoint, ref isSecure) == false)
                     throw new WebSocketException($"Failed to resolve remote endpoint for '{address}' address.");
 
                 var request = new WebSocketHttpRequest(HttpRequestDirection.Outgoing)
                 {
                     RequestUri = address,
                     LocalEndPoint = localEndpoint,
-                    RemoteEndPoint = remoteEndpoint
+                    RemoteEndPoint = remoteEndpoint,
+                    IsSecure = isSecure
                 };
-                var handshake = new WebSocketHandshake(request, cancellation);
-                this.pendingRequests.TryAdd(handshake, completion);
+                var handshake = new WebSocketHandshake(request);
+                var pendingRequest = this.OpenConnectionAsync(handshake, cancellation);
 
-                if (this.connectionBlock.Post(handshake) == false)
-                {
-                    var ignoreMe = completion;
-                    this.pendingRequests.TryRemove(handshake, out ignoreMe);
-                    throw new WebSocketException($"Failed to initiate collection to '{address}'. {nameof(WebSocketClient)} is closing or closed.");
-                }
+                this.pendingRequests.TryAdd(handshake, pendingRequest);
+
+                await pendingRequest.IgnoreFaultOrCancellation().ConfigureAwait(false);
+
+                if (this.pendingRequests.TryRemove(handshake, out pendingRequest) && this.workCancellation.IsCancellationRequested && this.pendingRequests.IsEmpty)
+                    this.closeEvent.Set();
+
+                return await pendingRequest.ConfigureAwait(false);
             }
-            catch (Exception connectionError) when (connectionError is ThreadAbortException == false)
+            catch (Exception connectionError)
+                when (connectionError.Unwrap() is ThreadAbortException == false &&
+                    connectionError.Unwrap() is OperationCanceledException == false &&
+                    connectionError.Unwrap() is WebSocketException == false)
             {
-                if (connectionError is WebSocketException)
-                    completion.TrySetException(connectionError);
-                else
-                    completion.TrySetException(new WebSocketException($"An unknown error occurred while connection to '{address}'. More detailed information in inner exception.", connectionError));
+                throw new WebSocketException($"An unknown error occurred while connection to '{address}'. More detailed information in inner exception.", connectionError.Unwrap());
             }
-            return completion.Task;
         }
 
-        public Task CloseAsync()
+        public async Task CloseAsync()
         {
-            this.connectionBlock.Complete();
-            var completion = Task.WhenAll(this.connectionBlock.Completion, this.negotiationBlock.Completion, this.dispatchBlock.Completion);
-            completion.ContinueWith(_ => SafeEnd.Dispose(this, this.log), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-            return completion;
+            this.workCancellation.Cancel(throwOnFirstException: false);
+            await this.closeEvent;
         }
 
-        private async Task<ConnectedRequest> OpenConnectionAsync(WebSocketHandshake handshake)
+        private async Task<WebSocket> OpenConnectionAsync(WebSocketHandshake handshake, CancellationToken cancellation)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
+            var socket = default(Socket);
+            var webSocket = default(WebSocket);
             try
             {
-                handshake.Cancellation.ThrowIfCancellationRequested();
+                cancellation.ThrowIfCancellationRequested();
 
                 // prepare socket
                 var remoteEndpoint = handshake.Request.RemoteEndPoint;
@@ -137,7 +142,7 @@ namespace vtortola.WebSockets
                     addressFamily = AddressFamily.InterNetworkV6;
 #endif
                 var protocolType = addressFamily == AddressFamily.Unix ? ProtocolType.Unspecified : ProtocolType.Tcp;
-                var socket = new Socket(addressFamily, SocketType.Stream, protocolType)
+                socket = new Socket(addressFamily, SocketType.Stream, protocolType)
                 {
                     NoDelay = !(this.options.UseNagleAlgorithm ?? true),
                     SendTimeout = (int)this.options.WebSocketSendTimeout.TotalMilliseconds,
@@ -147,6 +152,7 @@ namespace vtortola.WebSockets
                 if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
                     socket.DualMode = true;
 #endif
+
                 // prepare connection
                 var socketConnectedCondition = new AsyncConditionSource
                 {
@@ -157,13 +163,13 @@ namespace vtortola.WebSockets
                     RemoteEndPoint = remoteEndpoint,
                     UserToken = socketConnectedCondition
                 };
+
                 // connect                
                 socketAsyncEventArgs.Completed += (_, e) => ((AsyncConditionSource)e.UserToken).Set();
+
                 // interrupt connection when cancellation token is set
-                var connectInterruptRegistration = handshake.Cancellation.CanBeCanceled ?
-                    // ReSharper disable once ImpureMethodCallOnReadonlyValueField
-                    handshake.Cancellation.Register(s => ((AsyncConditionSource)s).Interrupt(new OperationCanceledException()), socketConnectedCondition) :
-                    default(CancellationTokenRegistration);
+                var connectInterruptRegistration = cancellation.CanBeCanceled ?
+                    cancellation.Register(s => ((AsyncConditionSource)s).Interrupt(new OperationCanceledException()), socketConnectedCondition) : default(CancellationTokenRegistration);
                 using (connectInterruptRegistration)
                 {
                     if (socket.ConnectAsync(socketAsyncEventArgs) == false)
@@ -171,119 +177,63 @@ namespace vtortola.WebSockets
 
                     await socketConnectedCondition;
                 }
-                handshake.Cancellation.ThrowIfCancellationRequested();
+                cancellation.ThrowIfCancellationRequested();
 
                 // check connection result
                 if (socketAsyncEventArgs.ConnectByNameError != null)
                     throw socketAsyncEventArgs.ConnectByNameError;
 
                 if (socketAsyncEventArgs.SocketError != SocketError.Success)
-                    throw new WebSocketException($"Failed to open socket to '{handshake.Request.RequestUri}' due error '{socketAsyncEventArgs.SocketError}'.", new SocketException((int)socketAsyncEventArgs.SocketError));
+                    throw new WebSocketException($"Failed to open socket to '{handshake.Request.RequestUri}' due error '{socketAsyncEventArgs.SocketError}'.",
+                        new SocketException((int)socketAsyncEventArgs.SocketError));
 
                 handshake.Request.LocalEndPoint = socket.LocalEndPoint;
                 handshake.Request.RemoteEndPoint = socket.RemoteEndPoint;
 
-                return Tuple.Create(socket, handshake);
-            }
-            catch (Exception error)
-            {
-                handshake.Error = ExceptionDispatchInfo.Capture(error.Unwrap());
-                return Tuple.Create(default(Socket), handshake);
-            }
-        }
-        private async Task<NegotiatedRequest> NegotiatedRequestAsync(ConnectedRequest connectedRequest)
-        {
-            var socket = connectedRequest.Item1;
-            var handshake = connectedRequest.Item2;
-            var stream = default(NetworkStream);
-
-            try
-            {
-                if (handshake.Error != null)
-                    return Tuple.Create(default(WebSocket), handshake);
-
-                handshake.Cancellation.ThrowIfCancellationRequested();
-
-                stream = new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);
-
-                handshake.Factory = this.standards.GetLast();
-
-                await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
-
-                handshake.Cancellation.ThrowIfCancellationRequested();
-
-                await this.ReadResponseAsync(handshake, stream).ConfigureAwait(false);
-
-                handshake.Cancellation.ThrowIfCancellationRequested();
-
-                var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
-
-                return Tuple.Create(webSocket, handshake);
-            }
-            catch (Exception error) when (error is ThreadAbortException == false)
-            {
-                handshake.Error = ExceptionDispatchInfo.Capture(error.Unwrap());
-                return Tuple.Create(default(WebSocket), handshake);
+                webSocket = await this.NegotiateRequestAsync(handshake, socket, cancellation).ConfigureAwait(false);
+                return webSocket;
             }
             finally
             {
-                if (handshake.Error != null)
-                {
+                if (webSocket == null) // no connection were made
                     SafeEnd.Dispose(socket, this.log);
-                    SafeEnd.Dispose(stream, this.log);
-                }
             }
         }
-        private void DispatchRequest(NegotiatedRequest negotiatedRequest)
+        private async Task<WebSocket> NegotiateRequestAsync(WebSocketHandshake handshake, Socket socket, CancellationToken cancellation)
         {
-            var resultPromise = default(WebSocketRequestCompletion);
-            var handshake = negotiatedRequest.Item2;
-            var webSocket = negotiatedRequest.Item1;
-            var error = handshake.Error;
-            var completeSuccessful = false;
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+            if (socket == null) throw new ArgumentNullException(nameof(socket));
 
-            try
+
+            cancellation.ThrowIfCancellationRequested();
+
+            var stream = (Stream)new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);
+
+            if (handshake.Request.IsSecure)
             {
-                if (this.pendingRequests.TryRemove(handshake, out resultPromise) == false)
-                {
-                    if (this.log.IsDebugEnabled)
-                        this.log.Debug("Failed to retrieve pending request. Probably client is disposed.");
-                    return; // failed to retrieve pending request
-                }
-
-                if (webSocket == null && error == null)
-                {
-                    // this is done for stack trace
-                    try { throw new WebSocketException($"An unknown error occurred while negotiating with '{handshake.Request.RequestUri}'."); }
-                    catch (Exception negotiationFailedError) { error = ExceptionDispatchInfo.Capture(negotiationFailedError); }
-                }
-
-                if (error != null && error.SourceException is WebSocketException == false && error.SourceException is OperationCanceledException == false)
-                {
-                    // this is done for stack trace
-                    try { throw new WebSocketException($"An unknown error occurred while negotiating with '{handshake.Request.RequestUri}'. More detailed information in inner exception.", error.SourceException); }
-                    catch (Exception negotiationFailedError) { error = ExceptionDispatchInfo.Capture(negotiationFailedError); }
-                }
-
-                if (error != null)
-                    completeSuccessful = resultPromise.TrySetException(error.SourceException);
-                else
-                    completeSuccessful = resultPromise.TrySetResult(webSocket);
+                var protocols = this.options.SupportedSslProtocols;
+                var host = handshake.Request.RequestUri.DnsSafeHost;
+                var secureStream = new SslStream(stream, false, this.options.OnRemoteCertificateValidation);
+                await secureStream.AuthenticateAsClientAsync(host, null, protocols, checkCertificateRevocation: false).ConfigureAwait(false);
+                stream = secureStream;
             }
-            catch (Exception completionError) when (completionError is ThreadAbortException == false)
-            {
-                if (this.log.IsWarningEnabled)
-                    this.log.Warning("Failed to complete pending request.", completionError);
-                resultPromise?.TrySetException(completionError.Unwrap());
-            }
-            finally
-            {
-                if (!completeSuccessful)
-                    SafeEnd.Dispose(webSocket);
-            }
+
+            handshake.Factory = this.standards.GetLast();
+
+            await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
+
+            cancellation.ThrowIfCancellationRequested();
+
+            await this.ReadResponseAsync(handshake, stream).ConfigureAwait(false);
+
+            cancellation.ThrowIfCancellationRequested();
+
+            var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
+
+            return webSocket;
         }
 
-        private async Task WriteRequestAsync(WebSocketHandshake handshake, NetworkStream stream)
+        private async Task WriteRequestAsync(WebSocketHandshake handshake, Stream stream)
         {
             var url = handshake.Request.RequestUri;
             var nonce = handshake.GenerateClientNonce();
@@ -321,7 +271,7 @@ namespace vtortola.WebSockets
                 await writer.FlushAsync().ConfigureAwait(false);
             }
         }
-        private async Task ReadResponseAsync(WebSocketHandshake handshake, NetworkStream stream)
+        private async Task ReadResponseAsync(WebSocketHandshake handshake, Stream stream)
         {
             var bufferSize = this.options.BufferManager.MaxBufferSize;
             using (var reader = new StreamReader(stream, Encoding.ASCII, false, bufferSize, leaveOpen: true))
@@ -351,9 +301,9 @@ namespace vtortola.WebSockets
             }
         }
 
-        private static bool TryPrepareEndpoints(Uri url, ref EndPoint remoteEndpoint, ref EndPoint localEndpoint)
+        private static bool TryPrepareEndpoints(Uri url, ref EndPoint remoteEndpoint, ref EndPoint localEndpoint, ref bool isSecure)
         {
-            var isSecure = string.Equals(url.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
+            isSecure = string.Equals(url.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
             var ipAddress = default(IPAddress);
             var port = url.Port;
             if (port == 0) port = isSecure ? 443 : 80;
@@ -376,22 +326,6 @@ namespace vtortola.WebSockets
                                 string.Equals(url?.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
 
             return isValidSchema && url != null;
-        }
-
-        /// <inheritdoc />
-        void IDisposable.Dispose()
-        {
-            var operationCanceledError = default(ExceptionDispatchInfo);
-            try { throw new OperationCanceledException(); }
-            catch (OperationCanceledException error) { operationCanceledError = ExceptionDispatchInfo.Capture(error); }
-
-            this.connectionBlock.Complete();
-            foreach (var kv in this.pendingRequests)
-            {
-                kv.Key.Error = operationCanceledError;
-                kv.Value.TrySetCanceled();
-            }
-            this.pendingRequests.Clear();
         }
     }
 }
