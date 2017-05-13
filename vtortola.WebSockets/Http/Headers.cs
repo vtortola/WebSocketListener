@@ -68,8 +68,8 @@ namespace vtortola.WebSockets.Http
             if (Enum.GetUnderlyingType(typeof(KnownHeaderT)) != typeof(int))
                 throw new InvalidOperationException("TKnownHeader should be enum with System.Int32 underlying type.");
 
-            FromInt = (Func<int, KnownHeaderT>)EnumHelpers<KnownHeaderT>.FromNumber;
-            ToInt = (Func<KnownHeaderT, int>)EnumHelpers<KnownHeaderT>.ToNumber;
+            FromInt = (Func<int, KnownHeaderT>)EnumHelper<KnownHeaderT>.FromNumber;
+            ToInt = (Func<KnownHeaderT, int>)EnumHelper<KnownHeaderT>.ToNumber;
 
             KeyComparer = StringComparer.OrdinalIgnoreCase;
 

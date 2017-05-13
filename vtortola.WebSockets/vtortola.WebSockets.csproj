@@ -97,7 +97,7 @@
     <Compile Include="Tools\ExceptionExtentions.cs" />
     <Compile Include="Tools\HeadersHelper.cs" />
     <Compile Include="Tools\DelegateHelper.cs" />
-    <Compile Include="Tools\EnumHelpers.cs" />
+    <Compile Include="Tools\EnumHelper.cs" />
     <Compile Include="Tools\Guard.cs" />
     <Compile Include="Tools\HttpHelper.cs" />
     <Compile Include="Tools\NullLogger.cs" />
