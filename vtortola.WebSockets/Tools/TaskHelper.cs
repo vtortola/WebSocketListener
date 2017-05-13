@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -67,6 +68,127 @@ namespace vtortola.WebSockets.Tools
             var tc = new TaskCompletionSource<T>();
             tc.SetException(errors);
             return tc.Task;
+        }
+
+        public static Task IgnoreFault(
+            this Task task,
+            CancellationToken cancellationToken = default(CancellationToken),
+            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler scheduler = null)
+        {
+            if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
+
+            if (scheduler == null) scheduler = TaskScheduler.Current ?? TaskScheduler.Default;
+
+            if (task.Status == TaskStatus.RanToCompletion || task.Status == TaskStatus.Canceled) return task;
+
+            return task.ContinueWith(t =>
+            {
+                // ReSharper disable once UnusedVariable
+                var error = t.Exception;
+#if DEBUG
+                if (error != null)
+                {
+                    Debug.WriteLine("Ignored exception in task:");
+                    Debug.Indent();
+                    Debug.WriteLine(error);
+                    Debug.Unindent();
+                }
+#endif
+
+                if (t.IsCanceled) throw new TaskCanceledException();
+            }, cancellationToken, options, scheduler);
+        }
+        public static Task<T> IgnoreFault<T>(
+            this Task<T> task,
+            T defaultResult = default(T),
+            CancellationToken cancellationToken = default(CancellationToken),
+            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler scheduler = null)
+        {
+            if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
+
+            if (scheduler == null) scheduler = TaskScheduler.Current ?? TaskScheduler.Default;
+
+            return task.ContinueWith((t, s) =>
+            {
+                // ReSharper disable once UnusedVariable
+                var error = t.Exception;
+#if DEBUG
+                if (error != null)
+                {
+                    Debug.WriteLine("Ignored exception in task:");
+                    Debug.Indent();
+                    Debug.WriteLine(error);
+                    Debug.Unindent();
+                }
+#endif
+
+                if (t.IsCanceled) throw new TaskCanceledException();
+
+                if (t.Status == TaskStatus.RanToCompletion) return t.Result;
+
+                return (T)s;
+            }, defaultResult, cancellationToken, options, scheduler);
+        }
+        public static Task IgnoreFaultOrCancellation(
+            this Task task,
+            CancellationToken cancellationToken = default(CancellationToken),
+            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler scheduler = null)
+        {
+            if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
+
+            if (scheduler == null) scheduler = TaskScheduler.Current ?? TaskScheduler.Default;
+
+            if (task.IsCompleted) return CompletedTask;
+
+            return task.ContinueWith(t =>
+            {
+                // ReSharper disable once UnusedVariable
+                var error = t.Exception;
+#if DEBUG
+                if (error != null)
+                {
+                    Debug.WriteLine("Ignored exception in task:");
+                    Debug.Indent();
+                    Debug.WriteLine(error);
+                    Debug.Unindent();
+                }
+#endif
+            }, cancellationToken, options, scheduler);
+        }
+        public static Task<T> IgnoreFaultOrCancellation<T>(
+            this Task<T> task,
+            T defaultResult = default(T),
+            CancellationToken cancellationToken = default(CancellationToken),
+            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler scheduler = null)
+        {
+            if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
+
+            if (scheduler == null) scheduler = TaskScheduler.Current ?? TaskScheduler.Default;
+
+            if (task.IsCompleted) return Task.FromResult(task.Status == TaskStatus.RanToCompletion ? task.Result : defaultResult);
+
+            return task.ContinueWith((t, s) =>
+            {
+                // ReSharper disable once UnusedVariable
+                var error = t.Exception;
+#if DEBUG
+                if (error != null)
+                {
+                    Debug.WriteLine("Ignored exception in task:");
+                    Debug.Indent();
+                    Debug.WriteLine(error);
+                    Debug.Unindent();
+                }
+#endif
+
+                if (t.Status == TaskStatus.RanToCompletion) return t.Result;
+
+                return (T)s;
+            }, defaultResult, cancellationToken, options, scheduler);
         }
 
         public static void LogFault(this Task task, ILogger log, string message = null, [CallerMemberName] string memberName = "Task", [CallerFilePath] string sourceFilePath = "<no file>", [CallerLineNumber] int sourceLineNumber = 0)
