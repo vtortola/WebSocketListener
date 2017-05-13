@@ -1,4 +1,5 @@
 ﻿using System;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -48,13 +49,17 @@ namespace vtortola.WebSockets.Rfc6455
             SetBit(ref optionByte, 6, false);
             SetBit(ref optionByte, 5, false);
             SetBit(ref optionByte, 4, false);
-            Int32 value = optionByte;
-            value = value > 128 ? value - 128 : value;
+            var options = (WebSocketFrameOption)optionByte;
+            options = options > (WebSocketFrameOption)128 ? options - 128 : options;
 
-            if (!Enum.IsDefined(typeof(WebSocketFrameOption), value))
+            if (EnumHelper<WebSocketFrameOption>.IsDefined(options) == false)
                 return false;
 
-            headerFlags = new WebSocketFrameHeaderFlags(buffer[0],buffer[1],(WebSocketFrameOption)value); 
+            headerFlags = new WebSocketFrameHeaderFlags(buffer[0], buffer[1], options);
+
+            if (options > WebSocketFrameOption.Binary)
+                headerFlags.FIN = true; // control frames is always final
+
             return true;
         }
         private WebSocketFrameHeaderFlags(Byte byte1, Byte byte2, WebSocketFrameOption option)
@@ -111,7 +116,7 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new WebSocketException("Cannot create a header with a length of " + length);
 
             buffer[offset] = _byte1;
-            buffer[offset+1] = (Byte)(_byte2 + headerLength);
+            buffer[offset + 1] = (Byte)(_byte2 + headerLength);
         }
     }
 }
