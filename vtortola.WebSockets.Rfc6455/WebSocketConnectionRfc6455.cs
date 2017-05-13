@@ -117,17 +117,32 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 while (this.IsConnected && CurrentHeader == null)
                 {
-                    int read = 0;
+                    var buffered = 0;
                     var estimatedHeaderLength = 2;
                     // try read minimal frame first
-                    while (read < estimatedHeaderLength)
+                    while (buffered < estimatedHeaderLength)
                     {
-                        read += this._networkStream.Read(_headerBuffer.Array, _headerBuffer.Offset + read, estimatedHeaderLength - read);
-                        if (read >= 2)
+                        var read = this._networkStream.Read(_headerBuffer.Array, _headerBuffer.Offset + buffered, estimatedHeaderLength - buffered);
+                        if (read == 0)
+                        {
+                            buffered = 0;
+                            break;
+                        }
+
+                        buffered += read;
+                        if (buffered >= 2)
                             estimatedHeaderLength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer.Array, _headerBuffer.Offset);
                     }
 
-                    ParseHeader(read);
+                    if (buffered == 0)
+                    {
+                        if (this.log.IsDebugEnabled)
+                            this.log.Debug("Connection has been closed while async awaiting header.");
+                        Close(WebSocketCloseReasons.ProtocolError);
+                        return;
+                    }
+
+                    ParseHeader(buffered);
                 }
             }
             catch (Exception awaitHeaderError)
@@ -149,29 +164,41 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 while (this.IsConnected && CurrentHeader == null)
                 {
-                    int read = 0;
+                    var buffered = 0;
                     var estimatedHeaderLength = 2;
                     // try read minimal frame first
-                    while (read < estimatedHeaderLength && !cancellation.IsCancellationRequested)
+                    while (buffered < estimatedHeaderLength && !cancellation.IsCancellationRequested)
                     {
-                        read += await this._networkStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset + read, estimatedHeaderLength - read, cancellation).ConfigureAwait(false);
-                        if (read >= 2)
+                        var read = await this._networkStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset + buffered, estimatedHeaderLength - buffered, cancellation).ConfigureAwait(false);
+                        if (read == 0)
+                        {
+                            buffered = 0;
+                            break;
+                        }
+
+                        buffered += read;
+                        if (buffered >= 2)
                             estimatedHeaderLength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer.Array, _headerBuffer.Offset);
                     }
 
-                    if (read == 0 || cancellation.IsCancellationRequested)
+                    if (buffered == 0 || cancellation.IsCancellationRequested)
                     {
+                        if (buffered == 0)
+                        {
+                            if (this.log.IsDebugEnabled)
+                                this.log.Debug("Connection has been closed while async awaiting header.");
+                        }
                         Close(WebSocketCloseReasons.ProtocolError);
                         return;
                     }
 
-                    ParseHeader(read);
+                    ParseHeader(buffered);
                 }
             }
             catch (Exception awaitHeaderError)
             {
                 if (this.log.IsDebugEnabled)
-                    this.log.Debug("An error occurred while async awaiting header from WebSocket.", awaitHeaderError);
+                    this.log.Debug("An error occurred while async awaiting header.", awaitHeaderError);
 
                 Close(WebSocketCloseReasons.ProtocolError);
 
@@ -189,9 +216,9 @@ namespace vtortola.WebSockets.Rfc6455
             var reg = cancellationToken.Register(this.Close, false);
             try
             {
-                var readed = await this._networkStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
-                CurrentHeader.DecodeBytes(buffer, offset, readed);
-                return readed;
+                var read = await this._networkStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+                CurrentHeader.DecodeBytes(buffer, offset, read);
+                return read;
             }
             catch (Exception readError) when (readError is IOException || readError is InvalidOperationException)
             {
