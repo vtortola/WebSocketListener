@@ -73,8 +73,8 @@ namespace vtortola.WebSockets
             if (this.WebSocketReceiveTimeout == TimeSpan.Zero)
                 this.WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
 
-            if (this.SendBufferSize <= 0)
-                throw new WebSocketException("SendBufferSize must be bigger than 0.");
+            if (this.SendBufferSize <= 512)
+                throw new WebSocketException("SendBufferSize must be bigger than 512.");
 
             if (this.BufferManager != null && this.SendBufferSize < this.BufferManager.MaxBufferSize)
                 throw new WebSocketException("BufferManager.MaxBufferSize must be bigger or equals to SendBufferSize.");
@@ -85,23 +85,9 @@ namespace vtortola.WebSockets
 
         public WebSocketListenerOptions Clone()
         {
-            return new WebSocketListenerOptions()
-            {
-                PingTimeout = this.PingTimeout,
-                NegotiationQueueCapacity = this.NegotiationQueueCapacity,
-                ParallelNegotiations = this.ParallelNegotiations,
-                NegotiationTimeout = this.NegotiationTimeout,
-                WebSocketSendTimeout = this.WebSocketSendTimeout,
-                WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
-                SendBufferSize = this.SendBufferSize,
-                SubProtocols = this.SubProtocols ?? NoSubProtocols,
-                BufferManager = this.BufferManager,
-                OnHttpNegotiation = this.OnHttpNegotiation,
-                UseNagleAlgorithm = this.UseNagleAlgorithm,
-                PingMode = this.PingMode,
-                HttpFallback = this.HttpFallback,
-                Logger = this.Logger
-            };
+            var cloned = (WebSocketListenerOptions)this.MemberwiseClone();
+            cloned.SubProtocols = (string[])this.SubProtocols.Clone();
+            return cloned;
         }
     }
 }

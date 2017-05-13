@@ -37,15 +37,15 @@ namespace vtortola.WebSockets
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (standards.Count == 0) throw new ArgumentException("Empty list of WebSocket standards.", nameof(standards));
 
+            options.CheckCoherence();
+
             this.log = options.Logger;
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, TaskCompletionSource<WebSocket>>();
             this.standards = standards.Clone();
             this.options = options.Clone();
 
             if (this.options.BufferManager == null)
-                this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize); // create small buffer pool if not configured
-
-            options.CheckCoherence();
+                this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize * 2); // create small buffer pool if not configured
 
             this.standards.SetUsed(true);
             foreach (var standard in this.standards)
@@ -89,7 +89,12 @@ namespace vtortola.WebSockets
                 if (TryPrepareEndpoints(address, ref remoteEndpoint, ref localEndpoint) == false)
                     throw new WebSocketException($"Failed to resolve remote endpoint for '{address}' address.");
 
-                var request = new WebSocketHttpRequest(localEndpoint, remoteEndpoint) { RequestUri = address };
+                var request = new WebSocketHttpRequest(HttpRequestDirection.Outgoing)
+                {
+                    RequestUri = address,
+                    LocalEndPoint = localEndpoint,
+                    RemoteEndPoint = remoteEndpoint
+                };
                 var handshake = new WebSocketHandshake(request, cancellation);
                 this.pendingRequests.TryAdd(handshake, completion);
 
@@ -211,9 +216,7 @@ namespace vtortola.WebSockets
 
                 handshake.Cancellation.ThrowIfCancellationRequested();
 
-                var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request.LocalEndPoint, handshake.Request.RemoteEndPoint,
-                    handshake.Request,
-                    handshake.Response, handshake.NegotiatedMessageExtensions);
+                var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
 
                 return Tuple.Create(webSocket, handshake);
             }

@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
+using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Http
@@ -13,8 +13,8 @@ namespace vtortola.WebSockets.Http
     public sealed class HttpNegotiationQueue : IDisposable
     {
         private readonly ILogger log;
-        readonly BufferBlock<Socket> _sockets;
-        readonly BufferBlock<WebSocketNegotiationResult> _negotiations;
+        readonly AsyncQueue<Socket> _sockets;
+        readonly AsyncQueue<WebSocketNegotiationResult> _negotiations;
         readonly CancellationTokenSource _cancel;
         readonly WebSocketHandshaker _handShaker;
         readonly WebSocketListenerOptions _options;
@@ -33,22 +33,10 @@ namespace vtortola.WebSockets.Http
             _cancel = new CancellationTokenSource();
             _semaphore = new SemaphoreSlim(options.ParallelNegotiations);
 
-            _sockets = new BufferBlock<Socket>(new DataflowBlockOptions
-            {
-                BoundedCapacity = options.NegotiationQueueCapacity,
-                CancellationToken = _cancel.Token
-            });
-            _sockets.Completion.LogFault(this.log);
+            _sockets = new AsyncQueue<Socket>(options.NegotiationQueueCapacity);
+            _negotiations = new AsyncQueue<WebSocketNegotiationResult>();
 
-            _negotiations = new BufferBlock<WebSocketNegotiationResult>(new DataflowBlockOptions()
-            {
-                BoundedCapacity = options.NegotiationQueueCapacity,
-                CancellationToken = _cancel.Token,
-            });
-            this._negotiations.Completion.LogFault(this.log);
-
-            _cancel.Token.Register(_sockets.Complete);
-            _cancel.Token.Register(_negotiations.Complete);
+            _cancel.Token.Register(() => this._sockets.Close());
 
             _handShaker = new WebSocketHandshaker(standards, _options);
 
@@ -72,7 +60,7 @@ namespace vtortola.WebSockets.Http
                 catch (Exception negotiateError)
                 {
                     if (this.log.IsWarningEnabled)
-                        this.log.Warning("Negotiation task error occurred.", negotiateError);
+                        this.log.Warning("An error occurred while negotiating WebSocket request.", negotiateError);
                     _cancel.Cancel();
                 }
             }
@@ -101,7 +89,7 @@ namespace vtortola.WebSockets.Http
                     stream = await extTask;
                 }
 
-                var handshakeTask = _handShaker.HandshakeAsync(stream, client.LocalEndPoint as IPEndPoint, client.RemoteEndPoint as IPEndPoint);
+                var handshakeTask = _handShaker.HandshakeAsync(stream, client.LocalEndPoint, client.RemoteEndPoint);
                 await Task.WhenAny(timeoutTask, handshakeTask).ConfigureAwait(false);
                 if (timeoutTask.IsCompleted)
                     throw new WebSocketException("Negotiation timeout");
@@ -110,7 +98,7 @@ namespace vtortola.WebSockets.Http
 
                 if (handshake.IsValidWebSocketRequest)
                 {
-                    result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
+                    result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(stream, _options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
                 }
                 else if (handshake.IsValidHttpRequest && _options.HttpFallback != null)
                 {
@@ -123,13 +111,17 @@ namespace vtortola.WebSockets.Http
                     result = new WebSocketNegotiationResult(handshake.Error);
                 }
 
-                await _negotiations.SendAsync(result, _cancel.Token).ConfigureAwait(false);
+                if (_negotiations.TrySendAsync(result, _cancel.Token) == false)
+                    SafeEnd.Dispose(result.Result);
 
             }
-            catch (Exception ex)
+            catch (Exception negotiationError)
             {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while negotiating WebSocket request.", negotiationError);
+
                 SafeEnd.Dispose(client, this.log);
-                result = new WebSocketNegotiationResult(ExceptionDispatchInfo.Capture(ex));
+                result = new WebSocketNegotiationResult(ExceptionDispatchInfo.Capture(negotiationError));
             }
             finally
             {
@@ -139,7 +131,7 @@ namespace vtortola.WebSockets.Http
 
         public void Queue(Socket socket)
         {
-            if (!_sockets.Post(socket))
+            if (!_sockets.TrySendAsync(socket, this._cancel.Token))
                 SafeEnd.Dispose(socket, this.log);
         }
 

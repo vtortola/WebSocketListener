@@ -54,11 +54,6 @@ namespace vtortola.WebSockets
             this.NegotiatedMessageExtensions = new List<IWebSocketMessageExtensionContext>();
             this.Cancellation = cancellation;
         }
-        public WebSocketHandshake(IPEndPoint localEndpoint, IPEndPoint remoteEndpoint)
-            : this(new WebSocketHttpRequest(localEndpoint, remoteEndpoint), CancellationToken.None)
-        {
-
-        }
 
         public string ComputeHandshake()
         {

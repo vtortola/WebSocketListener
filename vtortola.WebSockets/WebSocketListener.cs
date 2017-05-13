@@ -25,6 +25,7 @@ namespace vtortola.WebSockets
             Guard.ParameterCannotBeNull(options, "options");
 
             options.CheckCoherence();
+
             _options = options.Clone();
             _cancel = new CancellationTokenSource();
 
@@ -37,7 +38,7 @@ namespace vtortola.WebSockets
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
             Standards = new WebSocketFactoryCollection();
 
-            _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, options);
+            _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, _options);
         }
         public WebSocketListener(IPEndPoint endpoint)
             : this(endpoint, new WebSocketListenerOptions())

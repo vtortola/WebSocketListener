@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Tools;
@@ -27,9 +28,13 @@ namespace vtortola.WebSockets
             this.options = options;
         }
 
-        public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, IPEndPoint localEndpoint = null, IPEndPoint remoteEndpoint = null)
+        public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, EndPoint localEndpoint = null, EndPoint remoteEndpoint = null)
         {
-            var handshake = new WebSocketHandshake(localEndpoint, remoteEndpoint);
+            var request = new WebSocketHttpRequest(HttpRequestDirection.Incoming) {
+                LocalEndPoint = localEndpoint ?? WebSocketHttpRequest.NoAddress,
+                RemoteEndPoint = remoteEndpoint ?? WebSocketHttpRequest.NoAddress
+            };
+            var handshake = new WebSocketHandshake(request, CancellationToken.None);
             try
             {
                 ReadHttpRequest(clientStream, handshake);
