@@ -19,14 +19,12 @@ namespace vtortola.WebSockets.Deflate
         }
         public override void Write(byte[] buffer, int offset, int count)
         {
-            RemoveUTF8BOM(buffer, ref offset, ref count);
             if (count == 0)
                 return;
             _deflate.Write(buffer, offset, count);
         }
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            RemoveUTF8BOM(buffer, ref offset, ref count);
             if (count == 0)
                 return;
             await _deflate.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
