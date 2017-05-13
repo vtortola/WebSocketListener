@@ -63,7 +63,7 @@ namespace vtortola.WebSockets.Rfc6455
             _byte2 = byte2;
             Option = option;
         }
-        public WebSocketFrameHeaderFlags(bool isComplete, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
+        public WebSocketFrameHeaderFlags(bool isComplete, bool isMasked, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             this.Option = option;
             _byte1 = new Byte();
@@ -74,6 +74,7 @@ namespace vtortola.WebSockets.Rfc6455
             this.RSV1 = extensionFlags.Rsv1;
             this.RSV2 = extensionFlags.Rsv2;
             this.RSV3 = extensionFlags.Rsv3;
+            this.MASK = isMasked;
 
             switch (option)
             {
