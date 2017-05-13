@@ -60,6 +60,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (_isFinished)
                 throw new WebSocketException("The write stream has been already flushed or disposed.");
 
+            // TODO: Make this feature optional on WebSocketFactory
             RemoveUTF8BOM(buffer, ref offset, ref count);
 
             while (count > 0)

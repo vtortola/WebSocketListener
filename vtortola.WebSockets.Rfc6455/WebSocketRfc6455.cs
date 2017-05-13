@@ -17,28 +17,27 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal WebSocketConnectionRfc6455 Connection { get; private set; }
 
-        public override EndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
-        public override EndPoint LocalEndpoint { get { return _localEndpoint; } }
-        public override Boolean IsConnected { get { return Connection.IsConnected; } }
-        public override TimeSpan Latency { get { return Connection.Latency; } }
-        public override String SubProtocol { get { return _subprotocol; } }
+        public override EndPoint RemoteEndpoint => _remoteEndpoint;
+        public override EndPoint LocalEndpoint => _localEndpoint;
+        public override Boolean IsConnected => Connection.IsConnected;
+        public override TimeSpan Latency => Connection.Latency;
+        public override String SubProtocol => _subprotocol;
 
-        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, EndPoint local, EndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocketRfc6455(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             : base(httpRequest, httpResponse)
         {
-            Guard.ParameterCannotBeNull(clientStream, "clientStream");
+            Guard.ParameterCannotBeNull(networkStream, "networkStream");
             Guard.ParameterCannotBeNull(options, "options");
-            Guard.ParameterCannotBeNull(local, "local");
-            Guard.ParameterCannotBeNull(remote, "remote");
             Guard.ParameterCannotBeNull(extensions, "extensions");
             Guard.ParameterCannotBeNull(httpRequest, "httpRequest");
 
             this.log = options.Logger;
 
-            _remoteEndpoint = remote;
-            _localEndpoint = local;
+            _remoteEndpoint = httpRequest.RemoteEndPoint;
+            _localEndpoint = httpRequest.RemoteEndPoint;
 
-            Connection = new WebSocketConnectionRfc6455(clientStream, options);
+
+            Connection = new WebSocketConnectionRfc6455(networkStream, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
             _extensions = extensions;
             _subprotocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
                 httpResponse.Headers[ResponseHeader.WebSocketProtocol] : default(string);
