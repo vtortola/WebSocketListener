@@ -11,6 +11,7 @@ namespace vtortola.WebSockets
         EndPoint RemoteEndPoint { get; }
         Uri RequestUri { get; }
         Version HttpVersion { get; }
+        bool IsSecure { get; }
         CookieCollection Cookies { get; }
         Headers<RequestHeader> Headers { get; }
         IDictionary<String, Object> Items { get; }
