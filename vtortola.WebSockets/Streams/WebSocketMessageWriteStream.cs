@@ -53,20 +53,5 @@ namespace vtortola.WebSockets
                 throw;
             }
         }
-
-        protected virtual void RemoveUTF8BOM(Byte[] buffer, ref Int32 offset, ref Int32 count)
-        {
-            // http://www.rgagnon.com/javadetails/java-handle-utf8-file-with-bom.html
-            if (buffer.Length >= 3 &&
-                buffer[0] == 239 && buffer[1] == 187 && buffer[2] == 191)
-            {
-                count -= 3;
-
-                if (count <= 0)
-                    return;
-
-                offset += 3;
-            }
-        }
     }
 }
