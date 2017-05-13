@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Threading;
 using vtortola.WebSockets.Tools;
 
@@ -24,6 +26,8 @@ namespace vtortola.WebSockets
         public string[] SubProtocols { get; set; }
         public BufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
+        public RemoteCertificateValidationCallback OnRemoteCertificateValidation { get; set; }
+        public SslProtocols SupportedSslProtocols { get; set; }
         public bool? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
         public IHttpFallback HttpFallback { get; set; }
@@ -40,8 +44,10 @@ namespace vtortola.WebSockets
             this.SendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
             this.SubProtocols = NoSubProtocols;
             this.OnHttpNegotiation = null;
+            this.OnRemoteCertificateValidation = null;
             this.UseNagleAlgorithm = true;
             this.PingMode = PingModes.LatencyControl;
+            this.SupportedSslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12;
 #if DEBUG
             this.Logger = DebugLogger.Instance;
 #else
