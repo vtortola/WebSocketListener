@@ -14,7 +14,7 @@ namespace WebSocketListener.UnitTests
     public class HttpFallbackTests
     {
         private readonly Mock<IHttpFallback> fallback;
-        private readonly List<Tuple<HttpRequest, Stream>> postedConnections;
+        private readonly List<Tuple<IHttpRequest, Stream>> postedConnections;
         private readonly WebSocketFactoryCollection factories;
         private readonly ILogger logger;
 
@@ -25,9 +25,9 @@ namespace WebSocketListener.UnitTests
             this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
 
             this.fallback = new Mock<IHttpFallback>();
-            this.fallback.Setup(x => x.Post(It.IsAny<HttpRequest>(), It.IsAny<Stream>()))
-                .Callback((HttpRequest r, Stream s) => this.postedConnections.Add(new Tuple<HttpRequest, Stream>(r, s)));
-            this.postedConnections = new List<Tuple<HttpRequest, Stream>>();
+            this.fallback.Setup(x => x.Post(It.IsAny<IHttpRequest>(), It.IsAny<Stream>()))
+                .Callback((IHttpRequest r, Stream s) => this.postedConnections.Add(new Tuple<IHttpRequest, Stream>(r, s)));
+            this.postedConnections = new List<Tuple<IHttpRequest, Stream>>();
         }
 
         [Fact]
