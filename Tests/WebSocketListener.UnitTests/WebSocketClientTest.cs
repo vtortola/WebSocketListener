@@ -58,10 +58,10 @@ namespace WebSocketListener.UnitTests
         public async Task EchoServerAsync(string address, int timeoutSeconds, string[] messages)
         {
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
-            var cancellation = new CancellationTokenSource(timeoutSeconds).Token;
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
             var factories = new WebSocketFactoryCollection()
                 .RegisterRfc6455();
-            var options = new WebSocketListenerOptions() { Logger = this.logger };
+            var options = new WebSocketListenerOptions { Logger = this.logger };
             using (var webSocketClient = new WebSocketClient(factories, options))
             {
                 var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
@@ -76,21 +76,20 @@ namespace WebSocketListener.UnitTests
                     await Task.Yield();
                     foreach (var message in messages)
                     {
-                        var messageBytes = Encoding.UTF8.GetBytes(message);
-                        using (var writer = webSocket.CreateMessageWriter(WebSocketMessageType.Text))
-                            await writer.WriteAsync(messageBytes, 0, messageBytes.Length, cancellation).ConfigureAwait(false);
+                        await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                        logger.Debug("[CLIENT] -> " + message);
                     }
+
                     foreach (var expectedMessage in messages)
                     {
-                        using (var readStream = await webSocket.ReadMessageAsync(cancellation).ConfigureAwait(false))
-                        {
-                            if (readStream == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
-                            
-                            Assert.NotNull(readStream);
-                            var actualMessage = await new StreamReader(readStream, Encoding.UTF8).ReadToEndAsync().ConfigureAwait(false);
-                            Assert.Equal(expectedMessage, actualMessage);
-                        }
+                        var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                        if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+                        logger.Debug("[CLIENT] <- " + (actualMessage ?? "<null>"));
+                        Assert.NotNull(actualMessage);
+                        Assert.Equal(expectedMessage, actualMessage);
                     }
+
+                    webSocket.Close();
                 })();
 
                 if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
@@ -106,9 +105,9 @@ namespace WebSocketListener.UnitTests
         public async Task LocalEchoServerAsync(int timeoutSeconds, string[] messages)
         {
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
-            var cancellation = new CancellationTokenSource(timeoutSeconds).Token;
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
             var port = new Random().Next(10000, IPEndPoint.MaxPort);
-            var options = new WebSocketListenerOptions() { Logger = this.logger };
+            var options = new WebSocketListenerOptions { Logger = this.logger };
             var listener = new vtortola.WebSockets.WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
             listener.Standards
                 .RegisterRfc6455();
@@ -118,14 +117,20 @@ namespace WebSocketListener.UnitTests
             {
                 await Task.Yield();
                 var socket = await listener.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
+
                 var echoMessages = new Func<Task>(async () =>
                 {
                     await Task.Yield();
-                    using (var readStream = await socket.ReadMessageAsync(cancellation).ConfigureAwait(false))
-                    using (var writeStream = socket.CreateMessageWriter(WebSocketMessageType.Text))
-                        await readStream.CopyToAsync(writeStream).ConfigureAwait(false);
-
+                    while (cancellation.IsCancellationRequested == false)
+                    {
+                        var message = await socket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                        logger.Debug("[SERVER] <- " + (message ?? "<null>"));
+                        if (message == null) break;
+                        await socket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                        logger.Debug("[SERVER] -> " + (message ?? "<null>"));
+                    }
                 }).Invoke();
+
                 await echoMessages.ConfigureAwait(false);
             }).Invoke();
 
@@ -145,22 +150,21 @@ namespace WebSocketListener.UnitTests
                     await Task.Yield();
                     foreach (var message in messages)
                     {
-                        var messageBytes = Encoding.UTF8.GetBytes(message);
-                        using (var writer = webSocket.CreateMessageWriter(WebSocketMessageType.Text))
-                            await writer.WriteAsync(messageBytes, 0, messageBytes.Length, cancellation).ConfigureAwait(false);
+                        await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                        logger.Debug("[CLIENT] -> " + message);
+
                     }
 
                     foreach (var expectedMessage in messages)
                     {
-                        using (var readStream = await webSocket.ReadMessageAsync(cancellation).ConfigureAwait(false))
-                        {
-                            if(readStream == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
-
-                            Assert.NotNull(readStream);
-                            var actualMessage = await new StreamReader(readStream, Encoding.UTF8).ReadToEndAsync().ConfigureAwait(false);
-                            Assert.Equal(expectedMessage, actualMessage);
-                        }
+                        var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                        if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+                        logger.Debug("[CLIENT] <- " + (actualMessage ?? "<null>"));
+                        Assert.NotNull(actualMessage);
+                        Assert.Equal(expectedMessage, actualMessage);
                     }
+
+                    webSocket.Close();
                 })();
 
                 if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
@@ -170,5 +174,41 @@ namespace WebSocketListener.UnitTests
             }
             await acceptSockets.ConfigureAwait(false);
         }
+
+        //[Fact]
+        //public async Task ListenTest()
+        //{
+        //    var timeout = Task.Delay(TimeSpan.FromSeconds(30));
+        //    var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
+        //    var port = 10000;
+        //    var options = new WebSocketListenerOptions { Logger = this.logger };
+        //    var listener = new vtortola.WebSockets.WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
+        //    listener.Standards
+        //        .RegisterRfc6455();
+        //    listener.Start();
+
+        //    var acceptSockets = new Func<Task>(async () =>
+        //    {
+        //        await Task.Yield();
+        //        var socket = await listener.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
+
+        //        var echoMessages = new Func<Task>(async () =>
+        //        {
+        //            await Task.Yield();
+        //            while (cancellation.IsCancellationRequested == false)
+        //            {
+        //                var message = await socket.ReadStringAsync(cancellation).ConfigureAwait(false);
+        //                logger.Debug("[SERVER] <- " + (message ?? "<null>"));
+        //                await socket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+        //                logger.Debug("[SERVER] -> " + (message ?? "<null>"));
+        //            }
+        //        }).Invoke();
+
+        //        await echoMessages.ConfigureAwait(false);
+        //    }).Invoke();
+
+        //    await acceptSockets.ConfigureAwait(false);
+        //    await timeout.ConfigureAwait(false);
+        //}
     }
 }

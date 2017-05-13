@@ -10,7 +10,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateBigHeaderInt32()
         {
-            var header = WebSocketFrameHeader.Create(int.MaxValue, true, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(int.MaxValue, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             Assert.Equal(10, header.HeaderLength);
             var buffer = new byte[10];
@@ -30,7 +30,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateBigHeaderInt64()
         {
-            var header = WebSocketFrameHeader.Create(long.MaxValue, true, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(long.MaxValue, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             var buffer = new byte[10];
             header.ToBytes(buffer, 0);
@@ -49,7 +49,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateBinaryFrameHeader()
         {
-            var header = WebSocketFrameHeader.Create(101, true, false, WebSocketFrameOption.Binary,
+            var header = WebSocketFrameHeader.Create(101, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Binary,
                 new WebSocketExtensionFlags());
             var buffer = new byte[2];
             header.ToBytes(buffer, 0);
@@ -60,7 +60,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateBinaryFrameHeaderWithExtensions()
         {
-            var header = WebSocketFrameHeader.Create(101, true, false, WebSocketFrameOption.Binary,
+            var header = WebSocketFrameHeader.Create(101, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Binary,
                 new WebSocketExtensionFlags
                 {
                     Rsv1 = true, Rsv2 = true
@@ -74,7 +74,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateContinuationPartialFrameHeader()
         {
-            var header = WebSocketFrameHeader.Create(101, false, true, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(101, false, true, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             var buffer = new byte[2];
             header.ToBytes(buffer, 0);
@@ -85,7 +85,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateFinalPartialFrameHeader()
         {
-            var header = WebSocketFrameHeader.Create(101, true, true, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(101, true, true, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             var buffer = new byte[2];
             header.ToBytes(buffer, 0);
@@ -96,7 +96,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateMediumHeader()
         {
-            var header = WebSocketFrameHeader.Create(138, true, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(138, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             Assert.Equal(4, header.HeaderLength);
             var buffer = new byte[4];
@@ -112,7 +112,7 @@ namespace WebSocketListener.UnitTests
         {
             ushort ilength = (ushort)short.MaxValue + 1;
 
-            var header = WebSocketFrameHeader.Create(ilength, true, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(ilength, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             Assert.Equal(4, header.HeaderLength);
             var buffer = new byte[4];
@@ -126,7 +126,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateMediumMaxHeader()
         {
-            var header = WebSocketFrameHeader.Create(ushort.MaxValue, true, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(ushort.MaxValue, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             Assert.Equal(4, header.HeaderLength);
             var buffer = new byte[4];
@@ -139,7 +139,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateSmallHeader()
         {
-            var header = WebSocketFrameHeader.Create(101, true, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(101, true, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             var buffer = new byte[2];
             header.ToBytes(buffer, 0);
@@ -150,7 +150,7 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void CreateStartPartialFrameHeader()
         {
-            var header = WebSocketFrameHeader.Create(101, false, false, WebSocketFrameOption.Text,
+            var header = WebSocketFrameHeader.Create(101, false, false, default(ArraySegment<byte>), WebSocketFrameOption.Text,
                 new WebSocketExtensionFlags());
             Assert.Equal(2, header.HeaderLength);
             var buffer = new byte[2];

@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BufferManager.cs" />
+    <Compile Include="Extensibility\IHttpRequest.cs" />
     <Compile Include="Extensibility\IHttpFallback.cs" />
     <Compile Include="Extensibility\IWebSocketConnectionExtension.cs" />
     <Compile Include="Extensibility\IWebSocketMessageExtensionContext.cs" />
@@ -68,7 +69,7 @@
     <Compile Include="Http\Headers.Enumerator.cs" />
     <Compile Include="Http\Headers.ValueCollection.cs" />
     <Compile Include="Http\HttpNegotiationQueue.cs" />
-    <Compile Include="Http\HttpRequest.cs" />
+    <Compile Include="Http\HttpRequestDirection.cs" />
     <Compile Include="Http\RequestHeader.cs" />
     <Compile Include="Http\ResponseHeader.cs" />
     <Compile Include="Http\HttpStatusDescription.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Streams\WebSocketMessageWriteStream.cs" />
     <Compile Include="Threading\AsyncCondition.cs" />
     <Compile Include="Threading\AsyncConditionSource.cs" />
+    <Compile Include="Threading\AsyncQueue.cs" />
     <Compile Include="Threading\AsyncResultTask.cs" />
     <Compile Include="Tools\ArraySegmentExtension.cs" />
     <Compile Include="Tools\TaskHelper.cs" />
@@ -101,6 +103,7 @@
     <Compile Include="Tools\NullLogger.cs" />
     <Compile Include="Tools\ObjectPool.cs" />
     <Compile Include="Tools\SafeEnd.cs" />
+    <Compile Include="Tools\ThreadStaticRandom.cs" />
     <Compile Include="WebSocket.cs" />
     <Compile Include="WebSocketFactory.cs" />
     <Compile Include="WebSocketFactoryCollection.cs" />
