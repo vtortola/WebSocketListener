@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace vtortola.WebSockets
@@ -13,6 +14,9 @@ namespace vtortola.WebSockets
 
         public WebSocketExtension(string name, IList<WebSocketExtensionOption> options)
         {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
             this.Name = name;
             this.Options = options as ReadOnlyCollection<WebSocketExtensionOption> ?? new ReadOnlyCollection<WebSocketExtensionOption>(options);
             this.extensionString = this.Options.Count > 0 ? this.Name + ";" + string.Join(";", this.Options) : this.Name;

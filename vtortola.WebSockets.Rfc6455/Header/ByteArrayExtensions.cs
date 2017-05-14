@@ -4,28 +4,32 @@ namespace vtortola.WebSockets.Rfc6455
 {
     internal static class ByteArrayExtensions
     {
-        internal static void ReversePortion(this byte[] array, int from, int count)
+        internal static void ReversePortion(this byte[] buffer, int offset, int count)
         {
-            if (count + from > array.Length)
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
+            if (count + offset > buffer.Length)
                 throw new ArgumentException("The array is to small");
 
             if (count < 1)
                 return;
 
             byte pivot;
-            int back = from + count - 1;
-            int half = (int)Math.Floor(count / 2f);
-            for (int i = from; i < from + half; i++)
+            var back = offset + count - 1;
+            var half = (int)Math.Floor(count / 2f);
+            for (var i = offset; i < offset + half; i++)
             {
-                pivot = array[i];
-                array[i] = array[back];
-                array[back--] = pivot;
+                pivot = buffer[i];
+                buffer[i] = buffer[back];
+                buffer[back--] = pivot;
             }
         }
 
         internal static void ToBytes(this ushort value, byte[] buffer, int offset)
         {
-            for (int i = 0; i < 2; i++)
+            for (var i = 0; i < 2; i++)
             {
                 buffer[offset + i] = (byte)value;
                 value >>= 8;
@@ -34,7 +38,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal static void ToBytes(this ulong value, byte[] buffer, int offset)
         {
-            for (int i = 0; i < 8; i++)
+            for (var i = 0; i < 8; i++)
             {
                 buffer[offset + i] = (byte)value;
                 value >>= 8;
@@ -43,7 +47,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal static void ToBytesBackwards(this ushort value, byte[] buffer, int offset)
         {
-            for (int i = offset + 1; i >= offset; i--)
+            for (var i = offset + 1; i >= offset; i--)
             {
                 buffer[i] = (byte)value;
                 value >>= 8;
@@ -52,7 +56,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal static void ToBytesBackwards(this ulong value, byte[] buffer, int offset)
         {
-            for (int i = offset + 7; i >= offset; i--)
+            for (var i = offset + 7; i >= offset; i--)
             {
                 buffer[i] = (byte)value;
                 value >>= 8;

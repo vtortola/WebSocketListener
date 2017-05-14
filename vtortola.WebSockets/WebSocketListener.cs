@@ -22,8 +22,8 @@ namespace vtortola.WebSockets
 
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(endpoint, nameof(endpoint));
-            Guard.ParameterCannotBeNull(options, nameof(options));
+            if (endpoint == null) throw new ArgumentNullException(nameof(endpoint));
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             options.CheckCoherence();
 
@@ -86,6 +86,8 @@ namespace vtortola.WebSockets
         }
         private void ConfigureSocket(Socket client)
         {
+            if (client == null) throw new ArgumentNullException(nameof(client));
+
             if (_options.UseNagleAlgorithm.HasValue)
                 client.NoDelay = !_options.UseNagleAlgorithm.Value;
             client.SendTimeout = (int)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
@@ -114,6 +116,7 @@ namespace vtortola.WebSockets
                 return null;
             }
         }
+
         public void Dispose()
         {
             this.Stop();

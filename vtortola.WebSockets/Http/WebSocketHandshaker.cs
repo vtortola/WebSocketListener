@@ -30,6 +30,8 @@ namespace vtortola.WebSockets
 
         public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, EndPoint localEndpoint = null, EndPoint remoteEndpoint = null)
         {
+            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+
             var request = new WebSocketHttpRequest(HttpRequestDirection.Incoming) {
                 LocalEndPoint = localEndpoint ?? WebSocketHttpRequest.NoAddress,
                 RemoteEndPoint = remoteEndpoint ?? WebSocketHttpRequest.NoAddress,
@@ -86,6 +88,8 @@ namespace vtortola.WebSockets
 
         private static bool IsWebSocketRequestValid(WebSocketHandshake handShake)
         {
+            if (handShake == null) throw new ArgumentNullException(nameof(handShake));
+
             var requestHeaders = handShake.Request.Headers;
             return requestHeaders.Contains(RequestHeader.Host) &&
                    requestHeaders.Contains(RequestHeader.Upgrade) &&
@@ -97,6 +101,8 @@ namespace vtortola.WebSockets
 
         private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             if (this.options.OnHttpNegotiation != null)
             {
                 try
@@ -113,6 +119,8 @@ namespace vtortola.WebSockets
 
         private void SelectExtensions(WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             foreach (var extRequest in handshake.Request.WebSocketExtensions)
             {
                 var extension = handshake.Factory.MessageExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.OrdinalIgnoreCase));
@@ -130,6 +138,9 @@ namespace vtortola.WebSockets
         }
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+
             if (!handshake.IsWebSocketRequest && handshake.IsValidHttpRequest && this.options.HttpFallback != null)
                 return;
 
@@ -143,6 +154,9 @@ namespace vtortola.WebSockets
 
         private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+
             handshake.IsResponseSent = true;
             using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
             {
@@ -153,6 +167,9 @@ namespace vtortola.WebSockets
 
         private void WriteResponseInternal(WebSocketHandshake handshake, StreamWriter writer)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+            if (writer == null) throw new ArgumentNullException(nameof(writer));
+
             if (!handshake.IsWebSocketRequest)
             {
                 handshake.Response.Status = HttpStatusCode.BadRequest;
@@ -175,6 +192,9 @@ namespace vtortola.WebSockets
         }
         private void ReadHttpRequest(Stream clientStream, WebSocketHandshake handshake)
         {
+            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, 1024, true))
             {
                 string line = sr.ReadLine();
@@ -189,6 +209,8 @@ namespace vtortola.WebSockets
         }
         private void ParseGET(string line, WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
                 throw new WebSocketException("Not GET request");
 
@@ -236,6 +258,9 @@ namespace vtortola.WebSockets
 
         private static void WriteHandshakeCookies(WebSocketHandshake handshake, StreamWriter writer)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+            if (writer == null) throw new ArgumentNullException(nameof(writer));
+
             if (handshake.Response.WebSocketExtensions.Any())
             {
                 bool firstExt = true, firstOpt = true;
@@ -271,6 +296,8 @@ namespace vtortola.WebSockets
         }
         private void SendNegotiationErrorResponse(StreamWriter writer, HttpStatusCode code)
         {
+            if (writer == null) throw new ArgumentNullException(nameof(writer));
+
             int intCode = (int)code;
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
@@ -295,6 +322,8 @@ namespace vtortola.WebSockets
 
         private void ConsolidateObjectModel(WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             ParseWebSocketProtocol(handshake);
 
             ParseWebSocketExtensions(handshake);
@@ -302,6 +331,8 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             if (!this.options.SubProtocols.Any())
                 return;
 
@@ -319,6 +350,8 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketExtensions(WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             var extensionList = new List<WebSocketExtension>();
             var requestHeaders = handshake.Request.Headers;
             if (requestHeaders.Contains(RequestHeader.WebSocketExtensions))
@@ -351,6 +384,8 @@ namespace vtortola.WebSockets
 
         private void ParseCookies(WebSocketHandshake handshake)
         {
+            if (handshake == null) throw new ArgumentNullException(nameof(handshake));
+
             var host = handshake.Request.Headers[RequestHeader.Host];
             foreach (var cookieValue in handshake.Request.Headers.GetValues(RequestHeader.Cookie))
             {

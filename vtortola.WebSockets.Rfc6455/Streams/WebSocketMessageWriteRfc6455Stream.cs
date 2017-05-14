@@ -11,9 +11,10 @@ namespace vtortola.WebSockets.Rfc6455
 
         private readonly WebSocketRfc6455 _webSocket;
         private readonly WebSocketMessageType _messageType;
+
         public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 webSocket, WebSocketMessageType messageType)
         {
-            Guard.ParameterCannotBeNull(webSocket, nameof(webSocket));
+            if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));
 
             _internalUsedBufferLength = 0;
             _messageType = messageType;
@@ -26,8 +27,11 @@ namespace vtortola.WebSockets.Rfc6455
             ExtensionFlags.Rsv2 = extensionFlags.Rsv2;
             ExtensionFlags.Rsv3 = extensionFlags.Rsv3;
         }
+
         private void BufferData(byte[] buffer, ref int offset, ref int count)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+
             var read = Math.Min(count, _webSocket.Connection.SendBuffer.Count - _internalUsedBufferLength);
             if (read == 0)
                 return;
@@ -38,6 +42,10 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
             if (_isFinished)
                 throw new WebSocketException("The write stream has been already flushed or disposed.");
             
@@ -55,6 +63,10 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
             if (_isFinished)
                 throw new WebSocketException("The write stream has been already flushed or disposed.");
 

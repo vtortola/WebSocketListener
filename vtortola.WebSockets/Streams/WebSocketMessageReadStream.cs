@@ -20,6 +20,10 @@ namespace vtortola.WebSockets
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
             var wrapper = new AsyncResultTask<int>(ReadAsync(buffer, offset, count), state);
             wrapper.Task.ContinueWith(t =>
             {

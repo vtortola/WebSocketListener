@@ -26,16 +26,16 @@ namespace vtortola.WebSockets.Rfc6455
         public WebSocketRfc6455(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             : base(httpRequest, httpResponse)
         {
-            Guard.ParameterCannotBeNull(networkStream, nameof(networkStream));
-            Guard.ParameterCannotBeNull(options, nameof(options));
-            Guard.ParameterCannotBeNull(extensions, nameof(extensions));
-            Guard.ParameterCannotBeNull(httpRequest, nameof(httpRequest));
+            if (networkStream == null) throw new ArgumentNullException(nameof(networkStream));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (httpRequest == null) throw new ArgumentNullException(nameof(httpRequest));
+            if (httpResponse == null) throw new ArgumentNullException(nameof(httpResponse));
+            if (extensions == null) throw new ArgumentNullException(nameof(extensions));
 
             this.log = options.Logger;
 
             _remoteEndpoint = httpRequest.RemoteEndPoint;
             _localEndpoint = httpRequest.RemoteEndPoint;
-
 
             Connection = new WebSocketConnectionRfc6455(networkStream, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
             _extensions = extensions;

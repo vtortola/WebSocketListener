@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,17 +15,28 @@ namespace vtortola.WebSockets.Deflate
 
         public WebSocketDeflateWriteStream(WebSocketMessageWriteStream inner)
         {
+            if (inner == null) throw new ArgumentNullException(nameof(inner));
+
             _inner = inner;
             _deflate = new DeflateStream(_inner, CompressionMode.Compress, true);
         }
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
             if (count == 0)
                 return;
+
             _deflate.Write(buffer, offset, count);
         }
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
             if (count == 0)
                 return;
             await _deflate.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);

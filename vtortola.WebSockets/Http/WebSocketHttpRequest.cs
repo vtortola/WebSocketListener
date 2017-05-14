@@ -34,6 +34,8 @@ namespace vtortola.WebSockets
         
         internal void SetExtensions(List<WebSocketExtension> extensions)
         {
+            if (extensions == null) throw new ArgumentNullException(nameof(extensions));
+
             WebSocketExtensions = new ReadOnlyCollection<WebSocketExtension>(extensions);
         }
 

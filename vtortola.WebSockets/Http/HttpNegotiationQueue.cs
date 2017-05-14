@@ -22,9 +22,9 @@ namespace vtortola.WebSockets.Http
 
         public HttpNegotiationQueue(WebSocketFactoryCollection standards, WebSocketConnectionExtensionCollection extensions, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(standards, nameof(standards));
-            Guard.ParameterCannotBeNull(extensions, nameof(extensions));
-            Guard.ParameterCannotBeNull(options, nameof(options));
+            if (standards == null) throw new ArgumentNullException(nameof(standards));
+            if (extensions == null) throw new ArgumentNullException(nameof(extensions));
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             this.log = options.Logger;
             _options = options;
@@ -132,6 +132,8 @@ namespace vtortola.WebSockets.Http
 
         public void Queue(Socket socket)
         {
+            if (socket == null) throw new ArgumentNullException(nameof(socket));
+
             if (!_sockets.TrySendAsync(socket, this._cancel.Token))
                 SafeEnd.Dispose(socket, this.log);
         }

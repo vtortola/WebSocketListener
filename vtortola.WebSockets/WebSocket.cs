@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public abstract class WebSocket:IDisposable
+    public abstract class WebSocket : IDisposable
     {
         public abstract EndPoint RemoteEndpoint { get; }
         public WebSocketHttpRequest HttpRequest { get; }
@@ -15,8 +15,11 @@ namespace vtortola.WebSockets
         public abstract TimeSpan Latency { get; }
         public abstract string SubProtocol { get; }
 
-        public WebSocket(WebSocketHttpRequest request, WebSocketHttpResponse response)
+        protected WebSocket(WebSocketHttpRequest request, WebSocketHttpResponse response)
         {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (response == null) throw new ArgumentNullException(nameof(response));
+
             HttpRequest = request;
             HttpResponse = response;
         }
@@ -26,5 +29,11 @@ namespace vtortola.WebSockets
         public abstract WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType);
         public abstract void Close();
         public abstract void Dispose();
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{this.GetType().Name}, remote: {this.RemoteEndpoint}, connected: {this.IsConnected}";
+        }
     }
 }

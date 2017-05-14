@@ -9,6 +9,7 @@ namespace vtortola.WebSockets
     public abstract class WebSocketMessageWriteStream : WebSocketMessageStream
     {
         public sealed override bool CanWrite => true;
+
         public abstract override void Write(byte[] buffer, int offset, int count);
         public abstract override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
 
@@ -26,6 +27,10 @@ namespace vtortola.WebSockets
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
             var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count), state);
             wrapper.Task.ContinueWith(t =>
             {

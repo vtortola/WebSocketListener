@@ -15,7 +15,7 @@ namespace vtortola.WebSockets.Rfc6455
         internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<byte> pingBuffer, ILogger logger)
             : base(logger)
         {
-            Guard.ParameterCannotBeNull(connection, nameof(connection));
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             _connection = connection;
             _pingTimeout = pingTimeout;

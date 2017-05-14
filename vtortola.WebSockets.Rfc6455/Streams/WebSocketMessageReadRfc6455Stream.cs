@@ -8,25 +8,23 @@ namespace vtortola.WebSockets.Rfc6455
     {
         private readonly WebSocketRfc6455 _webSocket;
         private bool _hasPendingFrames;
-        private readonly WebSocketMessageType _messageType;
-        private readonly WebSocketExtensionFlags _flags;
 
-        public override WebSocketMessageType MessageType => _messageType;
-        public override WebSocketExtensionFlags Flags => _flags;
+        public override WebSocketMessageType MessageType { get; }
+        public override WebSocketExtensionFlags Flags { get; }
 
         public WebSocketMessageReadRfc6455Stream(WebSocketRfc6455 webSocket)
         {
-            Guard.ParameterCannotBeNull(webSocket, nameof(webSocket));
+            if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));
 
             _webSocket = webSocket;
-            _messageType = (WebSocketMessageType)_webSocket.Connection.CurrentHeader.Flags.Option;
-            _flags = GetExtensionFlags(_webSocket.Connection.CurrentHeader.Flags);
+            this.MessageType = (WebSocketMessageType)_webSocket.Connection.CurrentHeader.Flags.Option;
+            this.Flags = GetExtensionFlags(_webSocket.Connection.CurrentHeader.Flags);
             _hasPendingFrames = !_webSocket.Connection.CurrentHeader.Flags.FIN;
             if (_webSocket.Connection.CurrentHeader.Flags.Option != WebSocketFrameOption.Binary && _webSocket.Connection.CurrentHeader.Flags.Option != WebSocketFrameOption.Text)
                 throw new WebSocketException($"WebSocketMessageReadNetworkStream can only start with a Text or Binary frame, not {_webSocket.Connection.CurrentHeader.Flags.Option}." );
         }
 
-        private WebSocketExtensionFlags GetExtensionFlags(WebSocketFrameHeaderFlags webSocketFrameHeaderFlags)
+        private static WebSocketExtensionFlags GetExtensionFlags(WebSocketFrameHeaderFlags webSocketFrameHeaderFlags)
         {
             var flags = new WebSocketExtensionFlags();
             flags.Rsv1 = webSocketFrameHeaderFlags.RSV1;
@@ -128,7 +126,6 @@ namespace vtortola.WebSockets.Rfc6455
 
             return (int)Math.Min(bufferSize, header.RemainingBytes);
         }
-
 
         private void LoadNewHeader()
         {
