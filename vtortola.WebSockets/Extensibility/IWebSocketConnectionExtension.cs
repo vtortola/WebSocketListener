@@ -5,7 +5,8 @@ namespace vtortola.WebSockets
 {
     public interface IWebSocketConnectionExtension
     {
-        Stream ExtendConnection(Stream stream);
         Task<Stream> ExtendConnectionAsync(Stream stream);
+
+        IWebSocketConnectionExtension Clone();
     }
 }

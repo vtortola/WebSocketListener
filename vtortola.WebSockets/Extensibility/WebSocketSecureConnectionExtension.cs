@@ -20,7 +20,6 @@ namespace vtortola.WebSockets
             _certificate = certificate;
             _protocols = SslProtocols.Tls12;
         }
-
         public WebSocketSecureConnectionExtension(X509Certificate2 certificate, RemoteCertificateValidationCallback validation)
         {
             if (certificate == null) throw new ArgumentNullException(nameof(certificate));
@@ -29,7 +28,6 @@ namespace vtortola.WebSockets
             _validation = validation;
             _protocols = SslProtocols.Tls12;
         }
-
         public WebSocketSecureConnectionExtension(X509Certificate2 certificate, RemoteCertificateValidationCallback validation, SslProtocols supportedSslProtocols)
         {
             if (certificate == null) throw new ArgumentNullException(nameof(certificate));
@@ -38,23 +36,25 @@ namespace vtortola.WebSockets
             _validation = validation;
             _protocols = supportedSslProtocols;
         }
-
-        public Stream ExtendConnection(Stream stream)
-        {
-            var ssl = new SslStream(stream, false, _validation);
-#if (UAP10_0  || NETSTANDARD || NETSTANDARDAPP)
-            ssl.AuthenticateAsServerAsync(_certificate, _validation != null, _protocols, false).Wait();
-#else
-            ssl.AuthenticateAsServer(_certificate, _validation != null, _protocols, false);
-#endif
-            return ssl;
-        }
-
+        
         public async Task<Stream> ExtendConnectionAsync(Stream stream)
         {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+
             var ssl = new SslStream(stream, false, _validation);
             await ssl.AuthenticateAsServerAsync(_certificate, _validation != null, _protocols, false).ConfigureAwait(false);
             return ssl;
+        }
+        /// <inheritdoc />
+        public IWebSocketConnectionExtension Clone()
+        {
+            return (IWebSocketConnectionExtension)this.MemberwiseClone();
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"Secure Connection: protocols: {_protocols}, certificate: {_certificate.SubjectName}";
         }
     }
 }
