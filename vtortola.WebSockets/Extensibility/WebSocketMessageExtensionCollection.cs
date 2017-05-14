@@ -19,6 +19,8 @@ namespace vtortola.WebSockets
 
         public void RegisterExtension(IWebSocketMessageExtension extension)
         {
+            if (extension == null) throw new ArgumentNullException(nameof(extension));
+
             if (this.IsReadOnly)
                 throw new WebSocketException("Extensions cannot be added after the service is started");
 

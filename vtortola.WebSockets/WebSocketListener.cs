@@ -35,7 +35,7 @@ namespace vtortola.WebSockets
             if (_options.BufferManager == null)
                 _options.BufferManager = BufferManager.CreateBufferManager(100, this._options.SendBufferSize); // create small buffer pool if not configured
 
-            ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
+            ConnectionExtensions = new WebSocketConnectionExtensionCollection();
             Standards = new WebSocketFactoryCollection();
 
             _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, _options);
@@ -68,6 +68,7 @@ namespace vtortola.WebSockets
             else
                 _listener.Start();
             this.Standards.SetUsed(true);
+            this.ConnectionExtensions.SetUsed(true);
             foreach (var standard in this.Standards)
                 standard.MessageExtensions.SetUsed(true);
 
@@ -78,6 +79,7 @@ namespace vtortola.WebSockets
             IsStarted = false;
             _listener.Stop();
             this.Standards.SetUsed(false);
+            this.ConnectionExtensions.SetUsed(false);
             foreach (var standard in this.Standards)
                 standard.MessageExtensions.SetUsed(false);
         }
