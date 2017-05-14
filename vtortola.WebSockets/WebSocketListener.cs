@@ -72,24 +72,6 @@ namespace vtortola.WebSockets
 
             this.StartAcceptingAsync().LogFault(this.log);
         }
-
-        private async Task StartAcceptingAsync()
-        {
-            await Task.Yield();
-
-            while (IsStarted)
-            {
-                var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
-                if (client == null) continue;
-
-                if (this.log.IsDebugEnabled)
-                    this.log.Debug($"New client from {client.RemoteEndPoint} is connected.");
-
-                this.ConfigureSocket(client);
-                this._negotiationQueue.Queue(client);
-            }
-        }
-
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Stop()
         {
@@ -107,14 +89,26 @@ namespace vtortola.WebSockets
                 this.log.Debug($"{nameof(WebSocketListener)} is stopped.");
         }
 
-        private void ConfigureSocket(Socket client)
+        private async Task StartAcceptingAsync()
         {
-            if (client == null) throw new ArgumentNullException(nameof(client));
+            await Task.Yield();
 
-            if (_options.UseNagleAlgorithm.HasValue)
-                client.NoDelay = !_options.UseNagleAlgorithm.Value;
-            client.SendTimeout = (int)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
-            client.ReceiveTimeout = (int)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
+            while (this.IsStarted)
+            {
+                var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
+                if (client == null) continue;
+
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug($"New client from {client.RemoteEndPoint} is connected.");
+
+                // configure socket
+                if (_options.UseNagleAlgorithm.HasValue)
+                    client.NoDelay = !_options.UseNagleAlgorithm.Value;
+                client.SendTimeout = (int)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
+                client.ReceiveTimeout = (int)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
+
+                this._negotiationQueue.Queue(client);
+            }
         }
 
         public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
