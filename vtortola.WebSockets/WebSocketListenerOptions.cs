@@ -2,13 +2,10 @@
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading;
-using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
     public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
-
-    public enum PingModes { LatencyControl, BandwidthSaving }
 
     public sealed class WebSocketListenerOptions
     {
@@ -29,7 +26,7 @@ namespace vtortola.WebSockets
         public RemoteCertificateValidationCallback OnRemoteCertificateValidation { get; set; }
         public SslProtocols SupportedSslProtocols { get; set; }
         public bool? UseNagleAlgorithm { get; set; }
-        public PingModes PingMode { get; set; }
+        public PingMode PingMode { get; set; }
         public IHttpFallback HttpFallback { get; set; }
         public ILogger Logger { get; set; }
 
@@ -46,7 +43,7 @@ namespace vtortola.WebSockets
             this.OnHttpNegotiation = null;
             this.OnRemoteCertificateValidation = null;
             this.UseNagleAlgorithm = true;
-            this.PingMode = PingModes.LatencyControl;
+            this.PingMode = PingMode.LatencyControl;
             this.SupportedSslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12;
 #if DEBUG
             this.Logger = DebugLogger.Instance;
@@ -58,8 +55,11 @@ namespace vtortola.WebSockets
 
         public void CheckCoherence()
         {
-            if (this.PingTimeout == TimeSpan.Zero)
+            if (this.PingTimeout <= TimeSpan.Zero)
                 this.PingTimeout = Timeout.InfiniteTimeSpan;
+
+            if (this.PingTimeout <= TimeSpan.FromSeconds(1))
+                this.PingTimeout = TimeSpan.FromSeconds(1);
 
             if (this.NegotiationQueueCapacity < 0)
                 throw new WebSocketException("NegotiationQueueCapacity must be 0 or more.");
