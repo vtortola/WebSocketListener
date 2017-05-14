@@ -6,7 +6,8 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    internal class WebSocketConnectionRfc6455 : IDisposable
+
+    internal partial class WebSocketConnectionRfc6455 : IDisposable
     {
         //    readonly Byte[] _buffer;
         private readonly ArraySegment<byte> _headerBuffer, _pingBuffer, _pongBuffer, _controlBuffer, _keyBuffer, _maskBuffer, _closeBuffer;
@@ -16,41 +17,41 @@ namespace vtortola.WebSockets.Rfc6455
         private readonly SemaphoreSlim _writeSemaphore;
         private readonly Stream _networkStream;
         private readonly WebSocketListenerOptions _options;
-        private readonly PingStrategy _ping;
+        private readonly PingHandler _ping;
         private readonly bool _maskData;
 
         private int _ongoingMessageWrite, _ongoingMessageAwaiting, _isClosed;
 
-        private bool _pingStarted;
         private TimeSpan _latency;
 
-        internal bool IsConnected => _isClosed == 0;
-        internal WebSocketFrameHeader CurrentHeader { get; private set; }
-        internal TimeSpan Latency
+        public bool IsConnected => _isClosed == 0;
+        public WebSocketFrameHeader CurrentHeader { get; private set; }
+        public TimeSpan Latency
         {
             get
             {
-                if (_options.PingMode != PingModes.LatencyControl)
+                if (_options.PingMode != PingMode.LatencyControl)
                     throw new InvalidOperationException("PingMode has not been set to 'LatencyControl', so latency is not available");
                 return _latency;
             }
             set
             {
-                if (_options.PingMode != PingModes.LatencyControl)
+                if (_options.PingMode != PingMode.LatencyControl)
                     throw new InvalidOperationException("PingMode has not been set to 'LatencyControl', so latency is not available");
                 _latency = value;
             }
         }
 
-        internal WebSocketConnectionRfc6455(Stream networkStream, bool maskData, WebSocketListenerOptions options)
+        public WebSocketConnectionRfc6455(Stream networkStream, bool maskData, WebSocketListenerOptions options)
         {
             if (networkStream == null) throw new ArgumentNullException(nameof(networkStream));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             const int HEADER_SEGMENT_SIZE = 16;
-            const int CONTROL_SEGMENT_SIZE = 125;
-            const int PONG_SEGMENT_SIZE = 125;
-            const int PING_SEGMENT_SIZE = 8;
+            const int CONTROL_SEGMENT_SIZE = 128;
+            const int PONG_SEGMENT_SIZE = 128;
+            const int PING_HEADER_SEGMENT_SIZE = 16;
+            const int PING_SEGMENT_SIZE = 128;
             const int SEND_HEADER_SEGMENT_SIZE = 16;
             const int KEY_SEGMENT_SIZE = 4;
             const int MASK_SEGMENT_SIZE = 4;
@@ -67,6 +68,7 @@ namespace vtortola.WebSockets.Rfc6455
             var bufferSize = HEADER_SEGMENT_SIZE +
                 CONTROL_SEGMENT_SIZE +
                 PONG_SEGMENT_SIZE +
+                PING_HEADER_SEGMENT_SIZE +
                 PING_SEGMENT_SIZE +
                 KEY_SEGMENT_SIZE +
                 MASK_SEGMENT_SIZE +
@@ -76,7 +78,7 @@ namespace vtortola.WebSockets.Rfc6455
             _headerBuffer = new ArraySegment<byte>(smallBuffer, 0, HEADER_SEGMENT_SIZE);
             _controlBuffer = _headerBuffer.NextSegment(CONTROL_SEGMENT_SIZE);
             _pongBuffer = _controlBuffer.NextSegment(PONG_SEGMENT_SIZE);
-            _pingBuffer = _pongBuffer.NextSegment(PING_SEGMENT_SIZE);
+            _pingBuffer = _pongBuffer.NextSegment(PING_HEADER_SEGMENT_SIZE).NextSegment(PING_SEGMENT_SIZE);
             _keyBuffer = _pingBuffer.NextSegment(KEY_SEGMENT_SIZE);
             _maskBuffer = _keyBuffer.NextSegment(MASK_SEGMENT_SIZE);
             _closeBuffer = _maskBuffer.NextSegment(CLOSE_SEGMENT_SIZE);
@@ -88,32 +90,43 @@ namespace vtortola.WebSockets.Rfc6455
 
             switch (options.PingMode)
             {
-                case PingModes.BandwidthSaving:
-                    _ping = new BandwidthSavingPing(this, _options.PingTimeout, _pingBuffer, this.log);
+                case PingMode.BandwidthSaving:
+                    _ping = new BandwidthSavingPing(this);
                     break;
-                case PingModes.LatencyControl:
-                    _ping = new LatencyControlPing(this, _options.PingTimeout, _pingBuffer, this.log);
+                case PingMode.LatencyControl:
+                    _ping = new LatencyControlPing(this);
+                    break;
+                case PingMode.Manual:
+                    this._ping = new ManualPing(this);
                     break;
                 default:
-                    throw new InvalidOperationException($"Unknown value '{options.PingMode}' for '{nameof(PingModes)}' enumeration.");
+                    throw new InvalidOperationException($"Unknown value '{options.PingMode}' for '{nameof(PingMode)}' enumeration.");
             }
         }
 
-        private void StartPing()
+        public Task PingAsync(byte[] data, int offset, int count)
         {
-            if (!_pingStarted)
+            if (_ping is ManualPing)
             {
-                _pingStarted = true;
-                if (_options.PingTimeout != Timeout.InfiniteTimeSpan)
+                if (data != null)
                 {
-                    Task.Run((Func<Task>)_ping.StartPing);
+                    if (offset < 0 || offset > data.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+                    if (count < 0 || count > 125 || offset + count > data.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
+                    _pingBuffer.Array[_pingBuffer.Offset] = (byte)count;
+                    Buffer.BlockCopy(data, offset, _pingBuffer.Array, _pingBuffer.Offset + 1, count);
+                }
+                else
+                {
+                    _pingBuffer.Array[_pingBuffer.Offset] = 0;
                 }
             }
+
+            return _ping.PingAsync();
         }
-        internal void AwaitHeader()
+        public void AwaitHeader()
         {
             CheckForDoubleRead();
-            StartPing();
             try
             {
                 while (this.IsConnected && CurrentHeader == null)
@@ -157,10 +170,9 @@ namespace vtortola.WebSockets.Rfc6455
                     throw;
             }
         }
-        internal async Task AwaitHeaderAsync(CancellationToken cancellation)
+        public async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
             CheckForDoubleRead();
-            StartPing();
             try
             {
                 while (this.IsConnected && CurrentHeader == null)
@@ -207,12 +219,12 @@ namespace vtortola.WebSockets.Rfc6455
                     throw;
             }
         }
-        internal void DisposeCurrentHeaderIfFinished()
+        public void DisposeCurrentHeaderIfFinished()
         {
             if (CurrentHeader != null && CurrentHeader.RemainingBytes == 0)
                 CurrentHeader = null;
         }
-        internal async Task<int> ReadInternalAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public async Task<int> ReadInternalAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
@@ -238,7 +250,7 @@ namespace vtortola.WebSockets.Rfc6455
                 reg.Dispose();
             }
         }
-        internal int ReadInternal(byte[] buffer, int offset, int count)
+        public int ReadInternal(byte[] buffer, int offset, int count)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
@@ -259,69 +271,112 @@ namespace vtortola.WebSockets.Rfc6455
                 return 0;
             }
         }
-        internal void EndWriting()
+        public void EndWriting()
         {
             _ongoingMessageWrite = 0;
         }
-        internal void BeginWriting()
+        public void BeginWriting()
         {
             if (Interlocked.CompareExchange(ref _ongoingMessageWrite, 1, 0) == 1)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
         }
-        internal void WriteInternal(ArraySegment<byte> payload, int length, bool isCompleted, bool headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags)
+
+        public ArraySegment<byte> PrepareFrame(ArraySegment<byte> payload, int length, bool isCompleted, bool headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags)
         {
-            try
+            var mask = default(ArraySegment<byte>);
+            if (this._maskData)
+                ThreadStaticRandom.NextBytes(mask = _maskBuffer);
+
+            var header = WebSocketFrameHeader.Create(length, isCompleted, headerSent, mask, (WebSocketFrameOption)type, extensionFlags);
+            if (header.ToBytes(payload.Array, payload.Offset - header.HeaderLength) != header.HeaderLength)
+                throw new WebSocketException("Wrong frame header written.");
+
+            header.EncodeBytes(payload.Array, payload.Offset, length);
+
+            return new ArraySegment<byte>(payload.Array, payload.Offset - header.HeaderLength, length + header.HeaderLength);
+        }
+        public async Task SendFrameAsync(ArraySegment<byte> frame, CancellationToken cancellation)
+        {
+            using (cancellation.CanBeCanceled ? cancellation.Register(this.Close, false) : default(CancellationTokenRegistration))
             {
-                var mask = default(ArraySegment<byte>);
-                if (this._maskData)
-                    ThreadStaticRandom.NextBytes(mask = _maskBuffer);
+                try
+                {
+                    var lockTaken = await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation).ConfigureAwait(false);
+                    try
+                    {
+                        if (!lockTaken)
+                            throw new WebSocketException("Write timeout.");
 
-                var header = WebSocketFrameHeader.Create(length, isCompleted, headerSent, mask, (WebSocketFrameOption)type, extensionFlags);
-                if (header.ToBytes(payload.Array, payload.Offset - header.HeaderLength) != header.HeaderLength)
-                    throw new WebSocketException("Wrong frame header written.");
+                        await this._networkStream.WriteAsync(frame.Array, frame.Offset, frame.Count, cancellation).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (_isClosed == 0 && lockTaken)
+                            SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
+                    }
+                }
+                catch (Exception writeError)
+                {
+                    if (this.log.IsDebugEnabled)
+                        this.log.Debug("An error occurred while async writing to WebSocket.", writeError);
 
-                if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
-                    throw new WebSocketException("Write timeout.");
+                    Close(WebSocketCloseReasons.UnexpectedCondition);
 
-                header.EncodeBytes(payload.Array, payload.Offset, length);
-
-                this._networkStream.Write(payload.Array, payload.Offset - header.HeaderLength, length + header.HeaderLength);
-            }
-            catch (Exception writeError)
-            {
-                if (this.log.IsDebugEnabled)
-                    this.log.Debug("An error occurred while sync writing to WebSocket.", writeError);
-
-                Close(WebSocketCloseReasons.UnexpectedCondition);
-
-                if (writeError is IOException == false && writeError is InvalidOperationException == false)
-                    throw new WebSocketException("Cannot write on WebSocket", writeError);
-            }
-            finally
-            {
-                if (_isClosed == 0)
-                    SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
+                    if (writeError is IOException == false && writeError is InvalidOperationException == false)
+                        throw new WebSocketException("Cannot write on WebSocket", writeError);
+                }
             }
         }
-        internal async Task WriteInternalAsync(ArraySegment<byte> payload, int length, bool isCompleted, bool headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
+        public async Task<bool> TrySendFrameAsync(ArraySegment<byte> frame, TimeSpan timeout, CancellationToken cancellation)
         {
-            var reg = cancellation.Register(this.Close, false);
+            using (cancellation.CanBeCanceled ? cancellation.Register(this.Close, false) : default(CancellationTokenRegistration))
+            {
+                try
+                {
+                    var lockTaken = await _writeSemaphore.WaitAsync(timeout, cancellation).ConfigureAwait(false);
+                    try
+                    {
+                        if (!lockTaken)
+                            return false;
+
+                        await this._networkStream.WriteAsync(frame.Array, frame.Offset, frame.Count, cancellation).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        if (_isClosed == 0 && lockTaken)
+                            SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
+                    }
+                }
+                catch (Exception writeError)
+                {
+                    if (this.log.IsDebugEnabled)
+                        this.log.Debug("An error occurred while async writing to WebSocket.", writeError);
+
+                    Close(WebSocketCloseReasons.UnexpectedCondition);
+
+                    if (writeError is IOException == false && writeError is InvalidOperationException == false)
+                        throw new WebSocketException("Cannot write on WebSocket", writeError);
+                }
+            }
+            return true;
+        }
+        public void SendFrame(ArraySegment<byte> frame)
+        {
             try
             {
-                var mask = default(ArraySegment<byte>);
-                if (this._maskData)
-                    ThreadStaticRandom.NextBytes(mask = _maskBuffer);
+                var lockTaken = _writeSemaphore.Wait(_options.WebSocketSendTimeout);
+                try
+                {
+                    if (!lockTaken)
+                        throw new WebSocketException("Write timeout.");
 
-                var header = WebSocketFrameHeader.Create(length, isCompleted, headerSent, mask, (WebSocketFrameOption)type, extensionFlags);
-                if (header.ToBytes(payload.Array, payload.Offset - header.HeaderLength) != header.HeaderLength)
-                    throw new WebSocketException("Wrong frame header written.");
-
-                if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
-                    throw new WebSocketException("Write timeout");
-
-                header.EncodeBytes(payload.Array, payload.Offset, length);
-
-                await this._networkStream.WriteAsync(payload.Array, payload.Offset - header.HeaderLength, length + header.HeaderLength, cancellation).ConfigureAwait(false);
+                    this._networkStream.Write(frame.Array, frame.Offset, frame.Count);
+                }
+                finally
+                {
+                    if (_isClosed == 0 && lockTaken)
+                        SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
+                }
             }
             catch (Exception writeError)
             {
@@ -333,14 +388,9 @@ namespace vtortola.WebSockets.Rfc6455
                 if (writeError is IOException == false && writeError is InvalidOperationException == false)
                     throw new WebSocketException("Cannot write on WebSocket", writeError);
             }
-            finally
-            {
-                reg.Dispose();
-                if (_isClosed == 0)
-                    SafeEnd.ReleaseSemaphore(_writeSemaphore, this.log);
-            }
         }
-        internal void Close()
+
+        public void Close()
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
@@ -405,37 +455,72 @@ namespace vtortola.WebSockets.Rfc6455
 
                 case WebSocketFrameOption.Ping:
                 case WebSocketFrameOption.Pong:
-                    int contentLength = _pongBuffer.Count;
+                    var contentLength = _pongBuffer.Count;
                     if (CurrentHeader.ContentLength < 125)
                         contentLength = (int)CurrentHeader.ContentLength;
-                    int readed = 0;
+
+                    int read = 0;
                     while (CurrentHeader.RemainingBytes > 0)
                     {
-                        readed = clientStream.Read(_pongBuffer.Array, _pongBuffer.Offset + readed, contentLength - readed);
-                        CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, readed);
+                        read = clientStream.Read(_pongBuffer.Array, _pongBuffer.Offset + read, contentLength - read);
+                        CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, read);
                     }
 
                     if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
                         _ping.NotifyPong(_pongBuffer);
                     else // pong frames echo what was 'pinged'
-                        this.WriteInternal(_pongBuffer, readed, true, false, (WebSocketMessageType)WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
+                    {
+                        var frame = this.PrepareFrame(_pongBuffer, read, true, false, (WebSocketMessageType)WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
+                        this.SendFrame(frame);
+                    }
 
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
             }
         }
-        internal void Close(WebSocketCloseReasons reason)
+
+        public async Task CloseAsync(WebSocketCloseReasons reason)
         {
             try
             {
                 if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
                     return;
 
-                ((ushort)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
-                WriteInternal(_closeBuffer, 2, true, false, (WebSocketMessageType)WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
+                using (this._networkStream)
+                {
+                    ((ushort)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
+                    var messageType = (WebSocketMessageType)WebSocketFrameOption.ConnectionClose;
+                    var closeFrame = this.PrepareFrame(_closeBuffer, 2, true, false, messageType, WebSocketExtensionFlags.None);
+                    await this.SendFrameAsync(closeFrame, CancellationToken.None).ConfigureAwait(false);
 #if (NET45 || NET451 || NET452 || NET46)
-                this._networkStream.Close();
+                    this._networkStream.Close();
 #endif
+                }
+            }
+            catch (Exception closeError)
+            {
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug("An error occurred while closing connection.", closeError);
+            }
+        }
+        public void Close(WebSocketCloseReasons reason)
+        {
+            try
+            {
+                if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
+                    return;
+
+                using (_networkStream)
+                {
+
+                    ((ushort)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
+                    var closeFrame = this.PrepareFrame(_closeBuffer, 2, true, false, (WebSocketMessageType)WebSocketFrameOption.ConnectionClose, WebSocketExtensionFlags.None);
+                    this.SendFrame(closeFrame);
+#if (NET45 || NET451 || NET452 || NET46)
+                    this._networkStream.Close();
+#endif
+                }
+
             }
             catch (Exception closeError)
             {

@@ -22,10 +22,12 @@ namespace vtortola.WebSockets
 
         private readonly ILogger log;
         private readonly AsyncConditionSource closeEvent;
-        private readonly CancellationTokenSource workCancellation;
+        private readonly CancellationTokenSource workCancellationSource;
         private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
         private readonly ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>> pendingRequests;
+        private readonly CancellationQueue negotiationsTimeoutQueue;
+        private readonly PingQueue pingQueue;
 
         public bool HasPendingRequests => this.pendingRequests.IsEmpty == false;
 
@@ -39,10 +41,15 @@ namespace vtortola.WebSockets
 
             this.log = options.Logger;
             this.closeEvent = new AsyncConditionSource { ContinueOnCapturedContext = false };
-            this.workCancellation = new CancellationTokenSource();
+            this.workCancellationSource = new CancellationTokenSource();
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>>();
             this.standards = standards.Clone();
             this.options = options.Clone();
+
+            if (options.NegotiationTimeout > TimeSpan.Zero)
+                this.negotiationsTimeoutQueue = new CancellationQueue(options.NegotiationTimeout) { ScheduleCancellation = true };
+            if(options.PingMode != PingMode.Manual)
+                this.pingQueue = new PingQueue(options.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(options.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5));
 
             if (this.options.BufferManager == null)
                 this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize * 2); // create small buffer pool if not configured
@@ -72,13 +79,14 @@ namespace vtortola.WebSockets
             try
             {
                 cancellation.ThrowIfCancellationRequested();
-                if (this.workCancellation.IsCancellationRequested)
+                if (this.workCancellationSource.IsCancellationRequested)
                     throw new WebSocketException("Client is currently closing or closed.");
 
-                if (cancellation.CanBeCanceled == false)
-                    cancellation = this.workCancellation.Token;
-                else
-                    cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.workCancellation.Token).Token;
+                var workCancellation = this.workCancellationSource?.Token ?? CancellationToken.None;
+                var negotiationCancellation = this.negotiationsTimeoutQueue?.GetSubscriptionList().Token ?? CancellationToken.None;
+
+                if (cancellation.CanBeCanceled || workCancellation.CanBeCanceled || negotiationCancellation.CanBeCanceled)
+                    cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, workCancellation, negotiationCancellation).Token;
 
                 if (IsSchemeValid(address) == false)
                     throw new WebSocketException($"Invalid request url '{address}' or scheme '{address?.Scheme}'.");
@@ -101,12 +109,22 @@ namespace vtortola.WebSockets
 
                 this.pendingRequests.TryAdd(handshake, pendingRequest);
 
-                await pendingRequest.IgnoreFaultOrCancellation().ConfigureAwait(false);
+                var webSocket = await pendingRequest.IgnoreFaultOrCancellation().ConfigureAwait(false);
 
-                if (this.pendingRequests.TryRemove(handshake, out pendingRequest) && this.workCancellation.IsCancellationRequested && this.pendingRequests.IsEmpty)
+                if (!workCancellation.IsCancellationRequested && negotiationCancellation.IsCancellationRequested)
+                {
+                    SafeEnd.Dispose(webSocket, this.log);
+                    throw new WebSocketException("Negotiation timeout.");
+                }
+
+                if (this.pendingRequests.TryRemove(handshake, out pendingRequest) && this.workCancellationSource.IsCancellationRequested && this.pendingRequests.IsEmpty)
                     this.closeEvent.Set();
 
-                return await pendingRequest.ConfigureAwait(false);
+                webSocket = await pendingRequest.ConfigureAwait(false);
+
+                this.pingQueue?.GetSubscriptionList().Add(webSocket);
+
+                return webSocket;
             }
             catch (Exception connectionError)
                 when (connectionError.Unwrap() is ThreadAbortException == false &&
@@ -119,8 +137,12 @@ namespace vtortola.WebSockets
 
         public async Task CloseAsync()
         {
-            this.workCancellation.Cancel(throwOnFirstException: false);
+            this.workCancellationSource.Cancel(throwOnFirstException: false);
             await this.closeEvent;
+
+            SafeEnd.Dispose(this.pingQueue, this.log);
+            SafeEnd.Dispose(this.negotiationsTimeoutQueue, this.log);
+            SafeEnd.Dispose(this.workCancellationSource, this.log);
         }
 
         private async Task<WebSocket> OpenConnectionAsync(WebSocketHandshake handshake, CancellationToken cancellation)

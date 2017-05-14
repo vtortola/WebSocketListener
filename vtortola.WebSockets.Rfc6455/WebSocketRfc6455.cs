@@ -85,6 +85,17 @@ namespace vtortola.WebSockets.Rfc6455
 
             return writer;
         }
+        /// <inheritdoc />
+        public override Task SendPingAsync(byte[] data, int offset, int count)
+        {
+            if (data != null)
+            {
+                if (offset < 0 || offset > data.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+                if (count < 0 || count > 125 || offset + count > data.Length) throw new ArgumentOutOfRangeException(nameof(count));
+            }
+
+            return this.Connection.PingAsync(data, offset, count);
+        }
         public override void Close()
         {
             Connection.Close();

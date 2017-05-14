@@ -19,6 +19,7 @@ namespace vtortola.WebSockets.Http
         private readonly WebSocketListenerOptions _options;
         private readonly WebSocketConnectionExtensionCollection _extensions;
         private readonly SemaphoreSlim _semaphore;
+        private readonly PingQueue pingQueue;
 
         public HttpNegotiationQueue(WebSocketFactoryCollection standards, WebSocketConnectionExtensionCollection extensions, WebSocketListenerOptions options)
         {
@@ -27,6 +28,7 @@ namespace vtortola.WebSockets.Http
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             this.log = options.Logger;
+
             _options = options;
             _extensions = extensions;
             _cancel = new CancellationTokenSource();
@@ -38,6 +40,9 @@ namespace vtortola.WebSockets.Http
             _cancel.Token.Register(() => this._sockets.Close());
 
             _handShaker = new WebSocketHandshaker(standards, _options);
+
+            if (options.PingMode != PingMode.Manual)
+                this.pingQueue = new PingQueue(options.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(options.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5));
 
             WorkAsync().LogFault(this.log);
         }
@@ -112,9 +117,15 @@ namespace vtortola.WebSockets.Http
                     result = new WebSocketNegotiationResult(handshake.Error);
                 }
 
+                var webSocket = result.Result;
                 if (_negotiations.TrySendAsync(result, _cancel.Token) == false)
-                    SafeEnd.Dispose(result.Result);
+                {
+                    SafeEnd.Dispose(webSocket);
+                    return; // too many negotiations
+                }
 
+                if (webSocket != null)
+                    this.pingQueue?.GetSubscriptionList().Add(webSocket);
             }
             catch (Exception negotiationError)
             {
@@ -152,6 +163,7 @@ namespace vtortola.WebSockets.Http
                 _cancel.Cancel();
                 _cancel.Dispose();
             }
+            SafeEnd.Dispose(this.pingQueue, this.log);
         }
     }
 }

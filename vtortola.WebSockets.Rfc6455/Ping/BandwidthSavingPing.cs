@@ -1,63 +1,59 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    internal sealed class BandwidthSavingPing : PingStrategy
+    partial class WebSocketConnectionRfc6455
     {
-        private readonly TimeSpan _pingTimeout;
-        private readonly WebSocketConnectionRfc6455 _connection;
-        private readonly ArraySegment<byte> _pingBuffer;
-
-        private DateTime _lastActivity;
-        private TimeSpan _pingInterval;
-
-        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<byte> pingBuffer, ILogger logger)
-            : base(logger)
+        private sealed class BandwidthSavingPing : PingHandler
         {
-            if (connection == null) throw new ArgumentNullException(nameof(connection));
+            private readonly TimeSpan _pingTimeout;
+            private readonly TimeSpan _pingInterval;
+            private readonly WebSocketConnectionRfc6455 _connection;
+            private readonly ArraySegment<byte> _pingBuffer;
 
-            _connection = connection;
-            _pingTimeout = pingTimeout;
-            _pingBuffer = pingBuffer;
-        }
+            private long _lastActivity;
 
-        internal override async Task StartPing()
-        {
-            _lastActivity = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Max(500, _pingTimeout.TotalMilliseconds / 2));
-
-            while (_connection.IsConnected)
+            public BandwidthSavingPing(WebSocketConnectionRfc6455 connection)
             {
-                await Task.Delay(_pingInterval).ConfigureAwait(false);
+                if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-                try
-                {
-                    var now = DateTime.Now;
+                _connection = connection;
+                _pingTimeout = connection._options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection._options.PingTimeout;
+                _pingBuffer = connection._pingBuffer;
 
-                    if (_lastActivity.Add(_pingTimeout) < now)
-                    {
-                        _connection.Close(WebSocketCloseReasons.GoingAway);
-                    }
-                    else if (_lastActivity.Add(_pingInterval) < now)
-                    {
-                        _connection.WriteInternal(_pingBuffer, 0, true, false, (WebSocketMessageType)WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
-                    }
-                }
-                catch (Exception pingError)
-                {
-                    if (this.Log.IsWarningEnabled)
-                        this.Log.Warning("An error occurred while sending ping.", pingError);
-
-                    _connection.Close(WebSocketCloseReasons.ProtocolError);
-                }
+                this.NotifyActivity();
             }
 
-        }
+            /// <inheritdoc />
+            public override async Task PingAsync()
+            {
+                var elapsedTime = TimestampToTimeSpan(Stopwatch.GetTimestamp() - _lastActivity);
+                if (elapsedTime > _pingTimeout)
+                {
+                    await _connection.CloseAsync(WebSocketCloseReasons.GoingAway).ConfigureAwait(false);
+                    return;
+                }
 
-        internal override void NotifyActivity()
-        {
-            _lastActivity = DateTime.Now;
+                if (elapsedTime < _pingInterval)
+                    return;
+
+                var messageType = (WebSocketMessageType)WebSocketFrameOption.Ping;
+                var pingFrame = _connection.PrepareFrame(_pingBuffer, 0, true, false, messageType, WebSocketExtensionFlags.None);
+                await _connection.SendFrameAsync(pingFrame, CancellationToken.None).ConfigureAwait(false);
+            }
+
+            /// <inheritdoc />
+            public override void NotifyPong(ArraySegment<byte> pongBuffer)
+            {
+
+            }
+            public override void NotifyActivity()
+            {
+                _lastActivity = Stopwatch.GetTimestamp();
+            }
         }
     }
 }
