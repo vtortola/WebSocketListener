@@ -2,7 +2,7 @@
 
 namespace vtortola.WebSockets.Tools
 {
-    public static class ArraySegmentExtension
+    internal static class ArraySegmentExtension
     {
         public static ArraySegment<T> NextSegment<T>(this ArraySegment<T> segment, int segmentSize)
         {

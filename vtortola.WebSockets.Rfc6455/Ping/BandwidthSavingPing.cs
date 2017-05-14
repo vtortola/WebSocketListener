@@ -41,7 +41,7 @@ namespace vtortola.WebSockets.Rfc6455
                     }
                     else if (_lastActivity.Add(_pingInterval) < now)
                     {
-                        _connection.WriteInternal(_pingBuffer, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+                        _connection.WriteInternal(_pingBuffer, 0, true, false, (WebSocketMessageType)WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
                 catch (Exception pingError)

@@ -12,7 +12,7 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketHandshaker
+    internal class WebSocketHandshaker
     {
         private readonly ILogger log;
         private readonly WebSocketListenerOptions options;
@@ -20,8 +20,8 @@ namespace vtortola.WebSockets
 
         public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(factories, nameof(factories));
-            Guard.ParameterCannotBeNull(options, nameof(options));
+            if (factories == null) throw new ArgumentNullException(nameof(factories));
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
             this.log = options.Logger;
             this.factories = factories;

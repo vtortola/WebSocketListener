@@ -9,7 +9,7 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Threading
 {
-    public sealed class AsyncQueue<T>
+    internal sealed class AsyncQueue<T>
     {
         private const int STATE_OPENED = 0;
         private const int STATE_CLOSED = 1;

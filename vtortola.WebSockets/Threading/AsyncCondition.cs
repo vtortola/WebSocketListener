@@ -2,7 +2,7 @@
 
 namespace vtortola.WebSockets.Threading
 {
-    public struct AsyncConditionVariable
+    internal struct AsyncConditionVariable
     {
         private readonly AsyncConditionSource source;
 

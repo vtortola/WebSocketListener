@@ -2,8 +2,8 @@
 
 namespace vtortola.WebSockets.Http
 {
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
-    public class HeaderAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Field)]
+    internal class HeaderAttribute : Attribute
     {
         public string Name { get; }
         public bool IsAtomic { get; set; }

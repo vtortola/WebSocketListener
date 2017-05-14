@@ -2,7 +2,7 @@
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public sealed class WebSocketFrameHeaderFlags
+    internal sealed class WebSocketFrameHeaderFlags
     {
         private byte _byte1, _byte2;
 

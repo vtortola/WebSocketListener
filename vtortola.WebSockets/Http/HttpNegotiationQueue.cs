@@ -9,7 +9,7 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Http
 {
-    public sealed class HttpNegotiationQueue : IDisposable
+    internal sealed class HttpNegotiationQueue : IDisposable
     {
         private readonly ILogger log;
         private readonly AsyncQueue<Socket> _sockets;

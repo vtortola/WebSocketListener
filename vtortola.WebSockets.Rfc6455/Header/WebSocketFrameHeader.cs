@@ -2,7 +2,7 @@
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public sealed class WebSocketFrameHeader
+    internal sealed class WebSocketFrameHeader
     {
         private readonly ArraySegment<byte> _key;
         private int cursor;

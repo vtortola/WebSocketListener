@@ -10,7 +10,7 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Threading
 {
-    public sealed class AsyncConditionSource
+    internal sealed class AsyncConditionSource
     {
         public struct Awaiter : ICriticalNotifyCompletion
         {

@@ -9,7 +9,7 @@ using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketHandshake : IComparable<WebSocketHandshake>, IEquatable<WebSocketHandshake>
+    internal class WebSocketHandshake : IComparable<WebSocketHandshake>, IEquatable<WebSocketHandshake>
     {
         private static long LastId = 1;
 

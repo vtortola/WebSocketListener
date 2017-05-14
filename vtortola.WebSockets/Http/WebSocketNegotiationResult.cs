@@ -2,7 +2,7 @@
 
 namespace vtortola.WebSockets.Http
 {
-    public sealed class WebSocketNegotiationResult
+    internal sealed class WebSocketNegotiationResult
     {
         public WebSocket Result { get; }
         public ExceptionDispatchInfo Error { get; }

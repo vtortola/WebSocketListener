@@ -4,7 +4,7 @@ using System.Net;
 
 namespace vtortola.WebSockets.Tools
 {
-    public static class HttpHelper
+    internal static class HttpHelper
     {
         public static readonly string WebSocketHttp10Version = "HTTP/1.0";
         public static readonly string WebSocketHttp11Version = "HTTP/1.1";

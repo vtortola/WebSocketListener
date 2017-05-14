@@ -42,7 +42,7 @@ namespace vtortola.WebSockets.Rfc6455
                     else
                     {
                         ((ulong)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
-                        _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+                        _connection.WriteInternal(_pingBuffer, 8, true, false, (WebSocketMessageType)WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
                 catch (Exception pingError)

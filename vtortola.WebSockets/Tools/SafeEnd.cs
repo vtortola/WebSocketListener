@@ -4,7 +4,7 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
-    public static class SafeEnd
+    internal static class SafeEnd
     {
         public static void Dispose<T>(T disposable, ILogger log = null) where T : IDisposable
         {

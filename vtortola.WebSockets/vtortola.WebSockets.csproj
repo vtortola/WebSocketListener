@@ -88,14 +88,14 @@
     <Compile Include="Threading\AsyncResultTask.cs" />
     <Compile Include="Tools\ArraySegmentExtension.cs" />
     <Compile Include="Tools\TaskHelper.cs" />
-    <Compile Include="Tools\ConsoleLogger.cs" />
-    <Compile Include="Tools\DebugLogger.cs" />
+    <Compile Include="ConsoleLogger.cs" />
+    <Compile Include="DebugLogger.cs" />
     <Compile Include="Tools\ExceptionExtentions.cs" />
     <Compile Include="Tools\HeadersHelper.cs" />
     <Compile Include="Tools\DelegateHelper.cs" />
     <Compile Include="Tools\EnumHelper.cs" />
     <Compile Include="Tools\HttpHelper.cs" />
-    <Compile Include="Tools\NullLogger.cs" />
+    <Compile Include="NullLogger.cs" />
     <Compile Include="Tools\ObjectPool.cs" />
     <Compile Include="Tools\SafeEnd.cs" />
     <Compile Include="Tools\ThreadStaticRandom.cs" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -35,3 +36,5 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("3.0.0")]
 [assembly: AssemblyFileVersion("3.0.0")]
+
+[assembly: InternalsVisibleTo("WebSocketListener.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100DD799BC297D1586594801A2EE2E5FD9F8FB72002920C3E60C5C1A4681EC52CB4EA5BB90049B6649271B3CA2FDE367673C8F337D23CCF7F2FD407440B7EE251A9A82306C77259A3A3B445777DC290A00455A44C6590D9B802325376552D43DC99B4D10DEE52A5B1A0B18F113932B4550E7BA5E7DC1FB358D64B0B01A11BBA9BB7")]
