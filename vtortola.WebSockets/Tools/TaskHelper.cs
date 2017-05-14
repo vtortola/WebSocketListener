@@ -72,8 +72,7 @@ namespace vtortola.WebSockets.Tools
 
         public static Task IgnoreFault(
             this Task task,
-            CancellationToken cancellationToken = default(CancellationToken),
-            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskContinuationOptions options = TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler scheduler = null)
         {
             if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
@@ -97,13 +96,12 @@ namespace vtortola.WebSockets.Tools
 #endif
 
                 if (t.IsCanceled) throw new TaskCanceledException();
-            }, cancellationToken, options, scheduler);
+            }, CancellationToken.None, options, scheduler);
         }
         public static Task<T> IgnoreFault<T>(
             this Task<T> task,
             T defaultResult = default(T),
-            CancellationToken cancellationToken = default(CancellationToken),
-            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskContinuationOptions options = TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler scheduler = null)
         {
             if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
@@ -129,12 +127,11 @@ namespace vtortola.WebSockets.Tools
                 if (t.Status == TaskStatus.RanToCompletion) return t.Result;
 
                 return (T)s;
-            }, defaultResult, cancellationToken, options, scheduler);
+            }, defaultResult, CancellationToken.None, options, scheduler);
         }
         public static Task IgnoreFaultOrCancellation(
             this Task task,
-            CancellationToken cancellationToken = default(CancellationToken),
-            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskContinuationOptions options = TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler scheduler = null)
         {
             if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
@@ -156,13 +153,12 @@ namespace vtortola.WebSockets.Tools
                     Debug.Unindent();
                 }
 #endif
-            }, cancellationToken, options, scheduler);
+            }, CancellationToken.None, options, scheduler);
         }
         public static Task<T> IgnoreFaultOrCancellation<T>(
             this Task<T> task,
             T defaultResult = default(T),
-            CancellationToken cancellationToken = default(CancellationToken),
-            TaskContinuationOptions options = TaskContinuationOptions.LazyCancellation | TaskContinuationOptions.ExecuteSynchronously,
+            TaskContinuationOptions options = TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler scheduler = null)
         {
             if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
@@ -188,7 +184,7 @@ namespace vtortola.WebSockets.Tools
                 if (t.Status == TaskStatus.RanToCompletion) return t.Result;
 
                 return (T)s;
-            }, defaultResult, cancellationToken, options, scheduler);
+            }, defaultResult, CancellationToken.None, options, scheduler);
         }
 
         public static void LogFault(this Task task, ILogger log, string message = null, [CallerMemberName] string memberName = "Task", [CallerFilePath] string sourceFilePath = "<no file>", [CallerLineNumber] int sourceLineNumber = 0)
