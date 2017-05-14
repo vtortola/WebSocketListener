@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace vtortola.WebSockets.Tools
+namespace vtortola.WebSockets
 {
     public sealed class DebugLogger : ILogger
     {

@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace vtortola.WebSockets.Tools
+namespace vtortola.WebSockets
 {
-    internal sealed class NullLogger : ILogger
+    public sealed class NullLogger : ILogger
     {
         public static NullLogger Instance = new NullLogger();
 
