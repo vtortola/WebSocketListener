@@ -10,19 +10,20 @@ namespace vtortola.WebSockets
     public sealed class WebSocketListener : IDisposable
     {
         private readonly ILogger log;
-        readonly TcpListener _listener;
-        readonly HttpNegotiationQueue _negotiationQueue;
-        readonly CancellationTokenSource _cancel;
-        readonly WebSocketListenerOptions _options;
+        private readonly TcpListener _listener;
+        private readonly HttpNegotiationQueue _negotiationQueue;
+        private readonly CancellationTokenSource _cancel;
+        private readonly WebSocketListenerOptions _options;
 
-        public Boolean IsStarted { get; private set; }
-        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
-        public WebSocketFactoryCollection Standards { get; private set; }
-        public EndPoint LocalEndpoint { get { return _listener.LocalEndpoint; } }
+        public bool IsStarted { get; private set; }
+        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; }
+        public WebSocketFactoryCollection Standards { get; }
+        public EndPoint LocalEndpoint => _listener.LocalEndpoint;
+
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(endpoint, "endpoint");
-            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(endpoint, nameof(endpoint));
+            Guard.ParameterCannotBeNull(options, nameof(options));
 
             options.CheckCoherence();
 
@@ -87,8 +88,8 @@ namespace vtortola.WebSockets
         {
             if (_options.UseNagleAlgorithm.HasValue)
                 client.NoDelay = !_options.UseNagleAlgorithm.Value;
-            client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
-            client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
+            client.SendTimeout = (int)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
+            client.ReceiveTimeout = (int)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
         }
 
         public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)

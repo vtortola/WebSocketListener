@@ -14,7 +14,7 @@ namespace vtortola.WebSockets
         bool IsSecure { get; }
         CookieCollection Cookies { get; }
         Headers<RequestHeader> Headers { get; }
-        IDictionary<String, Object> Items { get; }
+        IDictionary<string, object> Items { get; }
     }
 
 }

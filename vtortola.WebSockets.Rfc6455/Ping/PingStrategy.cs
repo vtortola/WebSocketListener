@@ -15,7 +15,7 @@ namespace vtortola.WebSockets.Rfc6455
         }
 
         internal abstract Task StartPing();
-        internal virtual void NotifyPong(ArraySegment<Byte> frameContent) { }
+        internal virtual void NotifyPong(ArraySegment<byte> frameContent) { }
         internal virtual void NotifyActivity() { }
     }
 }

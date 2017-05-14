@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace vtortola.WebSockets.Http
+﻿namespace vtortola.WebSockets.Http
 {
     public enum ResponseHeader
     {

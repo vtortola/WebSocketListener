@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,10 +6,11 @@ namespace vtortola.WebSockets.Deflate
 {
     public sealed class WebSocketDeflateWriteStream : WebSocketMessageWriteStream
     {
-        readonly static Byte[] _BFINAL = new Byte[] { 0 };
-        readonly WebSocketMessageWriteStream _inner;
-        readonly DeflateStream _deflate;
-        Boolean _isClosed;
+        private static readonly byte[] BFINAL = new byte[] { 0 };
+
+        private readonly WebSocketMessageWriteStream _inner;
+        private readonly DeflateStream _deflate;
+        private bool _isClosed;
 
         public WebSocketDeflateWriteStream(WebSocketMessageWriteStream inner)
         {
@@ -39,7 +39,7 @@ namespace vtortola.WebSockets.Deflate
 #if (NET45 || NET451 || NET452 || NET46 || NET46)
             _deflate.Close();
 #endif
-            _inner.Write(_BFINAL, 0, 1);
+            _inner.Write(BFINAL, 0, 1);
             await _inner.CloseAsync(cancellation).ConfigureAwait(false);
         }
 
@@ -56,13 +56,13 @@ namespace vtortola.WebSockets.Deflate
 #if (NET45 || NET451 || NET452 || NET46)
             _deflate.Close(); 
 #endif
-            _inner.Write(_BFINAL, 0, 1);
+            _inner.Write(BFINAL, 0, 1);
 #if (NET45 || NET451 || NET452 || NET46)
             _inner.Close(); 
 #endif
         }
 
-        protected override void Dispose(Boolean disposing)
+        protected override void Dispose(bool disposing)
         {
             SafeEnd.Dispose(_deflate);
             SafeEnd.Dispose(_inner);

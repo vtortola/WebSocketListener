@@ -17,7 +17,7 @@ namespace vtortola.WebSockets
         public bool IsSecure { get; internal set; }
         public CookieCollection Cookies { get; }
         public Headers<RequestHeader> Headers { get; }
-        public IDictionary<String, Object> Items { get; }
+        public IDictionary<string, object> Items { get; }
         public HttpRequestDirection Direction { get; }
 
         public IReadOnlyList<WebSocketExtension> WebSocketExtensions { get; private set; }
@@ -26,7 +26,7 @@ namespace vtortola.WebSockets
         {
             this.Headers = new Headers<RequestHeader>();
             this.Cookies = new CookieCollection();
-            this.Items = new Dictionary<String, Object>();
+            this.Items = new Dictionary<string, object>();
             this.LocalEndPoint = NoAddress;
             this.RemoteEndPoint = NoAddress;
             this.Direction = direction;

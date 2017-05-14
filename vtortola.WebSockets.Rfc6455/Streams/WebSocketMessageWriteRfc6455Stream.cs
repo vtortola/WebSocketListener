@@ -6,14 +6,14 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
     {
-        Boolean _isHeaderSent, _isFinished;
-        Int32 _internalUsedBufferLength;
+        private bool _isHeaderSent, _isFinished;
+        private int _internalUsedBufferLength;
 
-        readonly WebSocketRfc6455 _webSocket;
-        readonly WebSocketMessageType _messageType;
+        private readonly WebSocketRfc6455 _webSocket;
+        private readonly WebSocketMessageType _messageType;
         public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 webSocket, WebSocketMessageType messageType)
         {
-            Guard.ParameterCannotBeNull(webSocket, "webSocket");
+            Guard.ParameterCannotBeNull(webSocket, nameof(webSocket));
 
             _internalUsedBufferLength = 0;
             _messageType = messageType;
@@ -26,7 +26,7 @@ namespace vtortola.WebSockets.Rfc6455
             ExtensionFlags.Rsv2 = extensionFlags.Rsv2;
             ExtensionFlags.Rsv3 = extensionFlags.Rsv3;
         }
-        private void BufferData(Byte[] buffer, ref Int32 offset, ref Int32 count)
+        private void BufferData(byte[] buffer, ref int offset, ref int count)
         {
             var read = Math.Min(count, _webSocket.Connection.SendBuffer.Count - _internalUsedBufferLength);
             if (read == 0)
@@ -36,7 +36,7 @@ namespace vtortola.WebSockets.Rfc6455
             offset += read;
             count -= read;
         }
-        public override void Write(Byte[] buffer, Int32 offset, Int32 count)
+        public override void Write(byte[] buffer, int offset, int count)
         {
             if (_isFinished)
                 throw new WebSocketException("The write stream has been already flushed or disposed.");
@@ -53,7 +53,7 @@ namespace vtortola.WebSockets.Rfc6455
                 }
             }
         }
-        public override async Task WriteAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             if (_isFinished)
                 throw new WebSocketException("The write stream has been already flushed or disposed.");

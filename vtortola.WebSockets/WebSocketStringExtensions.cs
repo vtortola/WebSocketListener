@@ -8,7 +8,7 @@ namespace vtortola.WebSockets
 {
     public static class WebSocketStringExtensions
     {
-        private static UTF8Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false);
+        private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false);
 
         public static string ReadString(this WebSocket webSocket)
         {

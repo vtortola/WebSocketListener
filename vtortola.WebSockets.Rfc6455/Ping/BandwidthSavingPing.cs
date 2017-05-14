@@ -5,17 +5,17 @@ namespace vtortola.WebSockets.Rfc6455
 {
     internal sealed class BandwidthSavingPing : PingStrategy
     {
-        readonly TimeSpan _pingTimeout;
-        readonly WebSocketConnectionRfc6455 _connection;
-        readonly ArraySegment<Byte> _pingBuffer;
+        private readonly TimeSpan _pingTimeout;
+        private readonly WebSocketConnectionRfc6455 _connection;
+        private readonly ArraySegment<byte> _pingBuffer;
 
-        DateTime _lastActivity;
-        TimeSpan _pingInterval;
+        private DateTime _lastActivity;
+        private TimeSpan _pingInterval;
 
-        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer, ILogger logger)
+        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<byte> pingBuffer, ILogger logger)
             : base(logger)
         {
-            Guard.ParameterCannotBeNull(connection, "connection");
+            Guard.ParameterCannotBeNull(connection, nameof(connection));
 
             _connection = connection;
             _pingTimeout = pingTimeout;

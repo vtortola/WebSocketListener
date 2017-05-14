@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace vtortola.WebSockets.Http
+﻿namespace vtortola.WebSockets.Http
 {
     /// <summary>
     /// Type is 1:1 convertible to <see cref="System.Net.HttpRequestHeader"/> except ContentDisposition and WebSocket headers.

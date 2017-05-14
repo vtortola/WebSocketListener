@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -13,19 +12,19 @@ namespace vtortola.WebSockets.Http
     public sealed class HttpNegotiationQueue : IDisposable
     {
         private readonly ILogger log;
-        readonly AsyncQueue<Socket> _sockets;
-        readonly AsyncQueue<WebSocketNegotiationResult> _negotiations;
-        readonly CancellationTokenSource _cancel;
-        readonly WebSocketHandshaker _handShaker;
-        readonly WebSocketListenerOptions _options;
-        readonly WebSocketConnectionExtensionCollection _extensions;
-        readonly SemaphoreSlim _semaphore;
+        private readonly AsyncQueue<Socket> _sockets;
+        private readonly AsyncQueue<WebSocketNegotiationResult> _negotiations;
+        private readonly CancellationTokenSource _cancel;
+        private readonly WebSocketHandshaker _handShaker;
+        private readonly WebSocketListenerOptions _options;
+        private readonly WebSocketConnectionExtensionCollection _extensions;
+        private readonly SemaphoreSlim _semaphore;
 
         public HttpNegotiationQueue(WebSocketFactoryCollection standards, WebSocketConnectionExtensionCollection extensions, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(standards, "standards");
-            Guard.ParameterCannotBeNull(extensions, "extensions");
-            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(standards, nameof(standards));
+            Guard.ParameterCannotBeNull(extensions, nameof(extensions));
+            Guard.ParameterCannotBeNull(options, nameof(options));
 
             this.log = options.Logger;
             _options = options;
@@ -68,6 +67,8 @@ namespace vtortola.WebSockets.Http
 
         private async Task NegotiateWebSocket(Socket client)
         {
+            if (client == null) throw new ArgumentNullException(nameof(client));
+
             await Task.Yield();
 
             WebSocketNegotiationResult result;
@@ -84,7 +85,7 @@ namespace vtortola.WebSockets.Http
                     var extTask = conExt.ExtendConnectionAsync(stream);
                     await Task.WhenAny(timeoutTask, extTask).ConfigureAwait(false);
                     if (timeoutTask.IsCompleted)
-                        throw new WebSocketException("Negotiation timeout (Extension: " + conExt.GetType().Name + ")");
+                        throw new WebSocketException($"Negotiation timeout (Extension: {conExt.GetType().Name})");
 
                     stream = await extTask;
                 }

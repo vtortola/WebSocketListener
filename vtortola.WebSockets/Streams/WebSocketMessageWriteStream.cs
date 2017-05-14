@@ -3,21 +3,20 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Threading;
-using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageWriteStream : WebSocketMessageStream
     {
-        public override sealed Boolean CanWrite { get { return true; } }
-        public override abstract void Write(Byte[] buffer, Int32 offset, Int32 count);
-        public override abstract Task WriteAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken);
+        public sealed override bool CanWrite => true;
+        public abstract override void Write(byte[] buffer, int offset, int count);
+        public abstract override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
 
         public abstract Task CloseAsync(CancellationToken cancellation = default(CancellationToken));
 
-        public WebSocketExtensionFlags ExtensionFlags { get; private set; }
+        public WebSocketExtensionFlags ExtensionFlags { get; }
 
-        public WebSocketMessageWriteStream()
+        protected WebSocketMessageWriteStream()
         {
             ExtensionFlags = new WebSocketExtensionFlags();
         }

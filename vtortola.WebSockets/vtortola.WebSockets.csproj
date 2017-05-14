@@ -102,7 +102,7 @@
     <Compile Include="Tools\ThreadStaticRandom.cs" />
     <Compile Include="WebSocket.cs" />
     <Compile Include="WebSocketFactory.cs" />
-    <Compile Include="WebSocketFactoryCollection.cs" />
+    <Compile Include="Extensibility\WebSocketFactoryCollection.cs" />
     <Compile Include="WebSocketException.cs" />
     <Compile Include="Extensibility\IWebSocketMessageExtension.cs" />
     <Compile Include="Streams\WebSocketMessageStream.cs" />

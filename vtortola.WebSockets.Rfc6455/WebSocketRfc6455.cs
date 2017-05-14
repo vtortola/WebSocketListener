@@ -11,25 +11,25 @@ namespace vtortola.WebSockets.Rfc6455
     public class WebSocketRfc6455 : WebSocket
     {
         private readonly ILogger log;
-        readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-        readonly EndPoint _remoteEndpoint, _localEndpoint;
-        readonly String _subprotocol;
+        private readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
+        private readonly EndPoint _remoteEndpoint, _localEndpoint;
+        private readonly string _subProtocol;
 
-        internal WebSocketConnectionRfc6455 Connection { get; private set; }
+        internal WebSocketConnectionRfc6455 Connection { get; }
 
         public override EndPoint RemoteEndpoint => _remoteEndpoint;
         public override EndPoint LocalEndpoint => _localEndpoint;
-        public override Boolean IsConnected => Connection.IsConnected;
+        public override bool IsConnected => Connection.IsConnected;
         public override TimeSpan Latency => Connection.Latency;
-        public override String SubProtocol => _subprotocol;
+        public override string SubProtocol => this._subProtocol;
 
         public WebSocketRfc6455(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             : base(httpRequest, httpResponse)
         {
-            Guard.ParameterCannotBeNull(networkStream, "networkStream");
-            Guard.ParameterCannotBeNull(options, "options");
-            Guard.ParameterCannotBeNull(extensions, "extensions");
-            Guard.ParameterCannotBeNull(httpRequest, "httpRequest");
+            Guard.ParameterCannotBeNull(networkStream, nameof(networkStream));
+            Guard.ParameterCannotBeNull(options, nameof(options));
+            Guard.ParameterCannotBeNull(extensions, nameof(extensions));
+            Guard.ParameterCannotBeNull(httpRequest, nameof(httpRequest));
 
             this.log = options.Logger;
 
@@ -39,7 +39,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             Connection = new WebSocketConnectionRfc6455(networkStream, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
             _extensions = extensions;
-            _subprotocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
+            this._subProtocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
                 httpResponse.Headers[ResponseHeader.WebSocketProtocol] : default(string);
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)

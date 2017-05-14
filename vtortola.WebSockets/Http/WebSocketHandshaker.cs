@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Security;
 using System.Runtime.ExceptionServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Tools;
@@ -178,24 +177,24 @@ namespace vtortola.WebSockets
         {
             using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, 1024, true))
             {
-                String line = sr.ReadLine();
+                string line = sr.ReadLine();
 
                 ParseGET(line, handshake);
 
-                while (!String.IsNullOrWhiteSpace(line = sr.ReadLine()))
+                while (!string.IsNullOrWhiteSpace(line = sr.ReadLine()))
                     handshake.Request.Headers.TryParseAndAdd(line);
 
                 ParseCookies(handshake);
             }
         }
-        private void ParseGET(String line, WebSocketHandshake handshake)
+        private void ParseGET(string line, WebSocketHandshake handshake)
         {
-            if (String.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
+            if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
                 throw new WebSocketException("Not GET request");
 
             var parts = line.Split(' ');
             handshake.Request.RequestUri = new Uri(parts[1], UriKind.Relative);
-            String version = parts[2];
+            string version = parts[2];
             handshake.Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
         }
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
@@ -239,7 +238,7 @@ namespace vtortola.WebSockets
         {
             if (handshake.Response.WebSocketExtensions.Any())
             {
-                Boolean firstExt = true, firstOpt = true;
+                bool firstExt = true, firstOpt = true;
                 writer.Write("\r\nSec-WebSocket-Extensions: ");
 
                 foreach (var extension in handshake.Response.WebSocketExtensions)
@@ -272,7 +271,7 @@ namespace vtortola.WebSockets
         }
         private void SendNegotiationErrorResponse(StreamWriter writer, HttpStatusCode code)
         {
-            Int32 intCode = (Int32)code;
+            int intCode = (int)code;
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
@@ -283,7 +282,7 @@ namespace vtortola.WebSockets
         {
             writer.Write("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: ");
 
-            Boolean first = true;
+            bool first = true;
             foreach (var standard in this.factories)
             {
                 if (!first)
@@ -360,7 +359,7 @@ namespace vtortola.WebSockets
                     foreach (var cookie in CookieParser.Parse(cookieValue))
                     {
                         cookie.Domain = host;
-                        cookie.Path = String.Empty;
+                        cookie.Path = string.Empty;
                         handshake.Request.Cookies.Add(cookie);
                     }
                 }

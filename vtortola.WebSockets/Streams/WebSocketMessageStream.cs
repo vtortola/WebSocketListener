@@ -7,11 +7,11 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream : Stream
     {
-        public override Boolean CanRead { get { return false; } }
-        public override sealed Boolean CanSeek { get { return false; } }
-        public override Boolean CanWrite { get { return false; } }
-        public override sealed Int64 Length { get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } }
-        public override sealed Int64 Position
+        public override bool CanRead => false;
+        public sealed override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public sealed override long Length { get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } }
+        public sealed override long Position
         {
             get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); }
             set { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); }
@@ -27,12 +27,12 @@ namespace vtortola.WebSockets
             return TaskHelper.CompletedTask;
         }
 
-        public override sealed int ReadByte()
+        public sealed override int ReadByte()
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-        public override sealed void WriteByte(byte value)
+        public sealed override void WriteByte(byte value)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
@@ -74,12 +74,12 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-        public override sealed long Seek(long offset, SeekOrigin origin)
+        public sealed override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-        public override sealed void SetLength(long value)
+        public sealed override void SetLength(long value)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }

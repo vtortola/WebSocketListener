@@ -5,17 +5,17 @@ namespace vtortola.WebSockets.Rfc6455
 {
     internal sealed class LatencyControlPing : PingStrategy
     {
-        readonly ArraySegment<Byte> _pingBuffer;
-        readonly TimeSpan _pingTimeout;
-        readonly WebSocketConnectionRfc6455 _connection;
+        private readonly ArraySegment<byte> _pingBuffer;
+        private readonly TimeSpan _pingTimeout;
+        private readonly WebSocketConnectionRfc6455 _connection;
 
-        DateTime _lastPong;
-        TimeSpan _pingInterval;
+        private DateTime _lastPong;
+        private TimeSpan _pingInterval;
 
-        internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer, ILogger logger)
+        internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<byte> pingBuffer, ILogger logger)
             : base(logger)
         {
-            Guard.ParameterCannotBeNull(connection, "connection");
+            Guard.ParameterCannotBeNull(connection, nameof(connection));
 
             _pingTimeout = pingTimeout;
             _pingBuffer = pingBuffer;
@@ -40,7 +40,7 @@ namespace vtortola.WebSockets.Rfc6455
                     }
                     else
                     {
-                        ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
+                        ((ulong)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
                         _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
                 }
@@ -54,7 +54,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
         }
 
-        internal override void NotifyPong(ArraySegment<Byte> frameContent)
+        internal override void NotifyPong(ArraySegment<byte> frameContent)
         {
             var now = DateTime.Now;
             _lastPong = now;

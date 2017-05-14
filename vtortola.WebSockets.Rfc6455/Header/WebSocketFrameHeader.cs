@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace vtortola.WebSockets.Rfc6455
 {
     public sealed class WebSocketFrameHeader
     {
+        private readonly ArraySegment<byte> _key;
+        private int cursor;
+
         public long ContentLength { get; private set; }
         public int HeaderLength { get; private set; }
         public WebSocketFrameHeaderFlags Flags { get; private set; }
         public long RemainingBytes { get; private set; }
-
-        private readonly ArraySegment<byte> _key;
-        private int cursor = 0;
 
         private WebSocketFrameHeader(ArraySegment<byte> keySegment)
         {
@@ -92,6 +91,8 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public static bool TryParse(byte[] frameStart, int offset, int headerLength, ArraySegment<byte> keySegment, out WebSocketFrameHeader header)
         {
+            if (frameStart == null) throw new ArgumentNullException(nameof(frameStart));
+
             if (keySegment.Count != 4)
                 throw new WebSocketException("The frame key must have a length of 4");
 
@@ -158,6 +159,8 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public static WebSocketFrameHeader Create(long contentLength, bool isComplete, bool headerSent, ArraySegment<byte> keySegment, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
+            if (extensionFlags == null) throw new ArgumentNullException(nameof(extensionFlags));
+
             var isMasked = keySegment.Array != null;
             if (isMasked && keySegment.Count != 4)
                 throw new WebSocketException("The frame key must have a length of 4");

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
@@ -98,6 +97,7 @@ namespace vtortola.WebSockets.Rfc6455
                     break;
             }
         }
+
         private void StartPing()
         {
             if (!_pingStarted)
