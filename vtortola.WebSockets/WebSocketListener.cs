@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Http;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
@@ -20,6 +22,10 @@ namespace vtortola.WebSockets
         public WebSocketFactoryCollection Standards { get; }
         public EndPoint LocalEndpoint => _listener.LocalEndpoint;
 
+        public WebSocketListener(IPEndPoint endpoint)
+            : this(endpoint, new WebSocketListenerOptions())
+        {
+        }
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             if (endpoint == null) throw new ArgumentNullException(nameof(endpoint));
@@ -41,27 +47,15 @@ namespace vtortola.WebSockets
 
             _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, _options);
         }
-        public WebSocketListener(IPEndPoint endpoint)
-            : this(endpoint, new WebSocketListenerOptions())
-        {
-        }
-        private async Task StartAccepting()
-        {
-            while (IsStarted)
-            {
-                var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
-                if (client != null)
-                {
-                    ConfigureSocket(client);
-                    _negotiationQueue.Queue(client);
-                }
-            }
-        }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Start()
         {
             if (Standards.Count <= 0)
                 throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
+
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"{nameof(WebSocketListener)} is starting.");
 
             IsStarted = true;
             if (_options.TcpBacklog.HasValue)
@@ -73,17 +67,46 @@ namespace vtortola.WebSockets
             foreach (var standard in this.Standards)
                 standard.MessageExtensions.SetUsed(true);
 
-            Task.Run((Func<Task>)StartAccepting);
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"{nameof(WebSocketListener)} is started.");
+
+            this.StartAcceptingAsync().LogFault(this.log);
         }
+
+        private async Task StartAcceptingAsync()
+        {
+            await Task.Yield();
+
+            while (IsStarted)
+            {
+                var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
+                if (client == null) continue;
+
+                if (this.log.IsDebugEnabled)
+                    this.log.Debug($"New client from {client.RemoteEndPoint} is connected.");
+
+                this.ConfigureSocket(client);
+                this._negotiationQueue.Queue(client);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Stop()
         {
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"{nameof(WebSocketListener)} is stopping.");
+
             IsStarted = false;
             _listener.Stop();
             this.Standards.SetUsed(false);
             this.ConnectionExtensions.SetUsed(false);
             foreach (var standard in this.Standards)
                 standard.MessageExtensions.SetUsed(false);
+
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"{nameof(WebSocketListener)} is stopped.");
         }
+
         private void ConfigureSocket(Socket client)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
