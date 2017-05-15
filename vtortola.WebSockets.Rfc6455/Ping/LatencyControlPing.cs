@@ -50,7 +50,7 @@ namespace vtortola.WebSockets.Rfc6455
                 this._lastPong.Stop();
 
                 var timeDelta = TimestampToTimeSpan(Stopwatch.GetTimestamp() - BitConverter.ToInt64(pongBuffer.Array, pongBuffer.Offset));
-                _connection.Latency = TimeSpan.FromMilliseconds(Math.Max(0, timeDelta.TotalMilliseconds / 2));
+                _connection._latency = TimeSpan.FromMilliseconds(Math.Max(0, timeDelta.TotalMilliseconds / 2));
             }
         }
     }

@@ -42,7 +42,7 @@ namespace vtortola.WebSockets.Http
             _handShaker = new WebSocketHandshaker(standards, _options);
 
             if (options.PingMode != PingMode.Manual)
-                this.pingQueue = new PingQueue(options.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(options.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5));
+                this.pingQueue = new PingQueue(options.PingInterval);
 
             WorkAsync().LogFault(this.log);
         }

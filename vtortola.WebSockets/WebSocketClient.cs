@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
             if (this.options.NegotiationTimeout > TimeSpan.Zero)
                 this.negotiationsTimeoutQueue = new CancellationQueue(this.options.NegotiationTimeout) { ScheduleCancellation = true };
             if (this.options.PingMode != PingMode.Manual)
-                this.pingQueue = new PingQueue(this.options.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.options.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5));
+                this.pingQueue = new PingQueue(options.PingInterval);
 
             this.log = this.options.Logger;
             this.closeEvent = new AsyncConditionSource { ContinueOnCapturedContext = false };
