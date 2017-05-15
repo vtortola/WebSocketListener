@@ -33,7 +33,7 @@ namespace vtortola.WebSockets
             {
                 await writer.WriteAsync(data).ConfigureAwait(false);
                 await writer.FlushAsync().ConfigureAwait(false);
-                await msg.CloseAsync(cancellationToken).ConfigureAwait(false);
+                await msg.CloseAsync().ConfigureAwait(false);
             }
         }
     }

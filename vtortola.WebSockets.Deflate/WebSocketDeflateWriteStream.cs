@@ -42,7 +42,7 @@ namespace vtortola.WebSockets.Deflate
             await _deflate.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
         }
 
-        public override async Task CloseAsync(CancellationToken cancellation)
+        public override async Task CloseAsync()
         {
             if (_isClosed)
                 return;
@@ -52,7 +52,7 @@ namespace vtortola.WebSockets.Deflate
             _deflate.Close();
 #endif
             _inner.Write(BFINAL, 0, 1);
-            await _inner.CloseAsync(cancellation).ConfigureAwait(false);
+            await _inner.CloseAsync().ConfigureAwait(false);
         }
 
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)

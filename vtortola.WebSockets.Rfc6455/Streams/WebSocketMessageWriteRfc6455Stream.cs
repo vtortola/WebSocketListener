@@ -107,13 +107,13 @@ namespace vtortola.WebSockets.Rfc6455
             }
         }
 
-        public override async Task CloseAsync(CancellationToken cancellation)
+        public override async Task CloseAsync()
         {
             if (!_isFinished)
             {
                 _isFinished = true;
                 var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
-                await _webSocket.Connection.SendFrameAsync(dataFrame, cancellation).ConfigureAwait(false);
+                await _webSocket.Connection.SendFrameAsync(dataFrame, CancellationToken.None).ConfigureAwait(false);
                 _webSocket.Connection.EndWriting();
             }
         }

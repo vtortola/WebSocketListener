@@ -13,7 +13,7 @@ namespace vtortola.WebSockets
         public abstract override void Write(byte[] buffer, int offset, int count);
         public abstract override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
 
-        public abstract Task CloseAsync(CancellationToken cancellation = default(CancellationToken));
+        public abstract Task CloseAsync();
 
         public WebSocketExtensionFlags ExtensionFlags { get; }
 
