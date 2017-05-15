@@ -53,8 +53,8 @@ namespace vtortola.WebSockets
             if (this.options.BufferManager == null)
                 this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize * 2); // create small buffer pool if not configured
 
-            if (this.options.OnRemoteCertificateValidation == null)
-                this.options.OnRemoteCertificateValidation = this.ValidateRemoteCertificate;
+            if (this.options.CertificateValidationHandler == null)
+                this.options.CertificateValidationHandler = this.ValidateRemoteCertificate;
 
             this.standards.SetUsed(true);
             foreach (var standard in this.standards)
@@ -232,7 +232,7 @@ namespace vtortola.WebSockets
             {
                 var protocols = this.options.SupportedSslProtocols;
                 var host = handshake.Request.RequestUri.DnsSafeHost;
-                var secureStream = new SslStream(stream, false, this.options.OnRemoteCertificateValidation);
+                var secureStream = new SslStream(stream, false, this.options.CertificateValidationHandler);
                 await secureStream.AuthenticateAsClientAsync(host, null, protocols, checkCertificateRevocation: false).ConfigureAwait(false);
                 stream = secureStream;
             }
@@ -247,7 +247,8 @@ namespace vtortola.WebSockets
 
             cancellation.ThrowIfCancellationRequested();
 
-            this.options.OnHttpNegotiation?.Invoke(handshake.Request, handshake.Response);
+            if (await (this.options.HttpAuthenticationHandler?.Invoke(handshake.Request, handshake.Response) ?? Task.FromResult(false)).ConfigureAwait(false))
+                throw new WebSocketException("HTTP authentication failed.");
 
             var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
 

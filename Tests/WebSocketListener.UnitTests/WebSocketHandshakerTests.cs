@@ -32,7 +32,7 @@ namespace WebSocketListener.UnitTests
                 new WebSocketListenerOptions
                 {
                     Logger = this.logger,
-                    OnHttpNegotiation = (req, res) =>
+                    HttpAuthenticationHandler = async (req, res) =>
                     {
                         throw new Exception("dummy");
                     }
@@ -681,10 +681,11 @@ namespace WebSocketListener.UnitTests
                 new WebSocketListenerOptions
                 {
                     Logger = this.logger,
-                    OnHttpNegotiation = (request, response) =>
+                    HttpAuthenticationHandler = async (request, response) =>
                     {
                         response.Cookies.Add(new Cookie("name1", "value1"));
                         response.Cookies.Add(new Cookie("name2", "value2"));
+                        return true;
                     }
                 });
 
@@ -734,9 +735,10 @@ namespace WebSocketListener.UnitTests
                 new WebSocketListenerOptions
                 {
                     Logger = this.logger,
-                    OnHttpNegotiation = (req, res) =>
+                    HttpAuthenticationHandler = async (req, res) =>
                     {
                         res.Status = HttpStatusCode.Unauthorized;
+                        return false;
                     }
                 });
 

@@ -32,7 +32,8 @@ namespace vtortola.WebSockets
         {
             if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
 
-            var request = new WebSocketHttpRequest(HttpRequestDirection.Incoming) {
+            var request = new WebSocketHttpRequest(HttpRequestDirection.Incoming)
+            {
                 LocalEndPoint = localEndpoint ?? WebSocketHttpRequest.NoAddress,
                 RemoteEndPoint = remoteEndpoint ?? WebSocketHttpRequest.NoAddress,
                 IsSecure = clientStream is SslStream
@@ -63,7 +64,9 @@ namespace vtortola.WebSockets
 
                 SelectExtensions(handshake);
 
-                RunHttpNegotiationHandler(handshake);
+
+                if (await RunHttpNegotiationHandler(handshake).ConfigureAwait(false) == false)
+                    throw new WebSocketException("HTTP authentication failed.");
 
                 await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
             }
@@ -99,22 +102,24 @@ namespace vtortola.WebSockets
                    requestHeaders.Contains(RequestHeader.WebSocketVersion);
         }
 
-        private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
+        private Task<bool> RunHttpNegotiationHandler(WebSocketHandshake handshake)
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
 
-            if (this.options.OnHttpNegotiation != null)
+            if (this.options.HttpAuthenticationHandler != null)
             {
                 try
                 {
-                    this.options.OnHttpNegotiation(handshake.Request, handshake.Response);
+                    return this.options.HttpAuthenticationHandler(handshake.Request, handshake.Response);
                 }
                 catch (Exception onNegotiationHandlerError)
                 {
                     handshake.Response.Status = HttpStatusCode.InternalServerError;
                     handshake.Error = ExceptionDispatchInfo.Capture(onNegotiationHandlerError);
+                    return Task.FromResult(false);
                 }
             }
+            return Task.FromResult(true);
         }
 
         private void SelectExtensions(WebSocketHandshake handshake)
