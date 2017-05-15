@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Http;
@@ -32,15 +33,17 @@ namespace vtortola.WebSockets
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             options.CheckCoherence();
-
             _options = options.Clone();
-            _cancel = new CancellationTokenSource();
+            if (_options.BufferManager == null)
+                _options.BufferManager = BufferManager.CreateBufferManager(100, this._options.SendBufferSize); // create small buffer pool if not configured
+            if (_options.Logger == null)
+                _options.Logger = NullLogger.Instance;
+            this.log = _options.Logger;
 
+            _cancel = new CancellationTokenSource();
             _listener = new TcpListener(endpoint);
             if (_options.UseNagleAlgorithm.HasValue)
                 _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
-            if (_options.BufferManager == null)
-                _options.BufferManager = BufferManager.CreateBufferManager(100, this._options.SendBufferSize); // create small buffer pool if not configured
 
             ConnectionExtensions = new WebSocketConnectionExtensionCollection();
             Standards = new WebSocketFactoryCollection();
