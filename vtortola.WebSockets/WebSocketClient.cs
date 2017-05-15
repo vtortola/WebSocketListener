@@ -38,18 +38,17 @@ namespace vtortola.WebSockets
             if (standards.Count == 0) throw new ArgumentException("Empty list of WebSocket standards.", nameof(standards));
 
             options.CheckCoherence();
+            this.options = options.Clone();
+            if (this.options.NegotiationTimeout > TimeSpan.Zero)
+                this.negotiationsTimeoutQueue = new CancellationQueue(this.options.NegotiationTimeout) { ScheduleCancellation = true };
+            if (this.options.PingMode != PingMode.Manual)
+                this.pingQueue = new PingQueue(this.options.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.options.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5));
 
-            this.log = options.Logger;
+            this.log = this.options.Logger;
             this.closeEvent = new AsyncConditionSource { ContinueOnCapturedContext = false };
             this.workCancellationSource = new CancellationTokenSource();
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>>();
             this.standards = standards.Clone();
-            this.options = options.Clone();
-
-            if (options.NegotiationTimeout > TimeSpan.Zero)
-                this.negotiationsTimeoutQueue = new CancellationQueue(options.NegotiationTimeout) { ScheduleCancellation = true };
-            if(options.PingMode != PingMode.Manual)
-                this.pingQueue = new PingQueue(options.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(options.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5));
 
             if (this.options.BufferManager == null)
                 this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize * 2); // create small buffer pool if not configured
@@ -60,7 +59,6 @@ namespace vtortola.WebSockets
             this.standards.SetUsed(true);
             foreach (var standard in this.standards)
                 standard.MessageExtensions.SetUsed(true);
-
         }
 
         private bool ValidateRemoteCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -249,6 +247,8 @@ namespace vtortola.WebSockets
 
             cancellation.ThrowIfCancellationRequested();
 
+            this.options.OnHttpNegotiation?.Invoke(handshake.Request, handshake.Response);
+
             var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
 
             return webSocket;
@@ -271,6 +271,8 @@ namespace vtortola.WebSockets
                 requestHeaders[RequestHeader.Pragma] = "no-cache";
                 foreach (var extension in handshake.Factory.MessageExtensions)
                     requestHeaders.Add(RequestHeader.WebSocketExtensions, extension.ToString());
+                foreach (var subProtocol in this.options.SubProtocols)
+                    requestHeaders.Add(RequestHeader.WebSocketProtocol, subProtocol);
 
                 writer.NewLine = "\r\n";
                 await writer.WriteAsync("GET ").ConfigureAwait(false);
