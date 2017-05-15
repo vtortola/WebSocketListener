@@ -30,6 +30,7 @@ namespace vtortola.WebSockets.Rfc6455
                 if (this._lastPong.Elapsed > this._pingTimeout)
                 {
                     await this._connection.CloseAsync(WebSocketCloseReasons.GoingAway).ConfigureAwait(false);
+                    return;
                 }
 
                 ((ulong)Stopwatch.GetTimestamp()).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
