@@ -105,6 +105,9 @@
     <Compile Include="Tools\ObjectPool.cs" />
     <Compile Include="Tools\SafeEnd.cs" />
     <Compile Include="Tools\ThreadStaticRandom.cs" />
+    <Compile Include="Transports\Tcp\TcpTransport.cs" />
+    <Compile Include="Transports\WebSocketTransport.cs" />
+    <Compile Include="Transports\WebSocketTransportCollection.cs" />
     <Compile Include="WebSocket.cs" />
     <Compile Include="WebSocketFactory.cs" />
     <Compile Include="Extensibility\WebSocketFactoryCollection.cs" />
@@ -117,7 +120,9 @@
     <Compile Include="WebSocketClient.cs" />
     <Compile Include="WebSocketStringExtensions.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Transports\NamedPipes\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="WebSocketListener.snk" />

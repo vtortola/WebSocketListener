@@ -2,6 +2,8 @@
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading;
+using vtortola.WebSockets.Transports;
+using vtortola.WebSockets.Transports.Tcp;
 
 namespace vtortola.WebSockets
 {
@@ -12,6 +14,7 @@ namespace vtortola.WebSockets
 
         public TimeSpan PingTimeout { get; set; }
         public TimeSpan PingInterval => this.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5);
+        public WebSocketTransportCollection Transports { get; }
         public int NegotiationQueueCapacity { get; set; }
         public int? TcpBacklog { get; set; }
         public int ParallelNegotiations { get; set; }
@@ -32,6 +35,7 @@ namespace vtortola.WebSockets
         public WebSocketListenerOptions()
         {
             this.PingTimeout = TimeSpan.FromSeconds(5);
+            this.Transports = new WebSocketTransportCollection();
             this.NegotiationQueueCapacity = Environment.ProcessorCount * 10;
             this.ParallelNegotiations = Environment.ProcessorCount * 2;
             this.NegotiationTimeout = TimeSpan.FromSeconds(5);
@@ -49,6 +53,7 @@ namespace vtortola.WebSockets
 #else
             Logger = NullLogger.Instance;
 #endif
+            this.Transports.RegisterTransport(new TcpTransport()); // tcp transport is always available
 
         }
 
