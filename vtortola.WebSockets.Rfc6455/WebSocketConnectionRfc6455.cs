@@ -124,52 +124,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             return _ping.PingAsync();
         }
-        public void AwaitHeader()
-        {
-            CheckForDoubleRead();
-            try
-            {
-                while (this.IsConnected && CurrentHeader == null)
-                {
-                    var buffered = 0;
-                    var estimatedHeaderLength = 2;
-                    // try read minimal frame first
-                    while (buffered < estimatedHeaderLength)
-                    {
-                        var read = this._networkStream.Read(_headerBuffer.Array, _headerBuffer.Offset + buffered, estimatedHeaderLength - buffered);
-                        if (read == 0)
-                        {
-                            buffered = 0;
-                            break;
-                        }
-
-                        buffered += read;
-                        if (buffered >= 2)
-                            estimatedHeaderLength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer.Array, _headerBuffer.Offset);
-                    }
-
-                    if (buffered == 0)
-                    {
-                        if (this.log.IsDebugEnabled)
-                            this.log.Debug("Connection has been closed while async awaiting header.");
-                        Close(WebSocketCloseReasons.ProtocolError);
-                        return;
-                    }
-
-                    ParseHeader(buffered);
-                }
-            }
-            catch (Exception awaitHeaderError)
-            {
-                if (this.log.IsDebugEnabled)
-                    this.log.Debug("An error occurred while sync awaiting header from WebSocket.", awaitHeaderError);
-
-                Close(WebSocketCloseReasons.ProtocolError);
-
-                if (awaitHeaderError is IOException == false && awaitHeaderError is InvalidOperationException == false)
-                    throw;
-            }
-        }
+        
         public async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
             CheckForDoubleRead();
@@ -205,7 +160,7 @@ namespace vtortola.WebSockets.Rfc6455
                         return;
                     }
 
-                    ParseHeader(buffered);
+                    await this.ParseHeaderAsync(buffered).ConfigureAwait(false);
                 }
             }
             catch (Exception awaitHeaderError)
@@ -250,27 +205,7 @@ namespace vtortola.WebSockets.Rfc6455
                 reg.Dispose();
             }
         }
-        public int ReadInternal(byte[] buffer, int offset, int count)
-        {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
-            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
 
-            try
-            {
-                var read = this._networkStream.Read(buffer, offset, count);
-                CurrentHeader.DecodeBytes(buffer, offset, read);
-                return read;
-            }
-            catch (Exception readError) when (readError is IOException || readError is InvalidOperationException)
-            {
-                if (this.log.IsDebugEnabled)
-                    this.log.Debug("An error occurred while sync reading from WebSocket.", readError);
-
-                this.Close(WebSocketCloseReasons.UnexpectedCondition);
-                return 0;
-            }
-        }
         public void EndWriting()
         {
             _ongoingMessageWrite = 0;
@@ -280,7 +215,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (Interlocked.CompareExchange(ref _ongoingMessageWrite, 1, 0) == 1)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
         }
-
+         
         public ArraySegment<byte> PrepareFrame(ArraySegment<byte> payload, int length, bool isCompleted, bool headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags)
         {
             var mask = default(ArraySegment<byte>);
@@ -394,12 +329,12 @@ namespace vtortola.WebSockets.Rfc6455
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
-        private void ParseHeader(int read)
+        private async Task ParseHeaderAsync(int read)
         {
             if (read < 2)
             {
                 if (this.log.IsWarningEnabled)
-                    this.log.Warning($"{nameof(this.ParseHeader)} is called with only {read} bytes buffer. Minimal is 2 bytes.");
+                    this.log.Warning($"{nameof(this.ParseHeaderAsync)} is called with only {read} bytes buffer. Minimal is 2 bytes.");
 
                 Close(WebSocketCloseReasons.ProtocolError);
                 return;
@@ -410,7 +345,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (read != headerLength)
             {
                 if (this.log.IsWarningEnabled)
-                    this.log.Warning($"{nameof(this.ParseHeader)} is called with {read} bytes buffer. While whole header is {headerLength} bytes length.");
+                    this.log.Warning($"{nameof(this.ParseHeaderAsync)} is called with {read} bytes buffer. While whole header is {headerLength} bytes length.");
 
                 Close(WebSocketCloseReasons.ProtocolError);
                 return;
@@ -424,7 +359,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             if (!header.Flags.Option.IsData())
             {
-                ProcessControlFrame(this._networkStream);
+                await ProcessControlFrameAsync(this._networkStream).ConfigureAwait(false);
                 CurrentHeader = null;
             }
             else
@@ -440,7 +375,7 @@ namespace vtortola.WebSockets.Rfc6455
             if (CurrentHeader != null)
                 throw new WebSocketException("There is an ongoing message that is being readed from somewhere else");
         }
-        private void ProcessControlFrame(Stream clientStream)
+        private async Task ProcessControlFrameAsync(Stream clientStream)
         {
             switch (CurrentHeader.Flags.Option)
             {
@@ -459,10 +394,10 @@ namespace vtortola.WebSockets.Rfc6455
                     if (CurrentHeader.ContentLength < 125)
                         contentLength = (int)CurrentHeader.ContentLength;
 
-                    int read = 0;
+                    var read = 0;
                     while (CurrentHeader.RemainingBytes > 0)
                     {
-                        read = clientStream.Read(_pongBuffer.Array, _pongBuffer.Offset + read, contentLength - read);
+                        read = await clientStream.ReadAsync(_pongBuffer.Array, _pongBuffer.Offset + read, contentLength - read).ConfigureAwait(false);
                         CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, read);
                     }
 

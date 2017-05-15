@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateReadStream: WebSocketMessageReadStream
+    public sealed class WebSocketDeflateReadStream : WebSocketMessageReadStream
     {
         private readonly WebSocketMessageReadStream _inner;
         private readonly DeflateStream _deflate;
@@ -21,14 +21,11 @@ namespace vtortola.WebSockets.Deflate
             _inner = inner;
             _deflate = new DeflateStream(_inner, CompressionMode.Decompress, true);
         }
-        
+
+        [Obsolete("Do not use synchronous IO operation on network streams. Use ReadAsync() instead.")]
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
-            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
-
-            return _deflate.Read(buffer, offset, count);
+            return this.ReadAsync(buffer, offset, count, CancellationToken.None).Result;
         }
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {

@@ -24,14 +24,16 @@ namespace vtortola.WebSockets
             HttpResponse = response;
         }
 
-        public abstract WebSocketMessageReadStream ReadMessage();
+        
         public abstract Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token);
         public abstract WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType);
+
         public Task SendPingAsync()
         {
             return this.SendPingAsync(null, 0, 0);
         }
         public abstract Task SendPingAsync(byte[] data, int offset, int count);
+
         public abstract void Close();
         public abstract void Dispose();
 

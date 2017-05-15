@@ -37,6 +37,7 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
+        [Obsolete("Do not use synchronous IO operation on network streams. Use ReadAsync() instead.")]
         public override int Read(byte[] buffer, int offset, int count)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");

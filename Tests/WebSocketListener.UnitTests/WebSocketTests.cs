@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
@@ -260,10 +261,10 @@ namespace WebSocketListener.UnitTests
         }
 
         [Fact]
-        public void FailDoubleMessageAwait()
+        public async Task FailDoubleMessageAwait()
         {
             var handshake = this.GenerateSimpleHandshake();
-            Assert.Throws<WebSocketException>(() =>
+            await Assert.ThrowsAsync<WebSocketException>(async () =>
             {
                 using (var ms = new BufferedStream(new MemoryStream()))
                 using (var ws = new WebSocketRfc6455(ms, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
@@ -273,17 +274,17 @@ namespace WebSocketListener.UnitTests
                     ms.Flush();
                     ms.Seek(0, SeekOrigin.Begin);
 
-                    ws.ReadMessage();
-                    ws.ReadMessage();
+                    await ws.ReadMessageAsync(CancellationToken.None).ConfigureAwait(false);
+                    await ws.ReadMessageAsync(CancellationToken.None).ConfigureAwait(false);
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         [Fact]
-        public void FailDoubleMessageRead()
+        public async Task FailDoubleMessageRead()
         {
             var handshake = this.GenerateSimpleHandshake();
-            Assert.Throws<WebSocketException>(() =>
+            await Assert.ThrowsAsync<WebSocketException>(async () =>
             {
                 using (var ms = new MemoryStream())
                 using (var ws = new WebSocketRfc6455(ms, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions))
@@ -299,10 +300,12 @@ namespace WebSocketListener.UnitTests
                     ms.Flush();
                     ms.Seek(0, SeekOrigin.Begin);
 
-                    var reader = ws.ReadMessage();
-                    reader = ws.ReadMessage();
+                    var reader =await ws.ReadMessageAsync(CancellationToken.None).ConfigureAwait(false);
+                    Assert.NotNull(reader);
+                    reader = await ws.ReadMessageAsync(CancellationToken.None).ConfigureAwait(false);
+                    Assert.NotNull(reader);
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         [Fact]

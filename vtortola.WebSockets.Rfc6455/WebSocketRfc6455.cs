@@ -58,20 +58,7 @@ namespace vtortola.WebSockets.Rfc6455
                 return null;
             }
         }
-        public override WebSocketMessageReadStream ReadMessage()
-        {
-            Connection.AwaitHeader();
-
-            if (Connection.IsConnected && Connection.CurrentHeader != null)
-            {
-                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
-                foreach (var extension in _extensions)
-                    reader = extension.ExtendReader(reader);
-                return reader;
-            }
-
-            return null;
-        }
+        
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
             if (!Connection.IsConnected)

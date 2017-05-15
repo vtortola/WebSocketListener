@@ -10,25 +10,6 @@ namespace vtortola.WebSockets
     {
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false);
 
-        public static string ReadString(this WebSocket webSocket)
-        {
-            using (var msg = webSocket.ReadMessage())
-            {
-                if (msg == null)
-                    return null;
-
-                using (var reader = new StreamReader(msg, Utf8NoBom))
-                    return reader.ReadToEnd();
-            }
-        }
-        public static void WriteString(this WebSocket webSocket, string data)
-        {
-            if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));
-
-            using (var msg = webSocket.CreateMessageWriter(WebSocketMessageType.Text))
-            using (var writer = new StreamWriter(msg, Utf8NoBom))
-                writer.Write(data);
-        }
         public static async Task<string> ReadStringAsync(this WebSocket webSocket, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));

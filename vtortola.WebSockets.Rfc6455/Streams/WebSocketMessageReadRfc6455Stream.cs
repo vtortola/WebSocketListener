@@ -33,46 +33,10 @@ namespace vtortola.WebSockets.Rfc6455
             return flags;
         }
 
+        [Obsolete("Do not use synchronous IO operation on network streams. Use ReadAsync() instead.")]
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0 || offset >= buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
-            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
-
-            if (count == 0)
-                return 0;
-
-            var read = 0;
-            do
-            {
-                if (!_webSocket.IsConnected)
-                    break;
-
-                var bytesToRead = this.GetBytesToRead(this._webSocket.Connection.CurrentHeader, count);
-                if (bytesToRead == 0 && !_hasPendingFrames)
-                {
-                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
-                    break;
-                }
-                else if (bytesToRead == 0 && _hasPendingFrames)
-                {
-                    LoadNewHeader();
-                }
-                else
-                {
-                    read = _webSocket.Connection.ReadInternal(buffer, offset, bytesToRead);
-
-                    offset += read;
-                    count -= read;
-
-                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
-
-                    if (_webSocket.Connection.CurrentHeader == null && _hasPendingFrames)
-                        LoadNewHeader();
-                }
-            } while (read == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0 && count > 0);
-
-            return read;
+            return this.ReadAsync(buffer, offset, count, CancellationToken.None).Result;
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
@@ -127,11 +91,6 @@ namespace vtortola.WebSockets.Rfc6455
             return (int)Math.Min(bufferSize, header.RemainingBytes);
         }
 
-        private void LoadNewHeader()
-        {
-            _webSocket.Connection.AwaitHeader();
-            _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
-        }
         private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
         {
             await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);

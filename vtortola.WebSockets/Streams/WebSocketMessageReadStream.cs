@@ -11,7 +11,10 @@ namespace vtortola.WebSockets
         public abstract WebSocketMessageType MessageType { get; }
         public abstract WebSocketExtensionFlags Flags { get; }
         public sealed override bool CanRead => true;
+
+        [Obsolete("Do not use synchronous IO operation on network streams. Use ReadAsync() instead.")]
         public abstract override int Read(byte[] buffer, int offset, int count);
+
         public abstract override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
 
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
