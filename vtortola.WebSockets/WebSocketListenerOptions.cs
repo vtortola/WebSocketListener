@@ -5,8 +5,6 @@ using System.Threading;
 
 namespace vtortola.WebSockets
 {
-    public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
-
     public sealed class WebSocketListenerOptions
     {
         public const int DEFAULT_SEND_BUFFER_SIZE = 8 * 1024;
