@@ -6,13 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Tools;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets.Http
 {
     internal sealed class HttpNegotiationQueue : IDisposable
     {
         private readonly ILogger log;
-        private readonly AsyncQueue<Socket> _sockets;
+        private readonly AsyncQueue<Connection> _connections;
         private readonly AsyncQueue<WebSocketNegotiationResult> _negotiations;
         private readonly CancellationTokenSource _cancel;
         private readonly WebSocketHandshaker _handShaker;
@@ -34,10 +35,10 @@ namespace vtortola.WebSockets.Http
             _cancel = new CancellationTokenSource();
             _semaphore = new SemaphoreSlim(options.ParallelNegotiations);
 
-            _sockets = new AsyncQueue<Socket>(options.NegotiationQueueCapacity);
+            _connections = new AsyncQueue<Connection>(options.NegotiationQueueCapacity);
             _negotiations = new AsyncQueue<WebSocketNegotiationResult>();
 
-            _cancel.Token.Register(() => this._sockets.Close());
+            _cancel.Token.Register(() => this._connections.Close());
 
             _handShaker = new WebSocketHandshaker(standards, _options);
 
@@ -55,7 +56,7 @@ namespace vtortola.WebSockets.Http
                 try
                 {
                     await _semaphore.WaitAsync(_cancel.Token).ConfigureAwait(false);
-                    var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
+                    var socket = await this._connections.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
                     NegotiateWebSocket(socket).LogFault(this.log);
                 }
                 catch (TaskCanceledException)
@@ -70,7 +71,7 @@ namespace vtortola.WebSockets.Http
             }
         }
 
-        private async Task NegotiateWebSocket(Socket client)
+        private async Task NegotiateWebSocket(Connection client)
         {
             if (client == null) throw new ArgumentNullException(nameof(client));
 
@@ -80,11 +81,9 @@ namespace vtortola.WebSockets.Http
             try
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
-#if (NET45 || NET451 || NET452 || NET46)
-                Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
-#elif (DNX451 || DNX452 || DNX46 || NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
-                Stream stream = new NetworkStream(client);
-#endif
+
+                var stream = client.GetDataStream();
+
                 foreach (var conExt in _extensions)
                 {
                     var extTask = conExt.ExtendConnectionAsync(stream);
@@ -141,12 +140,12 @@ namespace vtortola.WebSockets.Http
             }
         }
 
-        public void Queue(Socket socket)
+        public void Queue(Connection connection)
         {
-            if (socket == null) throw new ArgumentNullException(nameof(socket));
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-            if (!_sockets.TrySendAsync(socket, this._cancel.Token))
-                SafeEnd.Dispose(socket, this.log);
+            if (!this._connections.TrySendAsync(connection, this._cancel.Token))
+                SafeEnd.Dispose(connection, this.log);
         }
 
         public Task<WebSocketNegotiationResult> DequeueAsync(CancellationToken cancel)

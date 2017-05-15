@@ -130,13 +130,13 @@ namespace vtortola.WebSockets
         [Obsolete("Do not use synchronous IO operation on network streams. Use FlushAsync() instead.")]
         public override void Flush()
         {
-            this.FlushAsync().Wait();
+            
         }
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         [Obsolete("Do not use synchronous IO operation on network streams. Use CloseAsync() instead.")]
         public override void Close()
         {
-
+            base.Close();
         }
 #endif
 #pragma warning restore CS0809 // Obsolete member overrides non-obsolete member

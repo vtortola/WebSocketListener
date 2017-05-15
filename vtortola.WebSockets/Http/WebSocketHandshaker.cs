@@ -65,7 +65,7 @@ namespace vtortola.WebSockets
                 SelectExtensions(handshake);
 
 
-                if (await RunHttpNegotiationHandler(handshake).ConfigureAwait(false) == false)
+                if (await this.RunHttpNegotiationHandlerAsync(handshake).ConfigureAwait(false) == false)
                     throw new WebSocketException("HTTP authentication failed.");
 
                 await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
@@ -102,7 +102,7 @@ namespace vtortola.WebSockets
                    requestHeaders.Contains(RequestHeader.WebSocketVersion);
         }
 
-        private Task<bool> RunHttpNegotiationHandler(WebSocketHandshake handshake)
+        private async Task<bool> RunHttpNegotiationHandlerAsync(WebSocketHandshake handshake)
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
 
@@ -110,16 +110,16 @@ namespace vtortola.WebSockets
             {
                 try
                 {
-                    return this.options.HttpAuthenticationHandler(handshake.Request, handshake.Response);
+                    return await this.options.HttpAuthenticationHandler(handshake.Request, handshake.Response).ConfigureAwait(false);
                 }
                 catch (Exception onNegotiationHandlerError)
                 {
                     handshake.Response.Status = HttpStatusCode.InternalServerError;
                     handshake.Error = ExceptionDispatchInfo.Capture(onNegotiationHandlerError);
-                    return Task.FromResult(false);
+                    return false;
                 }
             }
-            return Task.FromResult(true);
+            return true;
         }
 
         private void SelectExtensions(WebSocketHandshake handshake)

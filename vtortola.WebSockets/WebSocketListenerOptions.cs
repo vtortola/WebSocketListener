@@ -12,11 +12,15 @@ namespace vtortola.WebSockets
         public const int DEFAULT_SEND_BUFFER_SIZE = 8 * 1024;
         public static readonly string[] NoSubProtocols = new string[0];
 
+        public WebSocketTransportCollection Transports { get; }
+        public WebSocketFactoryCollection Standards { get; }
+        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; }
+
         public TimeSpan PingTimeout { get; set; }
         public TimeSpan PingInterval => this.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5);
-        public WebSocketTransportCollection Transports { get; }
+
         public int NegotiationQueueCapacity { get; set; }
-        public int? TcpBacklog { get; set; }
+        public int? BacklogSize { get; set; }
         public int ParallelNegotiations { get; set; }
         public TimeSpan NegotiationTimeout { get; set; }
         public TimeSpan WebSocketSendTimeout { get; set; }
@@ -36,6 +40,8 @@ namespace vtortola.WebSockets
         {
             this.PingTimeout = TimeSpan.FromSeconds(5);
             this.Transports = new WebSocketTransportCollection();
+            this.Standards = new WebSocketFactoryCollection();
+            this.ConnectionExtensions = new WebSocketConnectionExtensionCollection();
             this.NegotiationQueueCapacity = Environment.ProcessorCount * 10;
             this.ParallelNegotiations = Environment.ProcessorCount * 2;
             this.NegotiationTimeout = TimeSpan.FromSeconds(5);
@@ -53,8 +59,7 @@ namespace vtortola.WebSockets
 #else
             Logger = NullLogger.Instance;
 #endif
-            this.Transports.RegisterTransport(new TcpTransport()); // tcp transport is always available
-
+            this.Transports.RegisterTransport(new TcpTransport()); // tcp transport is always available            
         }
 
         public void CheckCoherence()
@@ -68,7 +73,7 @@ namespace vtortola.WebSockets
             if (this.NegotiationQueueCapacity < 0)
                 throw new WebSocketException("NegotiationQueueCapacity must be 0 or more.");
 
-            if (this.TcpBacklog.HasValue && this.TcpBacklog.Value < 1)
+            if (this.BacklogSize.HasValue && this.BacklogSize.Value < 1)
                 throw new WebSocketException("TcpBacklog value must be bigger than 0.");
 
             if (this.ParallelNegotiations < 1)
@@ -98,6 +103,14 @@ namespace vtortola.WebSockets
             var cloned = (WebSocketListenerOptions)this.MemberwiseClone();
             cloned.SubProtocols = (string[])this.SubProtocols.Clone();
             return cloned;
+        }
+        public void SetUsed(bool isUsed)
+        {
+            this.Standards.SetUsed(isUsed);
+            foreach (var standard in this.Standards)
+                standard.MessageExtensions.SetUsed(true);
+            this.ConnectionExtensions.SetUsed(isUsed);
+            this.Transports.SetUsed(isUsed);
         }
     }
 }

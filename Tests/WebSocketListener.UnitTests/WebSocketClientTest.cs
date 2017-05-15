@@ -106,10 +106,9 @@ namespace WebSocketListener.UnitTests
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
             var port = new Random().Next(10000, IPEndPoint.MaxPort);
             var options = new WebSocketListenerOptions { Logger = this.logger };
+            options.Standards.RegisterRfc6455();
             var listener = new vtortola.WebSockets.WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
-            listener.Standards
-                .RegisterRfc6455();
-            listener.Start();
+            await listener.StartAsync().ConfigureAwait(false);
 
             var acceptSockets = new Func<Task>(async () =>
             {

@@ -108,7 +108,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public override Task CloseAsync()
         {
-            Interlocked.CompareExchange(ref this.state, STATE_OPEN, STATE_CLOSED);
+            Interlocked.CompareExchange(ref this.state, STATE_CLOSED, STATE_OPEN);
             return TaskHelper.CompletedTask;
         }
         protected override void Dispose(bool disposing)

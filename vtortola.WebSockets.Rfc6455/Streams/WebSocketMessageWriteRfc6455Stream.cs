@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
 
 #pragma warning disable 420
 
@@ -91,25 +92,33 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new WebSocketException("The write stream has been closed.");
         }
 
-        public override async Task CloseAsync()
+        public override Task CloseAsync()
         {
-            if (Interlocked.CompareExchange(ref this.state, STATE_OPEN, STATE_CLOSED) == STATE_OPEN)
-            {
-                var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
-                await _webSocket.Connection.SendFrameAsync(dataFrame, CancellationToken.None).ConfigureAwait(false);
-                _webSocket.Connection.EndWriting();
-            }
+            if (Interlocked.CompareExchange(ref this.state, STATE_CLOSED, STATE_OPEN) != STATE_OPEN)
+                return TaskHelper.CompletedTask;
+
+            var dataFrame = this._webSocket.Connection.PrepareFrame(this._webSocket.Connection.SendBuffer, this._internalUsedBufferLength, true,
+                this._isHeaderSent, this._messageType, this.ExtensionFlags);
+            return this._webSocket.Connection.SendFrameAsync(dataFrame, CancellationToken.None).ContinueWith(
+                (sendTask, s) => ((WebSocketConnectionRfc6455)s).EndWriting(),
+                this._webSocket.Connection,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (Interlocked.Exchange(ref this.state, STATE_DISPOSED) == STATE_OPEN)
-            {
-                var closeTask = this.CloseAsync();
-                if (closeTask.IsCompleted == false && this._webSocket.Connection.Log.IsWarningEnabled)
-                    this._webSocket.Connection.Log.Warning($"Invoking asynchronous operation '{nameof(this.CloseAsync)}()' from synchronous method '{nameof(Dispose)}(bool {nameof(disposing)})'.");
+            var closeTask = this.CloseAsync();
+            if (closeTask.IsCompleted == false && this._webSocket.Connection.Log.IsWarningEnabled)
+                this._webSocket.Connection.Log.Warning(
+                    $"Invoking asynchronous operation '{nameof(this.CloseAsync)}()' from synchronous method '{nameof(Dispose)}(bool {nameof(disposing)})'. " +
+                    $"Call and await {nameof(this.CloseAsync)}() before disposing stream.");
+
+            if (closeTask.Status != TaskStatus.RanToCompletion)
                 closeTask.Wait();
-            }
+
+            Interlocked.Exchange(ref this.state, STATE_DISPOSED);
         }
     }
 }

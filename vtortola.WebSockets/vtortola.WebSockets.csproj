@@ -105,6 +105,10 @@
     <Compile Include="Tools\ObjectPool.cs" />
     <Compile Include="Tools\SafeEnd.cs" />
     <Compile Include="Tools\ThreadStaticRandom.cs" />
+    <Compile Include="Transports\Listener.cs" />
+    <Compile Include="Transports\Connection.cs" />
+    <Compile Include="Transports\Tcp\TcpConnection.cs" />
+    <Compile Include="Transports\Tcp\TcpListener.cs" />
     <Compile Include="Transports\Tcp\TcpTransport.cs" />
     <Compile Include="Transports\WebSocketTransport.cs" />
     <Compile Include="Transports\WebSocketTransportCollection.cs" />

@@ -10,6 +10,7 @@ using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
 using Xunit.Abstractions;
+#pragma warning disable 1998
 
 namespace WebSocketListener.UnitTests
 {
@@ -762,7 +763,7 @@ namespace WebSocketListener.UnitTests
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
                 Assert.False(result.IsValidWebSocketRequest);
-                Assert.Null(result.Error);
+                Assert.NotNull(result.Error);
 
                 ms.Seek(position, SeekOrigin.Begin);
 

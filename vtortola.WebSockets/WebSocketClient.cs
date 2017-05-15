@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Tools;
-
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
@@ -86,9 +87,6 @@ namespace vtortola.WebSockets
                 if (cancellation.CanBeCanceled || workCancellation.CanBeCanceled || negotiationCancellation.CanBeCanceled)
                     cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, workCancellation, negotiationCancellation).Token;
 
-                if (IsSchemeValid(address) == false)
-                    throw new WebSocketException($"Invalid request url '{address}' or scheme '{address?.Scheme}'.");
-
                 var remoteEndpoint = default(EndPoint);
                 var localEndpoint = default(EndPoint);
                 var isSecure = false;
@@ -147,86 +145,42 @@ namespace vtortola.WebSockets
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
 
-            var socket = default(Socket);
+            var connection = default(Connection);
             var webSocket = default(WebSocket);
             try
             {
                 cancellation.ThrowIfCancellationRequested();
 
-                // prepare socket
-                var remoteEndpoint = handshake.Request.RemoteEndPoint;
-                var addressFamily = remoteEndpoint.AddressFamily;
-#if DUAL_MODE
-                if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
-                    addressFamily = AddressFamily.InterNetworkV6;
-#endif
-                var protocolType = addressFamily == AddressFamily.Unix ? ProtocolType.Unspecified : ProtocolType.Tcp;
-                socket = new Socket(addressFamily, SocketType.Stream, protocolType)
+                var requestUri = handshake.Request.RequestUri;
+                var transport = default(WebSocketTransport);
+                if (this.options.Transports.TryGetWebSocketTransport(requestUri, out transport) == false)
                 {
-                    NoDelay = !(this.options.UseNagleAlgorithm ?? true),
-                    SendTimeout = (int)this.options.WebSocketSendTimeout.TotalMilliseconds,
-                    ReceiveTimeout = (int)this.options.WebSocketReceiveTimeout.TotalMilliseconds
-                };
-#if DUAL_MODE
-                if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
-                    socket.DualMode = true;
-#endif
-
-                // prepare connection
-                var socketConnectedCondition = new AsyncConditionSource
-                {
-                    ContinueOnCapturedContext = false
-                };
-                var socketAsyncEventArgs = new SocketAsyncEventArgs
-                {
-                    RemoteEndPoint = remoteEndpoint,
-                    UserToken = socketConnectedCondition
-                };
-
-                // connect                
-                socketAsyncEventArgs.Completed += (_, e) => ((AsyncConditionSource)e.UserToken).Set();
-
-                // interrupt connection when cancellation token is set
-                var connectInterruptRegistration = cancellation.CanBeCanceled ?
-                    cancellation.Register(s => ((AsyncConditionSource)s).Interrupt(new OperationCanceledException()), socketConnectedCondition) : default(CancellationTokenRegistration);
-                using (connectInterruptRegistration)
-                {
-                    if (socket.ConnectAsync(socketAsyncEventArgs) == false)
-                        socketConnectedCondition.Set();
-
-                    await socketConnectedCondition;
+                    throw new WebSocketException($"Unable to find transport for '{requestUri}'. " +
+                        $"Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes))}.");
                 }
-                cancellation.ThrowIfCancellationRequested();
 
-                // check connection result
-                if (socketAsyncEventArgs.ConnectByNameError != null)
-                    throw socketAsyncEventArgs.ConnectByNameError;
+                connection = await transport.ConnectAsync(requestUri, this.options, cancellation).ConfigureAwait(false);
 
-                if (socketAsyncEventArgs.SocketError != SocketError.Success)
-                    throw new WebSocketException($"Failed to open socket to '{handshake.Request.RequestUri}' due error '{socketAsyncEventArgs.SocketError}'.",
-                        new SocketException((int)socketAsyncEventArgs.SocketError));
+                handshake.Request.LocalEndPoint = connection.LocalEndPoint;
+                handshake.Request.RemoteEndPoint = connection.RemoteEndPoint;
 
-                handshake.Request.LocalEndPoint = socket.LocalEndPoint;
-                handshake.Request.RemoteEndPoint = socket.RemoteEndPoint;
-
-                webSocket = await this.NegotiateRequestAsync(handshake, socket, cancellation).ConfigureAwait(false);
+                webSocket = await this.NegotiateRequestAsync(handshake, connection, cancellation).ConfigureAwait(false);
                 return webSocket;
             }
             finally
             {
                 if (webSocket == null) // no connection were made
-                    SafeEnd.Dispose(socket, this.log);
+                    SafeEnd.Dispose(connection, this.log);
             }
         }
-        private async Task<WebSocket> NegotiateRequestAsync(WebSocketHandshake handshake, Socket socket, CancellationToken cancellation)
+        private async Task<WebSocket> NegotiateRequestAsync(WebSocketHandshake handshake, Connection connection, CancellationToken cancellation)
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
-            if (socket == null) throw new ArgumentNullException(nameof(socket));
-
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             cancellation.ThrowIfCancellationRequested();
 
-            var stream = (Stream)new NetworkStream(socket, FileAccess.ReadWrite, ownsSocket: true);
+            var stream = connection.GetDataStream();
 
             if (handshake.Request.IsSecure)
             {
@@ -334,22 +288,11 @@ namespace vtortola.WebSockets
             if (IPAddress.TryParse(url.Host, out ipAddress))
                 remoteEndpoint = new IPEndPoint(ipAddress, port);
             else
-#if DUAL_MODE
                 remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port, AddressFamily.Unspecified);
-#else
-                remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port, AddressFamily.InterNetwork);
-#endif
 
             if (localEndpoint == null)
                 localEndpoint = new IPEndPoint(remoteEndpoint.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
             return true;
-        }
-        private static bool IsSchemeValid(Uri url)
-        {
-            var isValidSchema = string.Equals(url?.Scheme, "ws", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(url?.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
-
-            return isValidSchema && url != null;
         }
     }
 }
