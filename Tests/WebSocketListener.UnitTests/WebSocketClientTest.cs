@@ -46,7 +46,7 @@ namespace WebSocketListener.UnitTests
                 throw new TimeoutException();
 
             var webSocket = await connectTask.ConfigureAwait(false);
-            webSocket.Close();
+            await webSocket.CloseAsync().ConfigureAwait(false);
         }
 
         [Theory]
@@ -88,7 +88,7 @@ namespace WebSocketListener.UnitTests
                     Assert.Equal(expectedMessage, actualMessage);
                 }
 
-                webSocket.Close();
+                await webSocket.CloseAsync().ConfigureAwait(false);
             })();
 
             if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)
@@ -160,7 +160,7 @@ namespace WebSocketListener.UnitTests
                     Assert.Equal(expectedMessage, actualMessage);
                 }
 
-                webSocket.Close();
+                await webSocket.CloseAsync().ConfigureAwait(false);
             })();
 
             if (await Task.WhenAny(sendReceiveTask, timeout).ConfigureAwait(false) == timeout)

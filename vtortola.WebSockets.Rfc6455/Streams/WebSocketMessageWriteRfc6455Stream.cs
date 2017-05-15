@@ -2,12 +2,19 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+#pragma warning disable 420
+
 namespace vtortola.WebSockets.Rfc6455
 {
-    public class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
+    internal class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
     {
-        private bool _isHeaderSent, _isFinished;
+        private const int STATE_OPEN = 0;
+        private const int STATE_CLOSED = 1;
+        private const int STATE_DISPOSED = 2;
+
+        private bool _isHeaderSent;
         private int _internalUsedBufferLength;
+        private volatile int state = STATE_OPEN;
 
         private readonly WebSocketRfc6455 _webSocket;
         private readonly WebSocketMessageType _messageType;
@@ -20,8 +27,8 @@ namespace vtortola.WebSockets.Rfc6455
             _messageType = messageType;
             _webSocket = webSocket;
         }
-        public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 client, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
-            : this(client, messageType)
+        public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 webSocket, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
+            : this(webSocket, messageType)
         {
             ExtensionFlags.Rsv1 = extensionFlags.Rsv1;
             ExtensionFlags.Rsv2 = extensionFlags.Rsv2;
@@ -40,36 +47,14 @@ namespace vtortola.WebSockets.Rfc6455
             offset += read;
             count -= read;
         }
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
-            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
 
-            if (_isFinished)
-                throw new WebSocketException("The write stream has been already flushed or disposed.");
-
-            while (count > 0)
-            {
-                BufferData(buffer, ref offset, ref count);
-
-                if (_internalUsedBufferLength == _webSocket.Connection.SendBuffer.Count && count > 0)
-                {
-                    var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags);
-                    _webSocket.Connection.SendFrame(dataFrame);
-                    _internalUsedBufferLength = 0;
-                    _isHeaderSent = true;
-                }
-            }
-        }
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
             if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
 
-            if (_isFinished)
-                throw new WebSocketException("The write stream has been already flushed or disposed.");
+            this.ThrowIfDisposed();
 
             while (count > 0)
             {
@@ -84,37 +69,46 @@ namespace vtortola.WebSockets.Rfc6455
                 }
             }
         }
+
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags);
+            this.ThrowIfDisposed();
+
+            if (this._internalUsedBufferLength <= 0 && this._isHeaderSent)
+                return;
+
+            var dataFrame = this._webSocket.Connection.PrepareFrame(this._webSocket.Connection.SendBuffer, this._internalUsedBufferLength, false, this._isHeaderSent, this._messageType, this.ExtensionFlags);
             await this._webSocket.Connection.SendFrameAsync(dataFrame, cancellationToken).ConfigureAwait(false);
-            _internalUsedBufferLength = 0;
-            _isHeaderSent = true;
+            this._internalUsedBufferLength = 0;
+            this._isHeaderSent = true;
         }
-#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
-        public override void Close()
-#else
-        // NETSTANDARD, UAP10_0 and DOTNET5_4 don't support Close, so just override Dispose(bool disposing).
-        protected override void Dispose(bool disposing)
-#endif
+
+        private void ThrowIfDisposed()
         {
-            if (!_isFinished)
-            {
-                _isFinished = true;
-                var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
-                _webSocket.Connection.SendFrame(dataFrame);
-                _webSocket.Connection.EndWriting();
-            }
+            if (this.state >= STATE_DISPOSED)
+                throw new WebSocketException("The write stream has been disposed.");
+            if (this.state >= STATE_CLOSED)
+                throw new WebSocketException("The write stream has been closed.");
         }
 
         public override async Task CloseAsync()
         {
-            if (!_isFinished)
+            if (Interlocked.CompareExchange(ref this.state, STATE_OPEN, STATE_CLOSED) == STATE_OPEN)
             {
-                _isFinished = true;
                 var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
                 await _webSocket.Connection.SendFrameAsync(dataFrame, CancellationToken.None).ConfigureAwait(false);
                 _webSocket.Connection.EndWriting();
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (Interlocked.Exchange(ref this.state, STATE_DISPOSED) == STATE_OPEN)
+            {
+                var closeTask = this.CloseAsync();
+                if (closeTask.IsCompleted == false && this._webSocket.Connection.Log.IsWarningEnabled)
+                    this._webSocket.Connection.Log.Warning($"Invoking asynchronous operation '{nameof(this.CloseAsync)}()' from synchronous method '{nameof(Dispose)}(bool {nameof(disposing)})'.");
+                closeTask.Wait();
             }
         }
     }

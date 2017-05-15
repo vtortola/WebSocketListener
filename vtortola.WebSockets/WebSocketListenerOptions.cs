@@ -11,6 +11,7 @@ namespace vtortola.WebSockets
         public static readonly string[] NoSubProtocols = new string[0];
 
         public TimeSpan PingTimeout { get; set; }
+        public TimeSpan PingInterval => this.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5);
         public int NegotiationQueueCapacity { get; set; }
         public int? TcpBacklog { get; set; }
         public int ParallelNegotiations { get; set; }

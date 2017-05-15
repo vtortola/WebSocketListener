@@ -22,6 +22,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 _connection = connection;
                 _pingTimeout = connection._options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection._options.PingTimeout;
+                _pingInterval = connection._options.PingInterval;
                 _pingBuffer = connection._pingBuffer;
 
                 this.NotifyActivity();

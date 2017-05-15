@@ -33,8 +33,8 @@ namespace vtortola.WebSockets
             return this.SendPingAsync(null, 0, 0);
         }
         public abstract Task SendPingAsync(byte[] data, int offset, int count);
+        public abstract Task CloseAsync();
 
-        public abstract void Close();
         public abstract void Dispose();
 
         /// <inheritdoc />

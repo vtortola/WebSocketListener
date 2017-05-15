@@ -11,18 +11,16 @@ namespace vtortola.WebSockets.Rfc6455
     public class WebSocketRfc6455 : WebSocket
     {
         private readonly ILogger log;
-        private readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-        private readonly EndPoint _remoteEndpoint, _localEndpoint;
-        private readonly string _subProtocol;
+        private readonly IReadOnlyList<IWebSocketMessageExtensionContext> extensions;
 
         internal WebSocketConnectionRfc6455 Connection { get; }
 
-        public override EndPoint RemoteEndpoint => _remoteEndpoint;
-        public override EndPoint LocalEndpoint => _localEndpoint;
-        public override bool IsConnected => Connection.IsConnected;
-        public override TimeSpan Latency => Connection.Latency;
-        public override string SubProtocol => this._subProtocol;
-
+        public override EndPoint RemoteEndpoint { get; }
+        public override EndPoint LocalEndpoint { get; }
+        public override bool IsConnected => this.Connection.IsConnected;
+        public override TimeSpan Latency => this.Connection.Latency;
+        public override string SubProtocol { get; }
+        
         public WebSocketRfc6455(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             : base(httpRequest, httpResponse)
         {
@@ -34,40 +32,36 @@ namespace vtortola.WebSockets.Rfc6455
 
             this.log = options.Logger;
 
-            _remoteEndpoint = httpRequest.RemoteEndPoint;
-            _localEndpoint = httpRequest.RemoteEndPoint;
+            this.RemoteEndpoint = httpRequest.RemoteEndPoint;
+            this.LocalEndpoint = httpRequest.RemoteEndPoint;
 
-            Connection = new WebSocketConnectionRfc6455(networkStream, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
-            _extensions = extensions;
-            this._subProtocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
+            this.Connection = new WebSocketConnectionRfc6455(networkStream, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
+            this.extensions = extensions;
+            this.SubProtocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
                 httpResponse.Headers[ResponseHeader.WebSocketProtocol] : default(string);
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            using (token.Register(this.Close, false))
+            await this.Connection.AwaitHeaderAsync(token).ConfigureAwait(false);
+            if (this.Connection.IsConnected && this.Connection.CurrentHeader != null)
             {
-                await Connection.AwaitHeaderAsync(token).ConfigureAwait(false);
-
-                if (Connection.IsConnected && Connection.CurrentHeader != null)
-                {
-                    WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
-                    foreach (var extension in _extensions)
-                        reader = extension.ExtendReader(reader);
-                    return reader;
-                }
-                return null;
+                WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
+                foreach (var extension in this.extensions)
+                    reader = extension.ExtendReader(reader);
+                return reader;
             }
+            return null;
         }
-        
+
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
-            if (!Connection.IsConnected)
+            if (!this.Connection.IsConnected)
                 throw new WebSocketException("The connection is closed");
 
-            Connection.BeginWriting();
+            this.Connection.BeginWriting();
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);
 
-            foreach (var extension in _extensions)
+            foreach (var extension in this.extensions)
                 writer = extension.ExtendWriter(writer);
 
             return writer;
@@ -83,13 +77,15 @@ namespace vtortola.WebSockets.Rfc6455
 
             return this.Connection.PingAsync(data, offset, count);
         }
-        public override void Close()
+
+        public override Task CloseAsync()
         {
-            Connection.Close();
+            return this.Connection.CloseAsync(WebSocketCloseReasons.NormalClose);
         }
+
         public override void Dispose()
         {
-            SafeEnd.Dispose(Connection, this.log);
+            SafeEnd.Dispose(this.Connection, this.log);
         }
     }
 }

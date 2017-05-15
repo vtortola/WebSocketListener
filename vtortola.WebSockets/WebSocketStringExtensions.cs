@@ -28,6 +28,8 @@ namespace vtortola.WebSockets
             if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));
             if (data == null) throw new ArgumentNullException(nameof(data));
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             using (var msg = webSocket.CreateMessageWriter(WebSocketMessageType.Text))
             using (var writer = new StreamWriter(msg, Utf8NoBom))
             {

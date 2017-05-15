@@ -21,11 +21,11 @@ namespace vtortola.WebSockets.Deflate
             _inner = inner;
             _deflate = new DeflateStream(_inner, CompressionMode.Decompress, true);
         }
-
-        [Obsolete("Do not use synchronous IO operation on network streams. Use ReadAsync() instead.")]
-        public override int Read(byte[] buffer, int offset, int count)
+        
+        /// <inheritdoc />
+        public override Task CloseAsync()
         {
-            return this.ReadAsync(buffer, offset, count, CancellationToken.None).Result;
+           return _inner.CloseAsync();
         }
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
