@@ -19,6 +19,9 @@ namespace vtortola.WebSockets.Tools
         public static readonly Task<bool> TrueTask;
         public static readonly Task<bool> FalseTask;
 
+        public const TaskCreationOptions RUN_CONTINUATIONS_ASYNCHRONOUSLY = (TaskCreationOptions)64;
+        public static readonly bool SupportLazyContinuations = Enum.IsDefined(typeof(TaskCreationOptions), RUN_CONTINUATIONS_ASYNCHRONOUSLY);
+
         static TaskHelper()
         {
             CompletedTask = Task.FromResult<object>(null);
@@ -198,6 +201,43 @@ namespace vtortola.WebSockets.Tools
                 TaskContinuationOptions.OnlyOnFaulted,
                 TaskScheduler.Default
             );
+        }
+
+        public static Task PropagateResultTo<T>(this Task<T> task, TaskCompletionSource<T> completion)
+        {
+            if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
+            if (completion == null) throw new ArgumentNullException(nameof(completion), "completion != null");
+
+            return task.ContinueWith((t, s) =>
+            {
+                var completionSource = (TaskCompletionSource<T>)s;
+                var error = t.Exception;
+                if (t.IsCanceled) completionSource.TrySetCanceled();
+                else if (error != null)
+                {
+                    if (error.Message == DefaultAggregateExceptionMessage) completionSource.TrySetException(error.InnerExceptions);
+                    else completionSource.TrySetException(error);
+                }
+                else completionSource.TrySetResult(t.Result);
+            }, completion, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+        public static Task PropagateResultTo<T>(this Task task, TaskCompletionSource<T> completion)
+        {
+            if (task == null) throw new ArgumentNullException(nameof(task), "task != null");
+            if (completion == null) throw new ArgumentNullException(nameof(completion), "completion != null");
+
+            return task.ContinueWith((t, s) =>
+            {
+                var completionSource = (TaskCompletionSource<T>)s;
+                var error = t.Exception;
+                if (t.IsCanceled) completionSource.TrySetCanceled();
+                else if (error != null)
+                {
+                    if (error.Message == DefaultAggregateExceptionMessage) completionSource.TrySetException(error.InnerExceptions);
+                    else completionSource.TrySetException(error);
+                }
+                else completionSource.TrySetResult(default(T));
+            }, completion, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }
 }

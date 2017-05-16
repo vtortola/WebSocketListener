@@ -15,7 +15,8 @@ namespace vtortola.WebSockets.Threading
         private const int STATE_CLOSED = 1;
         private const int UNBOUND = -1;
 
-        private static readonly Task<T> QueueClosedExceptionTask = TaskHelper.FailedTask<T>(new InvalidOperationException("Queue is closed."));
+        private static readonly Task<T> DefaultCloseResult;
+        private static readonly TaskCompletionSource<T> DummyCompletionSource;
 
         private readonly ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
         private readonly int boundedCapacity;
@@ -24,9 +25,16 @@ namespace vtortola.WebSockets.Threading
 
         private volatile int closeState = STATE_OPENED;
         private volatile int sendReceiveCounter;
+        private volatile Task<T> closedResult;
 
         public int BoundedCapacity => this.boundedCapacity;
 
+        static AsyncQueue()
+        {
+            DummyCompletionSource = new TaskCompletionSource<T>();
+            DummyCompletionSource.TrySetResult(default(T));
+            DefaultCloseResult = TaskHelper.FailedTask<T>(new InvalidOperationException("Queue is closed and can't accept or give new items."));
+        }
         public AsyncQueue()
         {
             this.boundedCapacity = UNBOUND;
@@ -44,7 +52,7 @@ namespace vtortola.WebSockets.Threading
             try
             {
                 if (this.closeState != STATE_OPENED)
-                    return QueueClosedExceptionTask;
+                    return this.closedResult ?? DefaultCloseResult;
 
                 var receiveCompletion = new TaskCompletionSource<T>();
                 receiveCompletion.Task.ContinueWith
@@ -76,7 +84,35 @@ namespace vtortola.WebSockets.Threading
                 Interlocked.Decrement(ref this.sendReceiveCounter);
             }
         }
-        public bool TrySendAsync(T message, CancellationToken cancellation)
+        public bool TryReceive()
+        {
+            if (Interlocked.CompareExchange(ref this.receiveCompletionSource, DummyCompletionSource, null) != null)
+                throw new InvalidOperationException("Only one message at time could be received.");
+
+            Interlocked.Increment(ref this.sendReceiveCounter);
+            try
+            {
+                if (this.closeState != STATE_OPENED)
+                    (this.closedResult ?? DefaultCloseResult).Exception.Unwrap().Rethrow();
+
+                var message = default(T);
+                if (this.queue.TryDequeue(out message))
+                {
+                    Interlocked.Decrement(ref this.count);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            finally
+            {
+                Interlocked.CompareExchange(ref this.receiveCompletionSource, null, DummyCompletionSource);
+                Interlocked.Decrement(ref this.sendReceiveCounter);
+            }
+        }
+        public bool TrySend(T message)
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
@@ -84,9 +120,6 @@ namespace vtortola.WebSockets.Threading
             try
             {
                 if (this.closeState != STATE_OPENED)
-                    return false;
-
-                if (cancellation.IsCancellationRequested)
                     return false;
 
                 if (this.queue.IsEmpty && (this.receiveCompletionSource?.TrySetResult(message) ?? false))
@@ -106,12 +139,22 @@ namespace vtortola.WebSockets.Threading
             }
         }
 
-        public void Close()
+        public void Close(Exception closeException = null)
         {
+            if (closeException != null)
+                this.closedResult = TaskHelper.FailedTask<T>(closeException);
+
             this.closeState = STATE_CLOSED;
+
+            var receiveCompletionSource = this.receiveCompletionSource;
+            if (receiveCompletionSource != null)
+                (this.closedResult ?? DefaultCloseResult).PropagateResultTo(receiveCompletionSource);
         }
-        public List<T> CloseAndReceiveAll(int gracefulReceiveTimeoutMs = 10)
+        public List<T> CloseAndReceiveAll(int gracefulReceiveTimeoutMs = 10, Exception closeException = null)
         {
+            if (closeException != null)
+                this.closedResult = TaskHelper.FailedTask<T>(closeException);
+
             this.closeState = STATE_CLOSED;
 
             var wait = new SpinWait();
@@ -127,6 +170,11 @@ namespace vtortola.WebSockets.Threading
             var item = default(T);
             while (this.queue.TryDequeue(out item))
                 list.Add(item);
+
+            var receiveCompletionSource = this.receiveCompletionSource;
+            if (receiveCompletionSource != null)
+                (this.closedResult ?? DefaultCloseResult).PropagateResultTo(receiveCompletionSource);
+
             return list;
         }
     }
