@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
-using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -46,7 +45,7 @@ namespace vtortola.WebSockets
                 this.pingQueue = new PingQueue(options.PingInterval);
 
             this.log = this.options.Logger;
-            this.closeEvent = new AsyncConditionSource { ContinueOnCapturedContext = false };
+            this.closeEvent = new AsyncConditionSource(isSet: true) { ContinueOnCapturedContext = false };
             this.workCancellationSource = new CancellationTokenSource();
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>>();
             this.standards = standards.Clone();
@@ -87,18 +86,10 @@ namespace vtortola.WebSockets
                 if (cancellation.CanBeCanceled || workCancellation.CanBeCanceled || negotiationCancellation.CanBeCanceled)
                     cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, workCancellation, negotiationCancellation).Token;
 
-                var remoteEndpoint = default(EndPoint);
-                var localEndpoint = default(EndPoint);
-                var isSecure = false;
-                if (TryPrepareEndpoints(address, ref remoteEndpoint, ref localEndpoint, ref isSecure) == false)
-                    throw new WebSocketException($"Failed to resolve remote endpoint for '{address}' address.");
-
+                
                 var request = new WebSocketHttpRequest(HttpRequestDirection.Outgoing)
                 {
-                    RequestUri = address,
-                    LocalEndPoint = localEndpoint,
-                    RemoteEndPoint = remoteEndpoint,
-                    IsSecure = isSecure
+                    RequestUri = address,                
                 };
                 var handshake = new WebSocketHandshake(request);
                 var pendingRequest = this.OpenConnectionAsync(handshake, cancellation);
@@ -134,6 +125,9 @@ namespace vtortola.WebSockets
         public async Task CloseAsync()
         {
             this.workCancellationSource.Cancel(throwOnFirstException: false);
+
+            // TODO: wait for all pending websockets and set closeEvent after it
+
             await this.closeEvent;
 
             SafeEnd.Dispose(this.pingQueue, this.log);
@@ -156,11 +150,12 @@ namespace vtortola.WebSockets
                 if (this.options.Transports.TryGetWebSocketTransport(requestUri, out transport) == false)
                 {
                     throw new WebSocketException($"Unable to find transport for '{requestUri}'. " +
-                        $"Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes))}.");
+                        $"Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes).Distinct())}.");
                 }
 
                 connection = await transport.ConnectAsync(requestUri, this.options, cancellation).ConfigureAwait(false);
 
+                handshake.Request.IsSecure = connection.ShouldBeSecure;
                 handshake.Request.LocalEndPoint = connection.LocalEndPoint;
                 handshake.Request.RemoteEndPoint = connection.RemoteEndPoint;
 
@@ -213,7 +208,7 @@ namespace vtortola.WebSockets
         {
             var url = handshake.Request.RequestUri;
             var nonce = handshake.GenerateClientNonce();
-            var bufferSize = this.options.BufferManager.MaxBufferSize;
+            var bufferSize = this.options.BufferManager.LargeBufferSize;
             using (var writer = new StreamWriter(stream, Encoding.ASCII, bufferSize, leaveOpen: true))
             {
                 var requestHeaders = handshake.Request.Headers;
@@ -251,7 +246,7 @@ namespace vtortola.WebSockets
         }
         private async Task ReadResponseAsync(WebSocketHandshake handshake, Stream stream)
         {
-            var bufferSize = this.options.BufferManager.MaxBufferSize;
+            var bufferSize = this.options.BufferManager.LargeBufferSize;
             using (var reader = new StreamReader(stream, Encoding.ASCII, false, bufferSize, leaveOpen: true))
             {
                 var responseHeaders = handshake.Response.Headers;
@@ -277,22 +272,6 @@ namespace vtortola.WebSockets
 
                 handshake.Response.ThrowIfInvalid(handshake.ComputeHandshake());
             }
-        }
-
-        private static bool TryPrepareEndpoints(Uri url, ref EndPoint remoteEndpoint, ref EndPoint localEndpoint, ref bool isSecure)
-        {
-            isSecure = string.Equals(url.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
-            var ipAddress = default(IPAddress);
-            var port = url.Port;
-            if (port == 0) port = isSecure ? 443 : 80;
-            if (IPAddress.TryParse(url.Host, out ipAddress))
-                remoteEndpoint = new IPEndPoint(ipAddress, port);
-            else
-                remoteEndpoint = new DnsEndPoint(url.DnsSafeHost, port, AddressFamily.Unspecified);
-
-            if (localEndpoint == null)
-                localEndpoint = new IPEndPoint(remoteEndpoint.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
-            return true;
         }
     }
 }
