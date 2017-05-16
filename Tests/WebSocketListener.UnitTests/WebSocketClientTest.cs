@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
+using vtortola.WebSockets.Transports.NamedPipes;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -98,21 +99,28 @@ namespace WebSocketListener.UnitTests
         }
 
         [Theory]
-        [InlineData(15, new[] { "a test message" })]
-        [InlineData(15, new[] { "a test message", "a second message" })]
-        public async Task LocalEchoServerAsync(int timeoutSeconds, string[] messages)
+        [InlineData("tcp://localhost:10000/", 15, new[] { "a test message" })]
+        [InlineData("tcp://localhost:10001/", 15, new[] { "a test message", "a second message" })]
+        [InlineData("tcp://127.0.0.1:10002/", 15, new[] { "a test message" })]
+        [InlineData("tcp://127.0.0.1:10003/", 15, new[] { "a test message", "a second message" })]
+        [InlineData("pipe://testpipe/", 15, new[] { "a test message" })]
+        [InlineData("pipe://testpipe/", 15, new[] { "a test message", "a second message" })]
+        public async Task LocalEchoServerAsync(string address, int timeoutSeconds, string[] messages)
         {
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
-            var port = new Random().Next(10000, IPEndPoint.MaxPort);
+
             var options = new WebSocketListenerOptions { Logger = this.logger };
             options.Standards.RegisterRfc6455();
-            var listener = new vtortola.WebSockets.WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
+            options.Transports.RegisterTransport(new NamedPipeTransport());
+            var listener = new vtortola.WebSockets.WebSocketListener(new[] { new Uri(address) }, options);
+            logger.Debug("[TEST] Starting listener.");
             await listener.StartAsync().ConfigureAwait(false);
 
             var acceptSockets = new Func<Task>(async () =>
             {
                 await Task.Yield();
+                logger.Debug("[TEST] Starting echo server.");
                 var socket = await listener.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
 
                 var echoMessages = new Func<Task>(async () =>
@@ -123,8 +131,9 @@ namespace WebSocketListener.UnitTests
                         var message = await socket.ReadStringAsync(cancellation).ConfigureAwait(false);
                         logger.Debug("[SERVER] <- " + (message ?? "<null>"));
                         if (message == null) break;
-                        await socket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
                         logger.Debug("[SERVER] -> " + (message ?? "<null>"));
+                        await socket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                        logger.Debug("[SERVER] = " + (message ?? "<null>"));
                     }
                 }).Invoke();
 
@@ -134,19 +143,25 @@ namespace WebSocketListener.UnitTests
             var factories = new WebSocketFactoryCollection()
                 .RegisterRfc6455();
             var webSocketClient = new WebSocketClient(factories, options);
-            var connectTask = webSocketClient.ConnectAsync(new Uri("ws://127.0.0.1:" + port), CancellationToken.None);
+            logger.Debug("[TEST] Connecting client.");
+            var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
 
             if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
                 throw new TimeoutException();
+
+            logger.Debug("[TEST] Client connected.");
 
             var webSocket = await connectTask.ConfigureAwait(false);
             var sendReceiveTask = new Func<Task>(async () =>
             {
                 await Task.Yield();
+                logger.Debug("[TEST] Sending messages.");
+                
                 foreach (var message in messages)
                 {
-                    await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
                     logger.Debug("[CLIENT] -> " + message);
+                    await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                    logger.Debug("[CLIENT] = " + message);
 
                 }
 
@@ -167,6 +182,14 @@ namespace WebSocketListener.UnitTests
 
             await sendReceiveTask.ConfigureAwait(false);
             await acceptSockets.ConfigureAwait(false);
+
+            logger.Debug("[TEST] Stopping echo server.");
+            await listener.StopAsync().ConfigureAwait(false);
+            logger.Debug("[TEST] Echo server stopped.");
+            logger.Debug("[TEST] Closing client.");
+            await webSocketClient.CloseAsync().ConfigureAwait(false);
+            logger.Debug("[TEST] Client closed.");
+            listener.Dispose();
         }
 
         //[Fact]
