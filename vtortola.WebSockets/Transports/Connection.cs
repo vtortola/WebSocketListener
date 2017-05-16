@@ -8,6 +8,7 @@ namespace vtortola.WebSockets.Transports
     {
         public abstract EndPoint LocalEndPoint { get; }
         public abstract EndPoint RemoteEndPoint { get; }
+        public abstract bool ShouldBeSecure { get; }
 
         public abstract Stream GetDataStream();
 
