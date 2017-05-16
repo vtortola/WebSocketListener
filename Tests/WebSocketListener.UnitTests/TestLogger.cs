@@ -25,25 +25,31 @@ namespace WebSocketListener.UnitTests
         public void Debug(string message, Exception error = null)
         {
             if (!string.IsNullOrEmpty(message))
-                this.output.WriteLine(message);
+                this.WriteLine(message);
+
             if (error != null)
-                this.output.WriteLine(error.ToString());
+                this.WriteLine(error.ToString());
         }
         /// <inheritdoc />
         public void Warning(string message, Exception error = null)
         {
             if (!string.IsNullOrEmpty(message))
-                this.output.WriteLine("[WARN] " + message);
+                this.WriteLine("[WARN] " + message);
             if (error != null)
-                this.output.WriteLine(error.ToString());
+                this.WriteLine(error.ToString());
         }
         /// <inheritdoc />
         public void Error(string message, Exception error = null)
         {
             if (!string.IsNullOrEmpty("[ERROR] " + message))
-                this.output.WriteLine(message);
+                this.WriteLine(message);
             if (error != null)
-                this.output.WriteLine(error.ToString());
+                this.WriteLine(error.ToString());
+        }
+        private void WriteLine(string message)
+        {
+            this.output.WriteLine(message);
+            System.Diagnostics.Debug.WriteLine(message);
         }
     }
 }
