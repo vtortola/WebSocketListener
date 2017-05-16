@@ -91,7 +91,7 @@ namespace vtortola.WebSockets
             if (this.SendBufferSize <= 512)
                 throw new WebSocketException("SendBufferSize must be bigger than 512.");
 
-            if (this.BufferManager != null && this.SendBufferSize < this.BufferManager.MaxBufferSize)
+            if (this.BufferManager != null && this.SendBufferSize < this.BufferManager.LargeBufferSize)
                 throw new WebSocketException("BufferManager.MaxBufferSize must be bigger or equals to SendBufferSize.");
 
             if (this.Logger == null)

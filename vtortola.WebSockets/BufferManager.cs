@@ -5,22 +5,19 @@ namespace vtortola.WebSockets
 {
     public sealed class BufferManager
     {
-        private readonly int smallBufferSize;
-        private readonly int largeBufferSize;
-
         private readonly ObjectPool<byte[]> smallPool;
         private readonly ObjectPool<byte[]> largePool;
 
-        public readonly int MaxBufferSize;
+        public readonly int SmallBufferSize;
+        public readonly int LargeBufferSize;
 
         private BufferManager(int smallBufferSize, int smallPoolSizeLimit, int largeBufferSize, int largePoolSizeLimit)
         {
-            this.smallBufferSize = smallBufferSize;
-            this.largeBufferSize = largeBufferSize;
+            this.SmallBufferSize = smallBufferSize;
+            this.LargeBufferSize = largeBufferSize;
             this.smallPool = new ObjectPool<byte[]>(() => new byte[smallBufferSize], smallPoolSizeLimit);
             this.largePool = new ObjectPool<byte[]>(() => new byte[largeBufferSize], largePoolSizeLimit);
 
-            this.MaxBufferSize = largeBufferSize;
         }
 
         /// <summary>
@@ -65,9 +62,9 @@ namespace vtortola.WebSockets
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
 
-            if (buffer.Length >= this.largeBufferSize)
+            if (buffer.Length >= this.LargeBufferSize)
                 this.largePool.Return(buffer);
-            else if (buffer.Length >= this.smallBufferSize)
+            else if (buffer.Length >= this.SmallBufferSize)
                 this.smallPool.Return(buffer);
             else
                 throw new ArgumentException("Length of buffer does not match the pool's buffer length property.", nameof(buffer));
@@ -80,9 +77,9 @@ namespace vtortola.WebSockets
         /// <exception cref="System.ArgumentOutOfRangeException">bufferSize cannot be less than zero.</exception>
         public byte[] TakeBuffer(int bufferSize)
         {
-            if (bufferSize < 0 || bufferSize > this.largeBufferSize) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+            if (bufferSize < 0 || bufferSize > this.LargeBufferSize) throw new ArgumentOutOfRangeException(nameof(bufferSize));
 
-            if (bufferSize >= this.smallBufferSize)
+            if (bufferSize >= this.SmallBufferSize)
                 return this.largePool.Take();
             else
                 return this.smallPool.Take();
