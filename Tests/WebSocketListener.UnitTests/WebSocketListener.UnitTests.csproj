@@ -72,7 +72,10 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="AsyncConditionSourceTests.cs" />
+    <Compile Include="AsyncQueueTests.cs" />
     <Compile Include="TestLogger.cs" />
+    <Compile Include="TimedQueueTests.cs" />
     <Compile Include="WebSocketClientTest.cs" />
     <Compile Include="HttpHelperTest.cs" />
     <Compile Include="HeadersTest.cs" />

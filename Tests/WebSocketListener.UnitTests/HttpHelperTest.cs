@@ -21,9 +21,11 @@ namespace WebSocketListener.UnitTests
         InlineData(" HTTP/1.1   404   Not Found  ", HttpStatusCode.NotFound, "Not Found"),
         InlineData("HTTP/1.1 200", HttpStatusCode.OK, ""),
         InlineData("HTTP/1.1 ", (HttpStatusCode)0, "Missing Response Code"),
+        InlineData("HTTP/1.1 WRONG", (HttpStatusCode)0, "Missing Response Code"),
         InlineData("HTTP/1.1", (HttpStatusCode)0, "Missing Response Code"),
         InlineData("HTTP/1", (HttpStatusCode)0, "Malformed Response"),
-        InlineData("", (HttpStatusCode)0, "Malformed Response")]
+        InlineData("", (HttpStatusCode)0, "Malformed Response"),
+        InlineData("200 OK", (HttpStatusCode)0, "Malformed Response")]
         public void TryParseAndAddRequestHeaderTest(string headline, HttpStatusCode statusCode, string description)
         {
             var actualStatusCode = default(HttpStatusCode);

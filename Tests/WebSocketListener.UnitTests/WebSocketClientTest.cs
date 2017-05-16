@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -6,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
+using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Transports.NamedPipes;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,7 +17,7 @@ namespace WebSocketListener.UnitTests
 {
     public class WebSocketClientTest
     {
-        private readonly ILogger logger;
+        private readonly TestLogger logger;
 
         public WebSocketClientTest(ITestOutputHelper output)
         {
@@ -190,40 +193,105 @@ namespace WebSocketListener.UnitTests
             listener.Dispose();
         }
 
-        //[Fact]
-        //public async Task ListenTest()
-        //{
-        //    var timeout = Task.Delay(TimeSpan.FromSeconds(30));
-        //    var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        //    var port = 10000;
-        //    var options = new WebSocketListenerOptions { Logger = this.logger };
-        //    var listener = new vtortola.WebSockets.WebSocketListener(new IPEndPoint(IPAddress.Loopback, port), options);
-        //    listener.Standards
-        //        .RegisterRfc6455();
-        //    listener.Start();
+        [Theory]
+        [InlineData("tcp://localhost:10100/", 30, 10)]
+        [InlineData("tcp://localhost:10101/", 30, 100)]
+        [InlineData("tcp://localhost:10102/", 30, 1000)]
+        public async Task LocalEchoServerMassClientsAsync(string address, int timeoutSeconds, int maxClients)
+        {
+            var messages = new string[] { new string('a', 126), new string('a', 127), new string('a', 128), new string('a', ushort.MaxValue - 1), new string('a', ushort.MaxValue), new string('a', ushort.MaxValue + 2) };
+            var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
+            var options = new WebSocketListenerOptions { Logger = new TestLogger(this.logger) { IsDebugEnabled = false } };
+            options.Standards.RegisterRfc6455();
+            options.Transports.RegisterTransport(new NamedPipeTransport());
+            var listener = new vtortola.WebSockets.WebSocketListener(new[] { new Uri(address) }, options);
+            this.logger.Debug("[TEST] Starting listener.");
+            await listener.StartAsync().ConfigureAwait(false);
 
-        //    var acceptSockets = new Func<Task>(async () =>
-        //    {
-        //        await Task.Yield();
-        //        var socket = await listener.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
+            var acceptSockets = new Func<Task>(async () =>
+            {
+                await Task.Yield();
+                this.logger.Debug("[TEST] Starting echo server.");
+                var echoMessages = new Func<WebSocket, Task>(async ws =>
+                {
+                    await Task.Yield();
+                    while (cancellation.IsCancellationRequested == false)
+                    {
+                        var message = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
+                        if (message == null) break;
+                        await ws.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                    }
 
-        //        var echoMessages = new Func<Task>(async () =>
-        //        {
-        //            await Task.Yield();
-        //            while (cancellation.IsCancellationRequested == false)
-        //            {
-        //                var message = await socket.ReadStringAsync(cancellation).ConfigureAwait(false);
-        //                logger.Debug("[SERVER] <- " + (message ?? "<null>"));
-        //                await socket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
-        //                logger.Debug("[SERVER] -> " + (message ?? "<null>"));
-        //            }
-        //        }).Invoke();
+                    await ws.CloseAsync().ConfigureAwait(false);
+                    ws.Dispose();
+                });
 
-        //        await echoMessages.ConfigureAwait(false);
-        //    }).Invoke();
+                while (cancellation.IsCancellationRequested == false && listener.IsStarted)
+                {
+                    var socket = await listener.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
+                    if (socket == null)
+                        return;
+                    echoMessages.Invoke(socket);
+                }
+            }).Invoke();
 
-        //    await acceptSockets.ConfigureAwait(false);
-        //    await timeout.ConfigureAwait(false);
-        //}
+            var sendReceiveTask = new Func<WebSocket, Task>(async webSocket =>
+            {
+                await Task.Yield();
+
+                foreach (var message in messages)
+                {
+                    await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
+                }
+
+                foreach (var expectedMessage in messages)
+                {
+                    var actualMessage = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                    if (actualMessage == null && !webSocket.IsConnected) throw new InvalidOperationException("Connection is closed!");
+
+                    Assert.NotNull(actualMessage);
+                    Assert.Equal(expectedMessage, actualMessage);
+                }
+
+                await webSocket.CloseAsync().ConfigureAwait(false);
+            });
+
+            this.logger.Debug("[TEST] Creating client.");
+            var webSocketClient = new WebSocketClient(options);
+            this.logger.Debug("[TEST] Connecting clients.");
+            var connections = new Task[maxClients];
+            var sendReceives = new Task[maxClients];
+            for (var i = 0; i < connections.Length; i++)
+            {
+                var index = i;
+                connections[index] = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None)
+                    .ContinueWith(t => sendReceives[index] = sendReceiveTask(t.Result), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }
+
+            if (await Task.WhenAny(Task.WhenAll(connections), timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
+
+            this.logger.Debug("[TEST] Client connected.");
+
+            if (await Task.WhenAny(Task.WhenAll(sendReceives), timeout).ConfigureAwait(false) == timeout)
+                throw new TimeoutException();
+
+            this.logger.Debug("[TEST] Stopping echo server.");
+            await listener.StopAsync().ConfigureAwait(false);
+            this.logger.Debug("[TEST] Echo server stopped.");
+            this.logger.Debug("[TEST] Closing client.");
+            await webSocketClient.CloseAsync().ConfigureAwait(false);
+            this.logger.Debug("[TEST] Client closed.");
+            listener.Dispose();
+
+            this.logger.Debug("[TEST] Waiting for send/receive completion.");
+            foreach (var task in sendReceives)
+                await task.ConfigureAwait(false);
+            foreach (var task in connections)
+                await task.ConfigureAwait(false);
+
+            await acceptSockets.ConfigureAwait(false);
+        }
     }
 }
