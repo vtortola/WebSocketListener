@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
 using PingSubscriptionList = System.Collections.Concurrent.ConcurrentBag<vtortola.WebSockets.WebSocket>;
@@ -35,14 +36,14 @@ namespace vtortola.WebSockets.Threading
                 {
                     await webSocket.SendPingAsync(null, 0, 0).ConfigureAwait(false);
 
+                    if (webSocket.IsConnected && this.IsDisposed == false)
+                        this.GetSubscriptionList().Add(webSocket);
                 }
                 catch (Exception pingError)
                 {
-                    DebugLogger.Instance.Warning("An error occurred while sending ping.", pingError);
+                    if (pingError is ObjectDisposedException == false && pingError is ThreadAbortException == false)
+                        DebugLogger.Instance.Warning("An error occurred while sending ping.", pingError);
                 }
-
-                if (webSocket.IsConnected)
-                    this.GetSubscriptionList().Add(webSocket);
             }
         }
     }
