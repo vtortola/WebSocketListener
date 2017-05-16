@@ -241,7 +241,7 @@ namespace vtortola.WebSockets
 
                 if (result.Error != null)
                 {
-                    if (this.log.IsDebugEnabled)
+                    if (this.log.IsDebugEnabled && result.Error.SourceException.Unwrap() is OperationCanceledException == false)
                         this.log.Debug($"{nameof(this.AcceptWebSocketAsync)} is complete with error.", result.Error.SourceException);
 
                     result.Error.Throw();
