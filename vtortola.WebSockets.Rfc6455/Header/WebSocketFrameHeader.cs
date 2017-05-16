@@ -186,5 +186,11 @@ namespace vtortola.WebSockets.Rfc6455
                 RemainingBytes = contentLength
             };
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{Flags.Option}, len: {this.ContentLength}, key: {(Flags.MASK ? BitConverter.ToUInt32(_key.Array, _key.Offset).ToString("X") : "0")}, flags: {Flags}";
+        }
     }
 }

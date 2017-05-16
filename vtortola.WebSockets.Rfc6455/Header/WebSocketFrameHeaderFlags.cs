@@ -1,4 +1,5 @@
-﻿using vtortola.WebSockets.Tools;
+﻿using System.Text;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -117,6 +118,20 @@ namespace vtortola.WebSockets.Rfc6455
 
             buffer[offset] = _byte1;
             buffer[offset + 1] = (byte)(_byte2 + headerLength);
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            if (FIN) sb.Append("FIN,");
+            if (RSV1) sb.Append("RSV1,");
+            if (RSV2) sb.Append("RSV2,");
+            if (RSV3) sb.Append("RSV3,");
+            if (MASK) sb.Append("MASK,");
+            if (sb.Length > 0)
+                sb.Length--;
+            return sb.ToString();
         }
     }
 }
