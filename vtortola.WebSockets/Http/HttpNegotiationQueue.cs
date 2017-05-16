@@ -38,7 +38,7 @@ namespace vtortola.WebSockets.Http
             _connections = new AsyncQueue<Connection>(options.NegotiationQueueCapacity);
             _negotiations = new AsyncQueue<WebSocketNegotiationResult>();
 
-            _cancel.Token.Register(() => this._connections.Close());
+            _cancel.Token.Register(() => this._connections.Close(new OperationCanceledException()));
 
             _handShaker = new WebSocketHandshaker(standards, _options);
 
@@ -117,7 +117,7 @@ namespace vtortola.WebSockets.Http
                 }
 
                 var webSocket = result.Result;
-                if (_negotiations.TrySendAsync(result, _cancel.Token) == false)
+                if (_negotiations.TrySend(result) == false)
                 {
                     SafeEnd.Dispose(webSocket);
                     return; // too many negotiations
@@ -144,7 +144,7 @@ namespace vtortola.WebSockets.Http
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-            if (!this._connections.TrySendAsync(connection, this._cancel.Token))
+            if (!this._connections.TrySend(connection))
                 SafeEnd.Dispose(connection, this.log);
         }
 
