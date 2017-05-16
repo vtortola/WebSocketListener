@@ -38,7 +38,7 @@ namespace vtortola.WebSockets.Http
             _connections = new AsyncQueue<Connection>(options.NegotiationQueueCapacity);
             _negotiations = new AsyncQueue<WebSocketNegotiationResult>();
 
-            _cancel.Token.Register(() => this._connections.Close(new OperationCanceledException()));
+            //_cancel.Token.Register(() => this._connections.Close(new OperationCanceledException()));
 
             _handShaker = new WebSocketHandshaker(standards, _options);
 
@@ -157,11 +157,14 @@ namespace vtortola.WebSockets.Http
         {
             SafeEnd.Dispose(_semaphore, this.log);
 
-            if (_cancel != null)
-            {
-                _cancel.Cancel();
-                _cancel.Dispose();
-            }
+            _cancel?.Cancel(throwOnFirstException: false);
+            SafeEnd.Dispose(_cancel, this.log);
+            this.log.Debug("DISPOSE");
+            foreach (var connection in this._connections.CloseAndReceiveAll(closeException: new OperationCanceledException()))
+                SafeEnd.Dispose(connection, this.log);
+            foreach (var negotiation in this._negotiations.CloseAndReceiveAll(closeException: new OperationCanceledException()))
+                SafeEnd.Dispose(negotiation.Result, this.log);
+
             SafeEnd.Dispose(this.pingQueue, this.log);
         }
     }
