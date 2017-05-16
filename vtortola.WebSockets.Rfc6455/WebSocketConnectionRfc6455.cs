@@ -152,10 +152,12 @@ namespace vtortola.WebSockets.Rfc6455
                     return;
 
                 var awaitHeaderErrorUnwrap = awaitHeaderError.Unwrap();
-                if (this.log.IsDebugEnabled && awaitHeaderErrorUnwrap is OperationCanceledException == false)
+                if (this.log.IsDebugEnabled && awaitHeaderErrorUnwrap is OperationCanceledException == false && this.IsConnected)
                     this.log.Debug("An error occurred while async awaiting header.", awaitHeaderErrorUnwrap);
 
-                await this.CloseAsync(WebSocketCloseReasons.ProtocolError).ConfigureAwait(false);
+                if (this.IsConnected)
+                    await this.CloseAsync(WebSocketCloseReasons.ProtocolError).ConfigureAwait(false);
+
                 if (awaitHeaderErrorUnwrap is WebSocketException == false && awaitHeaderErrorUnwrap is OperationCanceledException == false)
                     throw new WebSocketException("Read operation on WebSocket stream is failed. More detailed information in inner exception.", awaitHeaderErrorUnwrap);
                 else
@@ -182,10 +184,11 @@ namespace vtortola.WebSockets.Rfc6455
             catch (Exception readError) when (readError.Unwrap() is ThreadAbortException == false)
             {
                 var readErrorUnwrap = readError.Unwrap();
-                if (this.log.IsDebugEnabled && readErrorUnwrap is OperationCanceledException == false)
+                if (this.log.IsDebugEnabled && readErrorUnwrap is OperationCanceledException == false && this.IsConnected)
                     this.log.Debug("An error occurred while async reading from WebSocket.", readErrorUnwrap);
 
-                await this.CloseAsync(WebSocketCloseReasons.UnexpectedCondition).ConfigureAwait(false);
+                if (this.IsConnected)
+                    await this.CloseAsync(WebSocketCloseReasons.UnexpectedCondition).ConfigureAwait(false);
 
                 if (readErrorUnwrap is WebSocketException == false && readErrorUnwrap is OperationCanceledException == false)
                     throw new WebSocketException("Read operation on WebSocket stream is failed. More detailed information in inner exception.", readErrorUnwrap);
@@ -213,6 +216,9 @@ namespace vtortola.WebSockets.Rfc6455
             var header = WebSocketFrameHeader.Create(length, isCompleted, headerSent, mask, (WebSocketFrameOption)type, extensionFlags);
             if (header.ToBytes(payload.Array, payload.Offset - header.HeaderLength) != header.HeaderLength)
                 throw new WebSocketException("Wrong frame header written.");
+
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"[FRAME->] {header}");
 
             header.EncodeBytes(payload.Array, payload.Offset, length);
 
@@ -250,10 +256,11 @@ namespace vtortola.WebSockets.Rfc6455
             catch (Exception writeError) when (writeError.Unwrap() is ThreadAbortException == false)
             {
                 var writeErrorUnwrap = writeError.Unwrap();
-                if (this.log.IsDebugEnabled && writeErrorUnwrap is OperationCanceledException == false)
-                    this.log.Debug("An error occurred while async writing to WebSocket.", writeErrorUnwrap);
+                if (this.log.IsDebugEnabled && writeErrorUnwrap is OperationCanceledException == false && this.IsConnected)
+                    this.log.Debug("Write operation on WebSocket stream is failed.", writeErrorUnwrap);
 
-                await this.CloseAsync(WebSocketCloseReasons.UnexpectedCondition).ConfigureAwait(false);
+                if (this.IsConnected)
+                    await this.CloseAsync(WebSocketCloseReasons.UnexpectedCondition).ConfigureAwait(false);
 
                 if (writeErrorUnwrap is WebSocketException == false && writeErrorUnwrap is OperationCanceledException == false)
                     throw new WebSocketException("Write operation on WebSocket stream is failed. More detailed information in inner exception.", writeErrorUnwrap);
@@ -289,6 +296,10 @@ namespace vtortola.WebSockets.Rfc6455
             if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerLength, _keyBuffer, out header))
                 throw new WebSocketException("Frame header is malformed.");
 
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"[FRAME<-] {header}");
+
+
             CurrentHeader = header;
 
             if (!header.Flags.Option.IsData())
@@ -311,7 +322,8 @@ namespace vtortola.WebSockets.Rfc6455
                     throw new WebSocketException("Text, Continuation or Binary are not protocol frames");
 
                 case WebSocketFrameOption.ConnectionClose:
-                    await this.CloseAsync(WebSocketCloseReasons.NormalClose).ConfigureAwait(false);
+                    Interlocked.CompareExchange(ref _isClosed, 1, 0);
+                    this.Dispose();
                     break;
 
                 case WebSocketFrameOption.Ping:
@@ -358,7 +370,11 @@ namespace vtortola.WebSockets.Rfc6455
             }
             catch (Exception closeError) when (closeError.Unwrap() is ThreadAbortException == false)
             {
-                if (this.log.IsDebugEnabled && closeError.Unwrap() is OperationCanceledException == false)
+                var closeErrorUnwrap = closeError.Unwrap();
+                if (closeErrorUnwrap is IOException || closeErrorUnwrap is OperationCanceledException || closeErrorUnwrap is InvalidOperationException)
+                    return; // ignore common IO exceptions while closing connection
+
+                if (this.log.IsDebugEnabled)
                     this.log.Debug("An error occurred while closing connection.", closeError.Unwrap());
             }
         }
@@ -385,12 +401,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public void Dispose()
         {
-            try { this.CloseAsync(WebSocketCloseReasons.NormalClose).Wait(); }
-            catch (Exception closeError) when (closeError.Unwrap() is ThreadAbortException == false)
-            {
-                if (this.log.IsDebugEnabled && closeError.Unwrap() is OperationCanceledException == false)
-                    this.log.Debug("An error occurred while closing connection.", closeError.Unwrap());
-            }
+            this.CloseAsync(WebSocketCloseReasons.NormalClose).Wait();
 
             _options.BufferManager.ReturnBuffer(this.SendBuffer.Array);
             _options.BufferManager.ReturnBuffer(this._closeBuffer.Array);
