@@ -137,7 +137,7 @@ namespace vtortola.WebSockets.Rfc6455
                         if (buffered == 0)
                         {
                             if (this.log.IsDebugEnabled)
-                                this.log.Debug("Connection has been closed while async awaiting header.");
+                                this.log.Debug($"({this.GetHashCode():X}) Connection has been closed while async awaiting header.");
                         }
                         await this.CloseAsync(WebSocketCloseReasons.ProtocolError).ConfigureAwait(false);
                         return;
@@ -153,7 +153,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 var awaitHeaderErrorUnwrap = awaitHeaderError.Unwrap();
                 if (this.log.IsDebugEnabled && awaitHeaderErrorUnwrap is OperationCanceledException == false && this.IsConnected)
-                    this.log.Debug("An error occurred while async awaiting header.", awaitHeaderErrorUnwrap);
+                    this.log.Debug($"({this.GetHashCode():X}) An error occurred while async awaiting header.", awaitHeaderErrorUnwrap);
 
                 if (this.IsConnected)
                     await this.CloseAsync(WebSocketCloseReasons.ProtocolError).ConfigureAwait(false);
@@ -185,7 +185,7 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 var readErrorUnwrap = readError.Unwrap();
                 if (this.log.IsDebugEnabled && readErrorUnwrap is OperationCanceledException == false && this.IsConnected)
-                    this.log.Debug("An error occurred while async reading from WebSocket.", readErrorUnwrap);
+                    this.log.Debug($"({this.GetHashCode():X}) An error occurred while async reading from WebSocket.", readErrorUnwrap);
 
                 if (this.IsConnected)
                     await this.CloseAsync(WebSocketCloseReasons.UnexpectedCondition).ConfigureAwait(false);
@@ -218,7 +218,7 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new WebSocketException("Wrong frame header written.");
 
             if (this.log.IsDebugEnabled)
-                this.log.Debug($"[FRAME->] {header}");
+                this.log.Debug($"({this.GetHashCode():X}) [FRAME->] {header}");
 
             header.EncodeBytes(payload.Array, payload.Offset, length);
 
@@ -257,7 +257,7 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 var writeErrorUnwrap = writeError.Unwrap();
                 if (this.log.IsDebugEnabled && writeErrorUnwrap is OperationCanceledException == false && this.IsConnected)
-                    this.log.Debug("Write operation on WebSocket stream is failed.", writeErrorUnwrap);
+                    this.log.Debug($"({this.GetHashCode():X}) Write operation on WebSocket stream is failed.", writeErrorUnwrap);
 
                 if (this.IsConnected)
                     await this.CloseAsync(WebSocketCloseReasons.UnexpectedCondition).ConfigureAwait(false);
@@ -297,7 +297,7 @@ namespace vtortola.WebSockets.Rfc6455
                 throw new WebSocketException("Frame header is malformed.");
 
             if (this.log.IsDebugEnabled)
-                this.log.Debug($"[FRAME<-] {header}");
+                this.log.Debug($"({this.GetHashCode():X}) [FRAME<-] {header}");
 
 
             CurrentHeader = header;
@@ -310,7 +310,15 @@ namespace vtortola.WebSockets.Rfc6455
             else
                 _ongoingMessageAwaiting = 0;
 
-            _ping.NotifyActivity();
+            try
+            {
+                _ping.NotifyActivity();
+            }
+            catch (Exception notifyPingError)
+            {
+                if (this.log.IsWarningEnabled)
+                    this.log.Warning($"({this.GetHashCode():X}) An error occurred while trying to call {this._ping.GetType().Name}.{nameof(this._ping.NotifyActivity)}() method.", notifyPingError);
+            }
         }
         private async Task ProcessControlFrameAsync(Stream clientStream)
         {
@@ -340,7 +348,17 @@ namespace vtortola.WebSockets.Rfc6455
                     }
 
                     if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
-                        _ping.NotifyPong(_pongBuffer);
+                    {
+                        try
+                        {
+                            _ping.NotifyPong(_pongBuffer);
+                        }
+                        catch (Exception notifyPong)
+                        {
+                            if (this.log.IsWarningEnabled)
+                                this.log.Warning($"({this.GetHashCode():X}) An error occurred while trying to call {this._ping.GetType().Name}.{nameof(this._ping.NotifyPong)}() method.", notifyPong);
+                        }
+                    }
                     else // pong frames echo what was 'pinged'
                     {
                         var frame = this.PrepareFrame(_pongBuffer, read, true, false, (WebSocketMessageType)WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
@@ -348,7 +366,8 @@ namespace vtortola.WebSockets.Rfc6455
                     }
 
                     break;
-                default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
+                default:
+                    throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
             }
         }
 
@@ -375,7 +394,7 @@ namespace vtortola.WebSockets.Rfc6455
                     return; // ignore common IO exceptions while closing connection
 
                 if (this.log.IsDebugEnabled)
-                    this.log.Debug("An error occurred while closing connection.", closeError.Unwrap());
+                    this.log.Debug($"({this.GetHashCode():X}) An error occurred while closing connection.", closeError.Unwrap());
             }
         }
         public Task PingAsync(byte[] data, int offset, int count)
