@@ -107,6 +107,11 @@
     <Compile Include="Tools\ThreadStaticRandom.cs" />
     <Compile Include="Transports\Listener.cs" />
     <Compile Include="Transports\Connection.cs" />
+    <Compile Include="Transports\NamedPipes\NamedPipeConnection.cs" />
+    <Compile Include="Transports\NamedPipes\NamedPipeEndPoint.cs" />
+    <Compile Include="Transports\NamedPipes\NamedPipeListener.cs" />
+    <Compile Include="Transports\NamedPipes\NamedPipeTransport.cs" />
+    <Compile Include="Transports\NamedPipes\PipeDuplexStream.cs" />
     <Compile Include="Transports\Tcp\TcpConnection.cs" />
     <Compile Include="Transports\Tcp\TcpListener.cs" />
     <Compile Include="Transports\Tcp\TcpTransport.cs" />
@@ -124,9 +129,7 @@
     <Compile Include="WebSocketClient.cs" />
     <Compile Include="WebSocketStringExtensions.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Transports\NamedPipes\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="WebSocketListener.snk" />
