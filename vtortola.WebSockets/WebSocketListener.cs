@@ -89,7 +89,7 @@ namespace vtortola.WebSockets
                     var prefix = this.listeningPrefixes[i];
                     var transport = default(WebSocketTransport);
                     if (this.options.Transports.TryGetWebSocketTransport(prefix, out transport) == false)
-                        throw new WebSocketException($"Unable to find transport for '{prefix}'. Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes))}.");
+                        throw new WebSocketException($"Unable to find transport for '{prefix}'. Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes).Distinct())}.");
 
                     endPoints[i] = Tuple.Create(prefix, transport);
                 }
@@ -101,7 +101,7 @@ namespace vtortola.WebSockets
 
                 this.listeners = listeners;
                 this.localEndPoints = this.listeners.SelectMany(l => l.LocalEndpoints).ToArray();
-                this.stopConditionSource = new AsyncConditionSource { ContinueOnCapturedContext = false };
+                this.stopConditionSource = new AsyncConditionSource(isSet: true) { ContinueOnCapturedContext = false };
                 this.AcceptConnectionsAsync().LogFault(this.log);
 
                 if (Interlocked.CompareExchange(ref state, STATE_STARTED, STATE_STARTING) != STATE_STARTING)
@@ -135,7 +135,7 @@ namespace vtortola.WebSockets
         }
         public async Task StopAsync()
         {
-            if (Interlocked.CompareExchange(ref state, STATE_STOPPING, STATE_STARTED) != STATE_STARTING)
+            if (Interlocked.CompareExchange(ref state, STATE_STOPPING, STATE_STARTED) != STATE_STARTED)
                 throw new WebSocketException("Failed to stop listener from current state. Maybe it is disposed or not started.");
 
             this.options.SetUsed(false);
@@ -143,6 +143,8 @@ namespace vtortola.WebSockets
 
             if (this.log.IsDebugEnabled)
                 this.log.Debug($"{nameof(WebSocketListener)} is stopping.");
+
+            // TODO: wait for all pending websockets and set stopCondition after it
 
             this.localEndPoints = EmptyEndPoints;
             var listeners = Interlocked.Exchange(ref this.listeners, EmptyListeners);
@@ -187,7 +189,7 @@ namespace vtortola.WebSockets
                     if (acceptTask == null || acceptTask.IsCompleted == false)
                         continue;
 
-                    acceptTasks[i] = null;
+                    acceptTasks[taskIndex] = null;
                     var error = acceptTask.Exception.Unwrap();
                     if (acceptTask.Status != TaskStatus.RanToCompletion)
                     {
