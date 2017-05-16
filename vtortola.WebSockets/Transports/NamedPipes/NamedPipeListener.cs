@@ -53,7 +53,14 @@ namespace vtortola.WebSockets.Transports.NamedPipes
             {
                 var namedPipe = this.server;
                 var waitForConnectionTask = Task.Factory.FromAsync(namedPipe.BeginWaitForConnection, namedPipe.EndWaitForConnection, null);
-                await waitForConnectionTask.ConfigureAwait(false);
+                try
+                {
+                    await waitForConnectionTask.ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new TaskCanceledException();
+                }
 
                 if (this.log.IsDebugEnabled)
                     this.log.Debug($"New named pipe accepted. Pipe name: '{this.pipeName}'.");
@@ -91,7 +98,7 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         /// <inheritdoc />
         protected override void Dispose(bool disposed)
         {
-            if (Interlocked.Exchange(ref this.state, STATE_DISPOSED) != STATE_LISTENING)
+            if (Interlocked.Exchange(ref this.state, STATE_DISPOSED) == STATE_DISPOSED)
                 return;
 
             SafeEnd.Dispose(this.server, this.log);

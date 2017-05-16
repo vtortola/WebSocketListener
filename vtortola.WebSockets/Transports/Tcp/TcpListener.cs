@@ -123,8 +123,8 @@ namespace vtortola.WebSockets.Transports.Tcp
                         var error = acceptTask.Exception.Unwrap();
                         if (acceptTask.Status != TaskStatus.RanToCompletion)
                         {
-                            if (this.log.IsDebugEnabled && error != null && error is OperationCanceledException == false)
-                                this.log.Debug($"Accept on '{this.sockets[taskIndex].LocalEndPoint}' has failed.", error);
+                            if (this.log.IsDebugEnabled && error != null && error is OperationCanceledException == false && this.state == STATE_ACCEPTING)
+                                this.log.Debug($"Accept on '{this.localEndPoints[i]}' has failed.", error);
                             continue;
                         }
 
@@ -216,11 +216,17 @@ namespace vtortola.WebSockets.Transports.Tcp
         /// <inheritdoc />
         protected override void Dispose(bool disposed)
         {
-            if (Interlocked.Exchange(ref this.state, STATE_DISPOSED) != STATE_LISTENING)
+            if (Interlocked.Exchange(ref this.state, STATE_DISPOSED) == STATE_DISPOSED)
                 return;
 
             foreach (var socket in this.sockets)
                 SafeEnd.Dispose(socket, this.log);
+
+            foreach (var acceptEvent in this.activeAcceptEvents.Concat(this.availableAcceptEvents))
+            {
+                ((TaskCompletionSource<Socket>)acceptEvent.UserToken)?.TrySetCanceled();
+                SafeEnd.Dispose(acceptEvent, this.log);
+            }
         }
         /// <inheritdoc />
         public override string ToString()
