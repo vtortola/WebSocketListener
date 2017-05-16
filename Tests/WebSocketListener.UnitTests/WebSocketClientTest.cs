@@ -24,10 +24,9 @@ namespace WebSocketListener.UnitTests
         [Fact]
         public void ConstructTest()
         {
-            var factories = new WebSocketFactoryCollection()
-                .RegisterRfc6455();
             var options = new WebSocketListenerOptions() { Logger = this.logger };
-            var webSocketClient = new WebSocketClient(factories, options);
+            options.Standards.RegisterRfc6455();
+            var webSocketClient = new WebSocketClient(options);
         }
 
         [Theory]
@@ -35,10 +34,9 @@ namespace WebSocketListener.UnitTests
         [InlineData("wss://echo.websocket.org?encoding=text", 15)]
         public async Task ConnectToServerAsync(string address, int timeoutSeconds)
         {
-            var factories = new WebSocketFactoryCollection()
-                .RegisterRfc6455();
             var options = new WebSocketListenerOptions() { Logger = this.logger };
-            var webSocketClient = new WebSocketClient(factories, options);
+            options.Standards.RegisterRfc6455();
+            var webSocketClient = new WebSocketClient(options);
 
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
             var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
@@ -59,10 +57,9 @@ namespace WebSocketListener.UnitTests
         {
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
-            var factories = new WebSocketFactoryCollection()
-                .RegisterRfc6455();
             var options = new WebSocketListenerOptions { Logger = this.logger };
-            var webSocketClient = new WebSocketClient(factories, options);
+            options.Standards.RegisterRfc6455();
+            var webSocketClient = new WebSocketClient(options);
             var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
 
             if (await Task.WhenAny(connectTask, timeout).ConfigureAwait(false) == timeout)
@@ -109,7 +106,6 @@ namespace WebSocketListener.UnitTests
         {
             var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
-
             var options = new WebSocketListenerOptions { Logger = this.logger };
             options.Standards.RegisterRfc6455();
             options.Transports.RegisterTransport(new NamedPipeTransport());
@@ -140,9 +136,8 @@ namespace WebSocketListener.UnitTests
                 await echoMessages.ConfigureAwait(false);
             }).Invoke();
 
-            var factories = new WebSocketFactoryCollection()
-                .RegisterRfc6455();
-            var webSocketClient = new WebSocketClient(factories, options);
+            logger.Debug("[TEST] Creating client.");
+            var webSocketClient = new WebSocketClient(options);
             logger.Debug("[TEST] Connecting client.");
             var connectTask = webSocketClient.ConnectAsync(new Uri(address), CancellationToken.None);
 
@@ -156,7 +151,7 @@ namespace WebSocketListener.UnitTests
             {
                 await Task.Yield();
                 logger.Debug("[TEST] Sending messages.");
-                
+
                 foreach (var message in messages)
                 {
                     logger.Debug("[CLIENT] -> " + message);

@@ -111,7 +111,6 @@
     <Compile Include="Transports\NamedPipes\NamedPipeEndPoint.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeListener.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeTransport.cs" />
-    <Compile Include="Transports\NamedPipes\PipeDuplexStream.cs" />
     <Compile Include="Transports\Tcp\TcpConnection.cs" />
     <Compile Include="Transports\Tcp\TcpListener.cs" />
     <Compile Include="Transports\Tcp\TcpTransport.cs" />

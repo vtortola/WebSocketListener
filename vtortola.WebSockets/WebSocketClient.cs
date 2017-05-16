@@ -23,7 +23,6 @@ namespace vtortola.WebSockets
         private readonly ILogger log;
         private readonly AsyncConditionSource closeEvent;
         private readonly CancellationTokenSource workCancellationSource;
-        private readonly WebSocketFactoryCollection standards;
         private readonly WebSocketListenerOptions options;
         private readonly ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>> pendingRequests;
         private readonly CancellationQueue negotiationsTimeoutQueue;
@@ -31,14 +30,15 @@ namespace vtortola.WebSockets
 
         public bool HasPendingRequests => this.pendingRequests.IsEmpty == false;
 
-        public WebSocketClient(WebSocketFactoryCollection standards, WebSocketListenerOptions options)
+        public WebSocketClient(WebSocketListenerOptions options)
         {
-            if (standards == null) throw new ArgumentNullException(nameof(standards));
             if (options == null) throw new ArgumentNullException(nameof(options));
-            if (standards.Count == 0) throw new ArgumentException("Empty list of WebSocket standards.", nameof(standards));
+            if (options.Standards.Count == 0) throw new ArgumentException("Empty list of WebSocket standards.", nameof(options));
 
             options.CheckCoherence();
             this.options = options.Clone();
+            this.options.SetUsed(true);
+
             if (this.options.NegotiationTimeout > TimeSpan.Zero)
                 this.negotiationsTimeoutQueue = new CancellationQueue(this.options.NegotiationTimeout) { ScheduleCancellation = true };
             if (this.options.PingMode != PingMode.Manual)
@@ -48,17 +48,12 @@ namespace vtortola.WebSockets
             this.closeEvent = new AsyncConditionSource(isSet: true) { ContinueOnCapturedContext = false };
             this.workCancellationSource = new CancellationTokenSource();
             this.pendingRequests = new ConcurrentDictionary<WebSocketHandshake, Task<WebSocket>>();
-            this.standards = standards.Clone();
 
             if (this.options.BufferManager == null)
                 this.options.BufferManager = BufferManager.CreateBufferManager(100, this.options.SendBufferSize * 2); // create small buffer pool if not configured
 
             if (this.options.CertificateValidationHandler == null)
                 this.options.CertificateValidationHandler = this.ValidateRemoteCertificate;
-
-            this.standards.SetUsed(true);
-            foreach (var standard in this.standards)
-                standard.MessageExtensions.SetUsed(true);
         }
 
         private bool ValidateRemoteCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -133,6 +128,8 @@ namespace vtortola.WebSockets
             SafeEnd.Dispose(this.pingQueue, this.log);
             SafeEnd.Dispose(this.negotiationsTimeoutQueue, this.log);
             SafeEnd.Dispose(this.workCancellationSource, this.log);
+
+            this.options.SetUsed(false);
         }
 
         private async Task<WebSocket> OpenConnectionAsync(WebSocketHandshake handshake, CancellationToken cancellation)
@@ -186,7 +183,7 @@ namespace vtortola.WebSockets
                 stream = secureStream;
             }
 
-            handshake.Factory = this.standards.GetLast();
+            handshake.Factory = this.options.Standards.GetLast();
 
             await this.WriteRequestAsync(handshake, stream).ConfigureAwait(false);
 
