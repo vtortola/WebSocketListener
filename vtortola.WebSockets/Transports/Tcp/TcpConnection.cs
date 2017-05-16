@@ -14,11 +14,14 @@ namespace vtortola.WebSockets.Transports.Tcp
         public override EndPoint LocalEndPoint => this.socket.LocalEndPoint;
         /// <inheritdoc />
         public override EndPoint RemoteEndPoint => this.socket.RemoteEndPoint;
+        /// <inheritdoc />
+        public override bool ShouldBeSecure { get; }
 
-        public TcpConnection(Socket socket)
+        public TcpConnection(Socket socket, bool shouldBeSecure)
         {
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
+            this.ShouldBeSecure = shouldBeSecure;
             this.socket = socket;
 
 #if (NET45 || NET451 || NET452 || NET46)

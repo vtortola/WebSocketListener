@@ -38,6 +38,7 @@ namespace vtortola.WebSockets.Transports.Tcp
             if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
+            var isSecure = string.Equals(endPoint.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
             // prepare socket
 #if DUAL_MODE
             var remoteEndpoint = new DnsEndPoint(endPoint.DnsSafeHost, endPoint.Port <= 0 ? DEFAULT_PORT : endPoint.Port, AddressFamily.Unspecified);
@@ -99,7 +100,7 @@ namespace vtortola.WebSockets.Transports.Tcp
                     throw new WebSocketException($"Failed to open socket to '{endPoint}' due error '{socketAsyncEventArgs.SocketError}'.",
                         new SocketException((int)socketAsyncEventArgs.SocketError));
 
-                var connection = new TcpConnection(socket);
+                var connection = new TcpConnection(socket, isSecure);
                 socket = null;
                 return connection;
             }
