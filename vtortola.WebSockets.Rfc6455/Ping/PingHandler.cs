@@ -15,7 +15,7 @@ namespace vtortola.WebSockets.Rfc6455
             protected static TimeSpan TimestampToTimeSpan(long timestamp)
             {
                 if (Stopwatch.IsHighResolution)
-                    return TimeSpan.FromTicks(timestamp / (Stopwatch.Frequency / 10000000L));
+                    return TimeSpan.FromTicks((long)(timestamp * (10000000D / Stopwatch.Frequency)));
 
                 return TimeSpan.FromTicks(timestamp);
             }
