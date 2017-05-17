@@ -1,9 +1,8 @@
 ﻿using System;
-using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public class WebSocketFrameHeaderTests
     {

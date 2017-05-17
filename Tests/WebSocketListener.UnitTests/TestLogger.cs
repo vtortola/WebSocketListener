@@ -1,8 +1,7 @@
 ﻿using System;
-using vtortola.WebSockets;
 using Xunit.Abstractions;
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public class TestLogger : ILogger
     {

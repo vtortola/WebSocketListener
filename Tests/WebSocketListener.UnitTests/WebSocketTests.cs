@@ -9,7 +9,7 @@ using vtortola.WebSockets.Rfc6455;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public class WebSocketTests
     {

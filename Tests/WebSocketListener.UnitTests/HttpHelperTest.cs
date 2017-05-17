@@ -2,7 +2,7 @@
 using vtortola.WebSockets.Tools;
 using Xunit;
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public class HttpHelperTest
     {

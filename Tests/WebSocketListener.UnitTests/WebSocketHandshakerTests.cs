@@ -10,9 +10,10 @@ using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Rfc6455;
 using Xunit;
 using Xunit.Abstractions;
+
 #pragma warning disable 1998
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public class WebSocketHandshakerTests
     {
@@ -58,7 +59,7 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.False(result.IsValidWebSocketRequest);
+                Assert.False((bool)result.IsValidWebSocketRequest);
                 Assert.NotNull(result.Error);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -99,15 +100,15 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
+                Assert.True((bool)result.IsWebSocketRequest);
+                Assert.True((bool)result.IsVersionSupported);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
-                Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
+                Assert.Equal((string)"server.example.com", (string)result.Request.Headers[RequestHeader.Host]);
+                Assert.Equal((string)@"/chat", (string)result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
-                Assert.Equal("key", cookie.Name);
-                Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
+                Assert.Equal((string)"key", (string)cookie.Name);
+                Assert.Equal((string)@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", (string)cookie.Value);
 
                 Assert.NotNull(result.Request.LocalEndPoint);
                 Assert.NotNull(result.Request.RemoteEndPoint);
@@ -185,15 +186,15 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
+                Assert.True((bool)result.IsWebSocketRequest);
+                Assert.True((bool)result.IsVersionSupported);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
-                Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
+                Assert.Equal((string)"server.example.com", (string)result.Request.Headers[RequestHeader.Host]);
+                Assert.Equal((string)@"/chat", (string)result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
-                Assert.Equal("key", cookie.Name);
-                Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
+                Assert.Equal((string)"key", (string)cookie.Name);
+                Assert.Equal((string)@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", (string)cookie.Value);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -260,8 +261,8 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.False(result.IsVersionSupported);
+                Assert.True((bool)result.IsWebSocketRequest);
+                Assert.False((bool)result.IsVersionSupported);
                 ms.Seek(position, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
@@ -317,8 +318,8 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.False(result.IsWebSocketRequest);
-                Assert.False(result.IsVersionSupported);
+                Assert.False((bool)result.IsWebSocketRequest);
+                Assert.False((bool)result.IsVersionSupported);
                 ms.Seek(position, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
@@ -366,9 +367,9 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
+                Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
+                Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -433,9 +434,9 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
+                Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
+                Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -504,9 +505,9 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
+                Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
+                Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -559,9 +560,9 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
+                Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("superchat", result.Response.Headers[ResponseHeader.WebSocketProtocol]);
+                Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -762,7 +763,7 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.False(result.IsValidWebSocketRequest);
+                Assert.False((bool)result.IsValidWebSocketRequest);
                 Assert.NotNull(result.Error);
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -803,9 +804,9 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsValidWebSocketRequest);
+                Assert.True((bool)result.IsValidWebSocketRequest);
                 Assert.Equal(1, result.Request.Cookies.Count);
-                Assert.Equal("This is encoded.", result.Request.Cookies["key"].Value);
+                Assert.Equal((string)"This is encoded.", (string)result.Request.Cookies["key"].Value);
             }
         }
 
@@ -841,10 +842,10 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
+                Assert.True((bool)result.IsWebSocketRequest);
+                Assert.True((bool)result.IsVersionSupported);
                 Assert.Null(result.Error);
-                Assert.True(result.IsValidWebSocketRequest);
+                Assert.True((bool)result.IsValidWebSocketRequest);
                 Assert.True(string.IsNullOrEmpty(result.Response.Headers[ResponseHeader.WebSocketProtocol]));
 
                 ms.Seek(position, SeekOrigin.Begin);
@@ -889,10 +890,10 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
+                Assert.True((bool)result.IsWebSocketRequest);
+                Assert.True((bool)result.IsVersionSupported);
                 Assert.Null(result.Error);
-                Assert.True(result.IsValidWebSocketRequest);
+                Assert.True((bool)result.IsValidWebSocketRequest);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -956,8 +957,8 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.False(result.IsWebSocketRequest);
-                Assert.False(result.IsVersionSupported);
+                Assert.False((bool)result.IsWebSocketRequest);
+                Assert.False((bool)result.IsVersionSupported);
                 ms.Seek(position, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();

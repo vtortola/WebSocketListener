@@ -9,7 +9,7 @@ using vtortola.WebSockets.Rfc6455;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public class HttpFallbackTests
     {
@@ -52,17 +52,17 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.False(result.IsWebSocketRequest);
-                Assert.False(result.IsValidWebSocketRequest);
-                Assert.True(result.IsValidHttpRequest);
-                Assert.False(result.IsVersionSupported);
+                Assert.False((bool)result.IsWebSocketRequest);
+                Assert.False((bool)result.IsValidWebSocketRequest);
+                Assert.True((bool)result.IsValidHttpRequest);
+                Assert.False((bool)result.IsVersionSupported);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
-                Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
+                Assert.Equal((string)"server.example.com", (string)result.Request.Headers[RequestHeader.Host]);
+                Assert.Equal((string)@"/chat", (string)result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
-                Assert.Equal("key", cookie.Name);
-                Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
+                Assert.Equal((string)"key", (string)cookie.Name);
+                Assert.Equal((string)@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", (string)cookie.Value);
                 Assert.NotNull(result.Request.LocalEndPoint);
                 Assert.NotNull(result.Request.RemoteEndPoint);
             }
@@ -94,15 +94,15 @@ namespace WebSocketListener.UnitTests
 
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.NotNull(result);
-                Assert.True(result.IsWebSocketRequest);
-                Assert.True(result.IsVersionSupported);
+                Assert.True((bool)result.IsWebSocketRequest);
+                Assert.True((bool)result.IsVersionSupported);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
-                Assert.Equal("server.example.com", result.Request.Headers[RequestHeader.Host]);
-                Assert.Equal(@"/chat", result.Request.RequestUri.ToString());
+                Assert.Equal((string)"server.example.com", (string)result.Request.Headers[RequestHeader.Host]);
+                Assert.Equal((string)@"/chat", (string)result.Request.RequestUri.ToString());
                 Assert.Equal(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies["key"];
-                Assert.Equal("key", cookie.Name);
-                Assert.Equal(@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", cookie.Value);
+                Assert.Equal((string)"key", (string)cookie.Name);
+                Assert.Equal((string)@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", (string)cookie.Value);
                 Assert.NotNull(result.Request.LocalEndPoint);
                 Assert.NotNull(result.Request.RemoteEndPoint);
 

@@ -9,7 +9,7 @@ using vtortola.WebSockets.Tools;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace WebSocketListener.UnitTests
+namespace vtortola.WebSockets.UnitTests
 {
     public sealed class AsyncQueueTests
     {
