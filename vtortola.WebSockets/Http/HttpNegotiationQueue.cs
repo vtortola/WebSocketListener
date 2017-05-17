@@ -148,7 +148,7 @@ namespace vtortola.WebSockets.Http
                 SafeEnd.Dispose(connection, this.log);
         }
 
-        public Task<WebSocketNegotiationResult> DequeueAsync(CancellationToken cancel)
+        public AsyncQueue<WebSocketNegotiationResult>.ReceiveResult DequeueAsync(CancellationToken cancel)
         {
             return _negotiations.ReceiveAsync(cancel);
         }
@@ -160,9 +160,9 @@ namespace vtortola.WebSockets.Http
             _cancel?.Cancel(throwOnFirstException: false);
             SafeEnd.Dispose(_cancel, this.log);
             this.log.Debug("DISPOSE");
-            foreach (var connection in this._connections.CloseAndReceiveAll(closeException: new OperationCanceledException()))
+            foreach (var connection in this._connections.CloseAndReceiveAll(closeError: new OperationCanceledException()))
                 SafeEnd.Dispose(connection, this.log);
-            foreach (var negotiation in this._negotiations.CloseAndReceiveAll(closeException: new OperationCanceledException()))
+            foreach (var negotiation in this._negotiations.CloseAndReceiveAll(closeError: new OperationCanceledException()))
                 SafeEnd.Dispose(negotiation.Result, this.log);
 
             SafeEnd.Dispose(this.pingQueue, this.log);

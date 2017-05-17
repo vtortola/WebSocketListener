@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Security;
 using System.Threading;
@@ -71,33 +72,101 @@ namespace vtortola.WebSockets.Tools
         }
 
         [SecurityCritical]
-        internal static void QueueContinuation(Action continuation, bool isSafe, bool continueOnCapturedContext)
+        internal static void UnsafeQueueContinuation(Action continuation, bool continueOnCapturedContext, bool schedule)
         {
             if (continuation == null) throw new ArgumentNullException(nameof(continuation));
 
             if (!IsSingleTarget(continuation))
             {
+                var runErrors = default(List<Exception>);
                 // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                foreach (Action act in continuation.GetInvocationList())
+                foreach (Action action in continuation.GetInvocationList())
                 {
-                    QueueContinuation(act, isSafe, continueOnCapturedContext);
+                    try
+                    {
+                        UnsafeQueueContinuation(action, continueOnCapturedContext, schedule);
+                    }
+                    catch (Exception runError)
+                    {
+                        if (runErrors == null) runErrors = new List<Exception>();
+                        runErrors.Add(runError);
+                    }
                 }
-
+                if (runErrors != null)
+                    throw new AggregateException(runErrors);
                 return;
             }
 
+            var currentScheduler = TaskScheduler.Current ?? TaskScheduler.Default;
             var syncContext = SynchronizationContext.Current;
             var isDefaultSyncContext = syncContext == null || syncContext.GetType() == typeof(SynchronizationContext);
-            if (continueOnCapturedContext && syncContext != null && !isDefaultSyncContext) syncContext.Post(SendOrPostCallbackRunAction, continuation);
+            if (schedule && continueOnCapturedContext && syncContext != null && !isDefaultSyncContext)
+            {
+                syncContext.Post(SendOrPostCallbackRunAction, continuation);
+            }
+            else if (schedule || currentScheduler != TaskScheduler.Default)
+            {
+                if (currentScheduler == TaskScheduler.Default)
+                {
+                    ThreadPool.UnsafeQueueUserWorkItem(WaitCallbackRunAction, continuation);
+                }
+                else
+                {
+                    Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, currentScheduler);
+                }
+            }
             else
             {
-                var current = TaskScheduler.Current;
-                if (current == TaskScheduler.Default)
+                continuation();
+            }
+        }
+        [SecuritySafeCritical]
+        internal static void QueueContinuation(Action continuation, bool continueOnCapturedContext, bool schedule)
+        {
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+
+            if (!IsSingleTarget(continuation))
+            {
+                var runErrors = default(List<Exception>);
+                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                foreach (Action action in continuation.GetInvocationList())
                 {
-                    if (isSafe) ThreadPool.QueueUserWorkItem(WaitCallbackRunAction, continuation);
-                    else ThreadPool.UnsafeQueueUserWorkItem(WaitCallbackRunAction, continuation);
+                    try
+                    {
+                        UnsafeQueueContinuation(action, continueOnCapturedContext, schedule);
+                    }
+                    catch (Exception runError)
+                    {
+                        if (runErrors == null) runErrors = new List<Exception>();
+                        runErrors.Add(runError);
+                    }
                 }
-                else Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, current);
+                if (runErrors != null)
+                    throw new AggregateException(runErrors);
+                return;
+            }
+
+            var currentScheduler = TaskScheduler.Current ?? TaskScheduler.Default;
+            var syncContext = SynchronizationContext.Current;
+            var isDefaultSyncContext = syncContext == null || syncContext.GetType() == typeof(SynchronizationContext);
+            if (schedule && continueOnCapturedContext && syncContext != null && !isDefaultSyncContext)
+            {
+                syncContext.Post(SendOrPostCallbackRunAction, continuation);
+            }
+            else if (schedule || currentScheduler != TaskScheduler.Default)
+            {
+                if (currentScheduler == TaskScheduler.Default)
+                {
+                    ThreadPool.QueueUserWorkItem(WaitCallbackRunAction, continuation);
+                }
+                else
+                {
+                    Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, currentScheduler);
+                }
+            }
+            else
+            {
+                continuation();
             }
         }
 

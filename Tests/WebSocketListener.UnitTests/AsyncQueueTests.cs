@@ -89,17 +89,17 @@ namespace WebSocketListener.UnitTests
                 while (cancellation.IsCancellationRequested == false)
                 {
                     var value = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
+                    this.logger.Debug(value.ToString());
                     Interlocked.Add(ref actualSum, value);
-                    ct++;
-                    if (ct == count)
+                    if (Interlocked.Increment(ref ct) == count)
                         return;
                 }
-            })().IgnoreFaultOrCancellation().ConfigureAwait(false);
+            })();
 
             for (var i = 0; i < count; i++)
                 Assert.True(asyncQueue.TrySend(i), "fail to send");
 
-            await receiveTask;
+            await receiveTask.ConfigureAwait(false);
 
             Assert.Equal(expectedSum, actualSum);
         }
@@ -130,15 +130,14 @@ namespace WebSocketListener.UnitTests
                 {
                     var value = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
                     Interlocked.Add(ref actualSum, value);
-                    ct++;
-                    if (ct == count)
+                    if (Interlocked.Increment(ref ct) == count)
                         return;
                 }
-            })().IgnoreFaultOrCancellation().ConfigureAwait(false);
+            })();
 
             Parallel.For(0, count, options, i => Assert.True(asyncQueue.TrySend(i), "fail to send"));
 
-            await receiveTask;
+            await receiveTask.ConfigureAwait(false);
 
             Assert.Equal(expectedSum, actualSum);
         }

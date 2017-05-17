@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
@@ -11,171 +15,273 @@ namespace vtortola.WebSockets.Threading
 {
     internal sealed class AsyncQueue<T>
     {
-        private const int STATE_OPENED = 0;
-        private const int STATE_CLOSED = 1;
-        private const int UNBOUND = -1;
+        private static readonly T[] EmptyList = new T[0];
 
-        private static readonly Task<T> DefaultCloseResult;
-        private static readonly TaskCompletionSource<T> DummyCompletionSource;
+        public const int UNBOUND = int.MaxValue;
 
-        private readonly ConcurrentQueue<T> queue = new ConcurrentQueue<T>();
+        // ReSharper disable StaticMemberInGenericType
+        private static readonly ExceptionDispatchInfo DefaultCloseError;
+        // ReSharper restore StaticMemberInGenericType
+
+        private readonly ConcurrentQueue<T> innerQueue = new ConcurrentQueue<T>();
         private readonly int boundedCapacity;
-        private volatile int count;
-        private volatile TaskCompletionSource<T> receiveCompletionSource;
 
-        private volatile int closeState = STATE_OPENED;
-        private volatile int sendReceiveCounter;
-        private volatile Task<T> closedResult;
+        private volatile int count;
+        private volatile ReceiveResult receiveResult;
+        private volatile ExceptionDispatchInfo closeError;
+        private int sendCounter;
 
         public int BoundedCapacity => this.boundedCapacity;
+        public bool IsClosed => this.closeError != null;
+        public bool IsEmpty => this.IsClosed || this.innerQueue.IsEmpty;
 
         static AsyncQueue()
         {
-            DummyCompletionSource = new TaskCompletionSource<T>();
-            DummyCompletionSource.TrySetResult(default(T));
-            DefaultCloseResult = TaskHelper.FailedTask<T>(new InvalidOperationException("Queue is closed and can't accept or give new items."));
+            try
+            {
+                throw new InvalidOperationException("Queue is closed and can't accept or give new items.");
+            }
+            catch (InvalidOperationException closeError)
+            {
+                DefaultCloseError = ExceptionDispatchInfo.Capture(closeError);
+            }
         }
-        public AsyncQueue()
-        {
-            this.boundedCapacity = UNBOUND;
-        }
-        public AsyncQueue(int boundedCapacity)
+        public AsyncQueue(int boundedCapacity = UNBOUND)
         {
             if (boundedCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(boundedCapacity));
 
             this.boundedCapacity = boundedCapacity;
+            this.count = 0;
+            this.closeError = null;
         }
 
-        public Task<T> ReceiveAsync(CancellationToken cancellation)
+        public ReceiveResult ReceiveAsync(CancellationToken cancellation)
         {
-            Interlocked.Increment(ref this.sendReceiveCounter);
+            var newReceiveResult = new ReceiveResult(this, cancellation, true, false);
+            if (Interlocked.CompareExchange(ref this.receiveResult, newReceiveResult, null) != null)
+                throw new InvalidOperationException("Only one receiver at time is allowed.");
+
+            return newReceiveResult;
+        }
+        public bool TryReceive(out T value)
+        {
+            value = default(T);
+            if (this.IsClosed)
+                return false;
+
+            var receiveResult = this.ReceiveAsync(CancellationToken.None);
+            if (!receiveResult.IsCompleted)
+                return false;
+
             try
             {
-                if (this.closeState != STATE_OPENED)
-                    return this.closedResult ?? DefaultCloseResult;
-
-                var receiveCompletion = new TaskCompletionSource<T>();
-                receiveCompletion.Task.ContinueWith
-                (
-                    (t, s) => Interlocked.CompareExchange(ref this.receiveCompletionSource, null, (TaskCompletionSource<T>)s),
-                    receiveCompletion,
-                    CancellationToken.None,
-                    TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Default
-                );
-
-                if (Interlocked.CompareExchange(ref this.receiveCompletionSource, receiveCompletion, null) != null)
-                    throw new InvalidOperationException("Only one message at time could be received.");
-
-                var message = default(T);
-                if (this.queue.TryDequeue(out message))
+                value = receiveResult.GetResult(); // claim result value
+            }
+            catch (Exception getResultError) when (getResultError is ThreadAbortException == false)
+            {
+                if (this.IsClosed)
+                    return false;
+                throw;
+            }
+            receiveResult.ResumeContinuations(); // un-register receiver
+            return true;
+        }
+        public bool TrySend(T value)
+        {
+            Interlocked.Increment(ref this.sendCounter);
+            try
+            {
+                if (Interlocked.Increment(ref this.count) > this.boundedCapacity)
                 {
                     Interlocked.Decrement(ref this.count);
-                    receiveCompletion.SetResult(message);
+                    return false;
                 }
 
-                if (cancellation.CanBeCanceled)
-                    cancellation.Register(s => ((TaskCompletionSource<T>)s).TrySetCanceled(), receiveCompletion, false);
+                if (this.IsClosed)
+                    return false;
 
-                return receiveCompletion.Task;
+                this.innerQueue.Enqueue(value);
             }
             finally
             {
-                Interlocked.Decrement(ref this.sendReceiveCounter);
+                Interlocked.Decrement(ref this.sendCounter);
             }
+
+            this.receiveResult?.ResumeContinuations();
+            return true;
         }
-        public bool TryReceive()
+
+        public void Close(Exception closeError = null)
         {
-            if (Interlocked.CompareExchange(ref this.receiveCompletionSource, DummyCompletionSource, null) != null)
-                throw new InvalidOperationException("Only one message at time could be received.");
+            var closeErrorDispatchInfo = closeError != null ? ExceptionDispatchInfo.Capture(closeError) : DefaultCloseError;
+            if (Interlocked.CompareExchange(ref this.closeError, closeErrorDispatchInfo, null) != null)
+                return;
 
-            Interlocked.Increment(ref this.sendReceiveCounter);
-            try
+            this.receiveResult?.ResumeContinuations();
+        }
+        public IReadOnlyList<T> CloseAndReceiveAll(Exception closeError = null)
+        {
+            var closeErrorDispatchInfo = closeError != null ? ExceptionDispatchInfo.Capture(closeError) : DefaultCloseError;
+            if (Interlocked.CompareExchange(ref this.closeError, closeErrorDispatchInfo, null) != null)
+                return EmptyList;
+
+            var resultList = default(List<T>);
+            var spinWait = new SpinWait();
+            while (this.sendCounter > 0)
+                spinWait.SpinOnce();
+
+            var value = default(T);
+            while (this.innerQueue.TryDequeue(out value))
             {
-                if (this.closeState != STATE_OPENED)
-                    (this.closedResult ?? DefaultCloseResult).Exception.Unwrap().Rethrow();
+                if (resultList == null) resultList = new List<T>(this.innerQueue.Count);
+                resultList.Add(value);
+            }
 
-                var message = default(T);
-                if (this.queue.TryDequeue(out message))
+            Interlocked.Add(ref this.count, -(resultList?.Count ?? 0));
+            this.receiveResult?.ResumeContinuations();
+
+            return (IReadOnlyList<T>)resultList ?? EmptyList;
+
+        }
+
+        public class ReceiveResult : ICriticalNotifyCompletion, IDisposable
+        {
+            private const int RESULT_NONE = 0;
+            private const int RESULT_TAKING = 1;
+            private const int RESULT_TAKEN = 2;
+
+            private readonly AsyncQueue<T> queue;
+            private readonly CancellationToken cancellation;
+            private readonly CancellationTokenRegistration cancellationRegistration;
+            private Action safeContinuation;
+            private Action unsafeContinuation;
+            private T result;
+            private volatile int resultTaken = RESULT_NONE;
+
+            public bool ContinueOnCapturedContext;
+            public bool Schedule;
+
+            public ReceiveResult(AsyncQueue<T> queue, CancellationToken cancellation, bool continueOnCapturedContext, bool schedule)
+            {
+                if (queue == null) throw new ArgumentNullException(nameof(queue), "condition != null");
+
+                this.queue = queue;
+                this.ContinueOnCapturedContext = continueOnCapturedContext;
+                this.Schedule = schedule;
+                this.cancellation = cancellation;
+                if (this.cancellation.CanBeCanceled)
+                    this.cancellationRegistration = this.cancellation.Register(this.ResumeContinuations);
+            }
+
+            public ReceiveResult GetAwaiter()
+            {
+                return this;
+            }
+            public ReceiveResult ConfigureAwait(bool continueOnCapturedContext, bool schedule = true)
+            {
+                this.ContinueOnCapturedContext = continueOnCapturedContext;
+                this.Schedule = schedule;
+                return this;
+            }
+
+            public bool IsCompleted => this.queue.innerQueue.IsEmpty == false || this.queue.IsClosed || this.cancellation.IsCancellationRequested;
+
+            [SecuritySafeCritical]
+            public void OnCompleted(Action continuation)
+            {
+                if (this.queue == null) throw new InvalidOperationException();
+
+                if (this.IsCompleted)
                 {
-                    Interlocked.Decrement(ref this.count);
-                    return true;
+                    DelegateHelper.QueueContinuation(continuation, this.ContinueOnCapturedContext, this.Schedule);
+                    return;
                 }
-                else
+
+                DelegateHelper.InterlockedCombine(ref this.safeContinuation, continuation);
+
+                if (this.IsCompleted)
+                    this.ResumeContinuations();
+            }
+            [SecurityCritical]
+            public void UnsafeOnCompleted(Action continuation)
+            {
+                if (this.queue == null) throw new InvalidOperationException();
+
+                if (this.IsCompleted)
                 {
-                    return false;
+                    DelegateHelper.UnsafeQueueContinuation(continuation, this.ContinueOnCapturedContext, this.Schedule);
+                    return;
+                }
+
+                DelegateHelper.InterlockedCombine(ref this.unsafeContinuation, continuation);
+
+                if (this.IsCompleted) this.ResumeContinuations();
+            }
+
+            public T GetResult()
+            {
+                this.Release();
+
+                this.cancellation.ThrowIfCancellationRequested();
+                this.queue.closeError?.Throw();
+
+                this.TakeResult();
+
+                return this.result;
+            }
+
+            private void TakeResult()
+            {
+                try
+                {
+                    if (Interlocked.CompareExchange(ref this.resultTaken, RESULT_TAKING, RESULT_NONE) == RESULT_TAKING)
+                    {
+                        var spinWait = new SpinWait();
+
+                        while (this.resultTaken != RESULT_TAKEN)
+                        {
+                            spinWait.SpinOnce();
+                            if (spinWait.Count > 1000)
+                                throw new InvalidOperationException("Unable to take value from async queue. Lock timeout.");
+                        }
+                    }
+
+                    if (this.queue.innerQueue.TryDequeue(out this.result))
+                        return;
+
+                    this.cancellation.ThrowIfCancellationRequested();
+                    this.queue.closeError?.Throw();
+                    throw new InvalidOperationException("Unable to take value from async queue. Item is gone, queue probably has a bug.");
+                }
+                finally
+                {
+                    Interlocked.CompareExchange(ref this.resultTaken, RESULT_TAKEN, RESULT_TAKING);
                 }
             }
-            finally
+
+            internal void ResumeContinuations()
             {
-                Interlocked.CompareExchange(ref this.receiveCompletionSource, null, DummyCompletionSource);
-                Interlocked.Decrement(ref this.sendReceiveCounter);
+                var continuation = Interlocked.Exchange(ref this.safeContinuation, null);
+                if (continuation != null) DelegateHelper.QueueContinuation(continuation, this.ContinueOnCapturedContext, this.Schedule);
+
+                continuation = Interlocked.Exchange(ref this.unsafeContinuation, null);
+                if (continuation != null) DelegateHelper.UnsafeQueueContinuation(continuation, this.ContinueOnCapturedContext, this.Schedule);
             }
-        }
-        public bool TrySend(T message)
-        {
-            if (message == null) throw new ArgumentNullException(nameof(message));
 
-            Interlocked.Increment(ref this.sendReceiveCounter);
-            try
+            internal void Release()
             {
-                if (this.closeState != STATE_OPENED)
-                    return false;
+                Interlocked.CompareExchange(ref this.queue.receiveResult, null, this);
 
-                if (this.queue.IsEmpty && (this.receiveCompletionSource?.TrySetResult(message) ?? false))
-                    return true;
+                // ReSharper disable once ImpureMethodCallOnReadonlyValueField
+                this.cancellationRegistration.Dispose();
 
-                if (this.boundedCapacity != UNBOUND && this.count > this.BoundedCapacity)
-                    return false;
-
-                Interlocked.Increment(ref this.count);
-                this.queue.Enqueue(message);
-
-                return true;
             }
-            finally
+
+            void IDisposable.Dispose()
             {
-                Interlocked.Decrement(ref this.sendReceiveCounter);
+                this.Release();
             }
         }
 
-        public void Close(Exception closeException = null)
-        {
-            if (closeException != null)
-                this.closedResult = TaskHelper.FailedTask<T>(closeException);
-
-            this.closeState = STATE_CLOSED;
-
-            var receiveCompletionSource = this.receiveCompletionSource;
-            if (receiveCompletionSource != null)
-                (this.closedResult ?? DefaultCloseResult).PropagateResultTo(receiveCompletionSource);
-        }
-        public List<T> CloseAndReceiveAll(int gracefulReceiveTimeoutMs = 10, Exception closeException = null)
-        {
-            if (closeException != null)
-                this.closedResult = TaskHelper.FailedTask<T>(closeException);
-
-            this.closeState = STATE_CLOSED;
-
-            var wait = new SpinWait();
-            var waitStartTime = DateTime.UtcNow;
-            while (this.sendReceiveCounter > 0)
-            {
-                if ((DateTime.UtcNow - waitStartTime).TotalMilliseconds > gracefulReceiveTimeoutMs)
-                    break;
-                wait.SpinOnce();
-            }
-
-            var list = new List<T>();
-            var item = default(T);
-            while (this.queue.TryDequeue(out item))
-                list.Add(item);
-
-            var receiveCompletionSource = this.receiveCompletionSource;
-            if (receiveCompletionSource != null)
-                (this.closedResult ?? DefaultCloseResult).PropagateResultTo(receiveCompletionSource);
-
-            return list;
-        }
     }
 }

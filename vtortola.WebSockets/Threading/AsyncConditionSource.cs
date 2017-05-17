@@ -48,7 +48,7 @@ namespace vtortola.WebSockets.Threading
 
                 if (this.IsCompleted)
                 {
-                    DelegateHelper.QueueContinuation(continuation, false, this.conditionSource.ContinueOnCapturedContext);
+                    DelegateHelper.UnsafeQueueContinuation(continuation, false, this.conditionSource.ContinueOnCapturedContext);
                     return;
                 }
 
@@ -71,6 +71,7 @@ namespace vtortola.WebSockets.Threading
 
         public AsyncConditionVariable Condition => new AsyncConditionVariable(this);
         public bool ContinueOnCapturedContext { get; set; }
+        public bool Schedule { get; set; }
 
         public bool IsSet => this.isSet > 0;
 
@@ -120,10 +121,10 @@ namespace vtortola.WebSockets.Threading
         private void ResumeContinuations()
         {
             var continuation = Interlocked.Exchange(ref this.safeContinuation, null);
-            if (continuation != null) DelegateHelper.QueueContinuation(continuation, true, this.ContinueOnCapturedContext);
+            if (continuation != null) DelegateHelper.QueueContinuation(continuation, this.ContinueOnCapturedContext, this.Schedule);
 
             continuation = Interlocked.Exchange(ref this.unsafeContinuation, null);
-            if (continuation != null) DelegateHelper.QueueContinuation(continuation, false, this.ContinueOnCapturedContext);
+            if (continuation != null) DelegateHelper.UnsafeQueueContinuation(continuation, this.ContinueOnCapturedContext, this.Schedule);
         }
     }
 }
