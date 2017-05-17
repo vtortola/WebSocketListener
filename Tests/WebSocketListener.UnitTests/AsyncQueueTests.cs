@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -6,11 +7,19 @@ using System.Threading.Tasks;
 using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Tools;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace WebSocketListener.UnitTests
 {
     public sealed class AsyncQueueTests
     {
+        private readonly TestLogger logger;
+
+        public AsyncQueueTests(ITestOutputHelper output)
+        {
+            this.logger = new TestLogger(output);
+        }
+
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
@@ -43,11 +52,10 @@ namespace WebSocketListener.UnitTests
         public void ParallelSendAndTryReceive(int count)
         {
             var asyncQueue = new AsyncQueue<int>();
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, TaskScheduler = TaskScheduler.Default };
             var items = Enumerable.Range(0, count).ToArray();
             var expectedSum = items.Sum();
-            var result = Parallel.For(0, count, i => Assert.True(asyncQueue.TrySend(i), "fail to send"));
-            while (result.IsCompleted == false)
-                Thread.Sleep(10);
+            Parallel.For(0, count, options, i => Assert.True(asyncQueue.TrySend(i), "fail to send"));
 
             var actualSum = 0;
             var value = default(int);
@@ -67,7 +75,7 @@ namespace WebSocketListener.UnitTests
         [InlineData(1000)]
         public async Task TrySendAndReceiveAsync(int count)
         {
-            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var asyncQueue = new AsyncQueue<int>();
             var items = Enumerable.Range(0, count).ToArray();
             var expectedSum = items.Sum();
@@ -81,7 +89,7 @@ namespace WebSocketListener.UnitTests
                 while (cancellation.IsCancellationRequested == false)
                 {
                     var value = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
-                    actualSum += value;
+                    Interlocked.Add(ref actualSum, value);
                     ct++;
                     if (ct == count)
                         return;
@@ -106,7 +114,8 @@ namespace WebSocketListener.UnitTests
         [InlineData(1000)]
         public async Task ParallelSendAndReceiveAsync(int count)
         {
-            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, TaskScheduler = TaskScheduler.Default };
             var asyncQueue = new AsyncQueue<int>();
             var items = Enumerable.Range(0, count).ToArray();
             var expectedSum = items.Sum();
@@ -120,16 +129,14 @@ namespace WebSocketListener.UnitTests
                 while (cancellation.IsCancellationRequested == false)
                 {
                     var value = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
-                    actualSum += value;
+                    Interlocked.Add(ref actualSum, value);
                     ct++;
                     if (ct == count)
                         return;
                 }
             })().IgnoreFaultOrCancellation().ConfigureAwait(false);
 
-            var result = Parallel.For(0, count, i => Assert.True(asyncQueue.TrySend(i), "fail to send"));
-            while (result.IsCompleted == false)
-                Thread.Sleep(10);
+            Parallel.For(0, count, options, i => Assert.True(asyncQueue.TrySend(i), "fail to send"));
 
             await receiveTask;
 
@@ -182,14 +189,11 @@ namespace WebSocketListener.UnitTests
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
+        [InlineData(3)]
         [InlineData(4)]
-        [InlineData(10)]
-        [InlineData(50)]
-        [InlineData(100)]
-        [InlineData(1000)]
-        public async Task FastSendAndSlowReceiveAsync(int count)
+        public async Task FastSendAndSlowReceiveAsync(int seconds)
         {
-            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(seconds));
             var asyncQueue = new AsyncQueue<int>(10);
             var expectedValue = (int)(DateTime.Now.Ticks % int.MaxValue);
 
@@ -200,7 +204,7 @@ namespace WebSocketListener.UnitTests
 
                 while (cancellation.IsCancellationRequested == false)
                 {
-                    await Task.Delay(5).ConfigureAwait(false);
+                    await Task.Delay(2).ConfigureAwait(false);
                     var actual = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
                     ct++;
                     Assert.Equal(expectedValue, actual);
@@ -229,14 +233,11 @@ namespace WebSocketListener.UnitTests
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
+        [InlineData(3)]
         [InlineData(4)]
-        [InlineData(10)]
-        [InlineData(50)]
-        [InlineData(100)]
-        [InlineData(1000)]
-        public async Task SlowSendAndFastReceiveAsync(int count)
+        public async Task SlowSendAndFastReceiveAsync(int seconds)
         {
-            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var asyncQueue = new AsyncQueue<int>(10);
             var expectedValue = (int)(DateTime.Now.Ticks % int.MaxValue);
 
@@ -260,7 +261,7 @@ namespace WebSocketListener.UnitTests
                 while (cancellation.IsCancellationRequested == false)
                 {
                     asyncQueue.TrySend(expectedValue);
-                    await Task.Delay(10).ConfigureAwait(false);
+                    await Task.Delay(2).ConfigureAwait(false);
                 }
             })().IgnoreFaultOrCancellation().ConfigureAwait(false);
 
@@ -421,7 +422,7 @@ namespace WebSocketListener.UnitTests
                 await receiveAsync.ConfigureAwait(false);
             });
 
-            var all = asyncQueue.CloseAndReceiveAll(closeException: new OperationCanceledException());
+            var all = asyncQueue.CloseAndReceiveAll(closeError: new OperationCanceledException());
 
             if (await Task.WhenAny(timeout, recvTask).ConfigureAwait(false) == timeout)
                 throw new TimeoutException();
@@ -429,5 +430,38 @@ namespace WebSocketListener.UnitTests
             Assert.Empty(all);
         }
 
+        [Theory]
+        [InlineData(80000)]
+        [InlineData(100000)]
+        [InlineData(120000)]
+        [InlineData(150000)]
+        public async Task ParallelSendAndCloseReceiveAll(int count)
+        {
+            var cancellationSource = new CancellationTokenSource();
+            var asyncQueue = new AsyncQueue<int>();
+            var options = new ParallelOptions { CancellationToken = cancellationSource.Token, MaxDegreeOfParallelism = Environment.ProcessorCount / 2, TaskScheduler = TaskScheduler.Default };
+            var items = new ConcurrentQueue<int>(Enumerable.Range(0, count));
+
+            var sendTask = Task.Factory.StartNew(() => Parallel.For(0, count, options, i =>
+            {
+                var item = default(int);
+                if (items.TryDequeue(out item))
+                    if (asyncQueue.TrySend(item) == false)
+                        items.Enqueue(item);
+            }));
+
+            await Task.Delay(1).ConfigureAwait(false);
+
+            var itemsInAsyncQueue = asyncQueue.CloseAndReceiveAll(); // deny TrySend
+            cancellationSource.Cancel(); // stop parallel for
+
+            await sendTask.IgnoreFaultOrCancellation().ConfigureAwait(false);
+
+            var actualCount = items.Count + itemsInAsyncQueue.Count;
+
+            this.logger.Debug($"[TEST] en-queued: {itemsInAsyncQueue.Count}, total: {count}");
+
+            Assert.Equal(count, actualCount);
+        }
     }
 }
