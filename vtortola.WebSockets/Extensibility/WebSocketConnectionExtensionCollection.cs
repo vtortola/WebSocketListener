@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
 namespace vtortola.WebSockets
@@ -25,6 +28,18 @@ namespace vtortola.WebSockets
                 throw new WebSocketException("Extensions cannot be added after the service is started");
 
             this.extensions.Add(extension);
+        }
+
+        public WebSocketConnectionExtensionCollection RegisterSecureConnection(
+            X509Certificate2 certificate,
+            RemoteCertificateValidationCallback validation = null,
+            SslProtocols supportedSslProtocols = SslProtocols.Tls12)
+        {
+            if (certificate == null) throw new ArgumentNullException(nameof(certificate));
+
+            var extension = new WebSocketSecureConnectionExtension(certificate, validation, supportedSslProtocols);
+            this.RegisterExtension(extension);
+            return this;
         }
 
         IEnumerator<IWebSocketConnectionExtension> IEnumerable<IWebSocketConnectionExtension>.GetEnumerator()

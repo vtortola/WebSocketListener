@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace vtortola.WebSockets
@@ -22,7 +23,10 @@ namespace vtortola.WebSockets
             if (extension == null) throw new ArgumentNullException(nameof(extension));
 
             if (this.IsReadOnly)
-                throw new WebSocketException("Extensions cannot be added after the service is started");
+                throw new WebSocketException("Extensions cannot be added after the service is started.");
+
+            if (this.extensions.Any(e => e.GetType() == extension.GetType()))
+                throw new WebSocketException($"Extension {extension.GetType().Name} is already added.");
 
             this.extensions.Add(extension);
         }

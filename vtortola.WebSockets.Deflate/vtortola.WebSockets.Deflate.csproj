@@ -45,6 +45,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebSocketDeflateReadStream.cs" />
     <Compile Include="WebSocketDeflateWriteStream.cs" />
+    <Compile Include="WebSocketMessageExtensionCollectionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj">
