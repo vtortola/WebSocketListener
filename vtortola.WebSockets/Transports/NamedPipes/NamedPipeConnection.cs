@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
+using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Net;
@@ -44,3 +45,4 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         }
     }
 }
+#endif

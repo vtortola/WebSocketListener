@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
+using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Net;
@@ -7,7 +8,6 @@ using System.Threading.Tasks;
 using vtortola.WebSockets.Transports.Tcp;
 
 #pragma warning disable 420
-
 namespace vtortola.WebSockets.Transports.NamedPipes
 {
     public sealed class NamedPipeListener : Listener
@@ -111,3 +111,4 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         }
     }
 }
+#endif
