@@ -6,7 +6,7 @@ using vtortola.WebSockets.Tools;
 
 #pragma warning disable 420
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     public abstract class TimedQueue<SubscriptionListT> : IDisposable where SubscriptionListT : class
     {

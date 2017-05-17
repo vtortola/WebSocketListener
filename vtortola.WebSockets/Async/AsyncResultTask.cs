@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     //http://blog.stephencleary.com/2012/07/async-interop-with-iasyncresult.html
     internal sealed class AsyncResultTask<T> : IAsyncResult

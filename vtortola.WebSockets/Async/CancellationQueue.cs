@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     public class CancellationQueue : TimedQueue<CancellationTokenSource>
     {

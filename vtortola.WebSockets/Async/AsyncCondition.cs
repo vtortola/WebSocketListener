@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     internal struct AsyncConditionVariable
     {

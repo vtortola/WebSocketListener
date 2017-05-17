@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Security;
 using System.Threading;
-using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
 
 #pragma warning disable 420
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     internal sealed class AsyncQueue<T>
     {

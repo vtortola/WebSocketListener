@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
 using PingSubscriptionList = System.Collections.Concurrent.ConcurrentBag<vtortola.WebSockets.WebSocket>;
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     public class PingQueue : TimedQueue<PingSubscriptionList>
     {

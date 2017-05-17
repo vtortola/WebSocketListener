@@ -8,7 +8,7 @@ using vtortola.WebSockets.Tools;
 // disable Warning	"a reference to a volatile field will not be treated as volatile"
 #pragma warning disable 420
 
-namespace vtortola.WebSockets.Threading
+namespace vtortola.WebSockets.Async
 {
     internal sealed class AsyncConditionSource
     {
