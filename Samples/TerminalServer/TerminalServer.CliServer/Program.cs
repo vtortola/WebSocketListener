@@ -13,8 +13,8 @@ namespace TerminalServer.CliServer
             var sysinfo = new SystemInfo();
             var endpoint = new IPEndPoint(IPAddress.Any, 8009);
 
-            WebSocketQueueServer server = new WebSocketQueueServer(endpoint, sysinfo, logger);
-            ConnectionManager manager = new ConnectionManager(server, logger, sysinfo);
+            var server = new WebSocketQueueServer(endpoint, sysinfo, logger);
+            var manager = new ConnectionManager(server, logger, sysinfo);
 
             var cliFactories = new ICliSessionFactory[] 
             { 

@@ -30,17 +30,17 @@ namespace WebSocketEventListenerSample
         }
         public WebSocketEventListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
-            _listener = new WebSocketListener(endpoint, options);
-            _listener.Standards.RegisterStandard(new WebSocketFactoryRfc6455(_listener));
+            options.Standards.RegisterRfc6455();
+            _listener = new WebSocketListener(endpoint, options);            
         }
         public void Start()
         {
-            _listener.Start();
+            _listener.StartAsync().Wait();
             Task.Run((Func<Task>)ListenAsync);
         }
         public void Stop()
         {
-            _listener.Stop();
+            _listener.StopAsync().Wait();
         }
         private async Task ListenAsync()
         {
@@ -48,8 +48,7 @@ namespace WebSocketEventListenerSample
             {
                 try
                 {
-                    var websocket = await _listener.AcceptWebSocketAsync(CancellationToken.None)
-                                                   .ConfigureAwait(false);
+                    var websocket = await _listener.AcceptWebSocketAsync(CancellationToken.None).ConfigureAwait(false);
                     if (websocket != null)
                         Task.Run(() => HandleWebSocketAsync(websocket));
                 }

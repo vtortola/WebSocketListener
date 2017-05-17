@@ -17,10 +17,10 @@ namespace TerminalServer.CliServer
         }
         public void Consume(TerminalInputRequest message)
         {
-            UserConnection connection = _connections.GetConnection(message.ConnectionId);
+            var connection = _connections.GetConnection(message.ConnectionId);
             if (connection == null)
                 throw new ArgumentException("Connection does not exist");
-            ICliSession cli = connection.GetTerminalSession(message.TerminalId);
+            var cli = connection.GetTerminalSession(message.TerminalId);
             if (cli == null)
                 throw new ArgumentException("CLI does not exist");
             cli.Input(message.Input, message.CorrelationId);

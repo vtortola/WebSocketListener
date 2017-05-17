@@ -1,16 +1,12 @@
 ﻿using log4net;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Deflate;
+using vtortola.WebSockets.Rfc6455;
 
 namespace WebSocketListenerTests.Echo
 {
@@ -37,39 +33,42 @@ namespace WebSocketListenerTests.Echo
             //store.Certificates.Count.ToString();
             //var certificate = store.Certificates[1];
             //store.Close();
-            
-            CancellationTokenSource cancellation = new CancellationTokenSource();
-            
+
+            var cancellation = new CancellationTokenSource();
+
             // local endpoint
             var endpoint = new IPEndPoint(IPAddress.Any, 8005);
-            
-            // starting the server
-            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() 
+            var options = new WebSocketListenerOptions()
             {
-                SubProtocols = new []{"text"},
+                SubProtocols = new[] { "text" },
                 PingTimeout = TimeSpan.FromSeconds(5),
                 NegotiationTimeout = TimeSpan.FromSeconds(5),
                 ParallelNegotiations = 16,
                 NegotiationQueueCapacity = 256,
-                TcpBacklog = 1000,
-                BufferManager = BufferManager.CreateBufferManager((8192 + 1024)*1000, 8192 + 1024)
-            });
-            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
-            // adding the deflate extension
-            rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
-            server.Standards.RegisterStandard(rfc6455);
-            // adding the WSS extension
-            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+                BacklogSize = 1000,
+                Logger = new Log4NetLogger(typeof(Program)),
+                BufferManager = BufferManager.CreateBufferManager((8192 + 1024) * 1000, 8192 + 1024)
+            };
+            options.Standards.RegisterRfc6455(factory =>
+            {
+                factory.MessageExtensions.RegisterDeflateCompression();
 
-            server.Start();
+            });
+            // adding the WSS extension
+            //options.ConnectionExtensions.RegisterSecureConnection(certificate);
+
+            // starting the server
+            var server = new WebSocketListener(endpoint, options);
+
+            server.StartAsync().Wait();
 
             Log("Echo Server started at " + endpoint.ToString());
 
-            var acceptingTask = Task.Run(()=> AcceptWebSocketClients(server, cancellation.Token));
+            var acceptingTask = Task.Run(() => AcceptWebSocketClients(server, cancellation.Token));
 
             Console.ReadKey(true);
             Log("Server stoping");
-            server.Stop();
+            server.StopAsync().Wait();
             cancellation.Cancel();
             acceptingTask.Wait();
 
@@ -97,7 +96,7 @@ namespace WebSocketListenerTests.Echo
                 {
                     var ex = aex.GetBaseException();
                     _log.Error("AcceptWebSocketClients", ex);
-                    Log("Error Accepting client: " + ex.GetType().Name +": " + ex.Message);
+                    Log("Error Accepting client: " + ex.GetType().Name + ": " + ex.Message);
                 }
             }
             Log("Server Stop accepting clients");
@@ -110,13 +109,13 @@ namespace WebSocketListenerTests.Echo
                 PerformanceCounters.Connected.Increment();
                 while (ws.IsConnected && !cancellation.IsCancellationRequested)
                 {
-                    String msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
+                    var msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
                     if (msg == null)
                         continue;
 
                     PerformanceCounters.MessagesIn.Increment();
 
-                    ws.WriteString(msg);
+                    await ws.WriteStringAsync(msg, cancellation).ConfigureAwait(false);
                     PerformanceCounters.MessagesOut.Increment();
 
                     PerformanceCounters.Delay.IncrementBy(ws.Latency.Ticks * Stopwatch.Frequency / 10000);
@@ -130,7 +129,7 @@ namespace WebSocketListenerTests.Echo
             catch (Exception aex)
             {
                 Log("Error Handling connection: " + aex.GetBaseException().Message);
-                try { ws.Close(); }
+                try { await ws.CloseAsync().ConfigureAwait(false); }
                 catch { }
             }
             finally

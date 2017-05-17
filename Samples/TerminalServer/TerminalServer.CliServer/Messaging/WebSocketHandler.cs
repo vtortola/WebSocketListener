@@ -26,7 +26,7 @@ namespace TerminalServer.CliServer
         public async Task HandleConnectionAsync(CancellationToken cancellation)
         {
             _cancellation = cancellation;
-            List<UnsubscribeAction> unsubs = new List<UnsubscribeAction>();
+            var unsubs = new List<UnsubscribeAction>();
             var connectionId = GetConnectionId(_ws);
             var sessionId = GetSessionId(_ws);
             try
@@ -59,7 +59,7 @@ namespace TerminalServer.CliServer
             catch (Exception aex)
             {
                 _log.Error("Error Handling connection", aex.GetBaseException());
-                try { _ws.Close(); }
+                try { await _ws.CloseAsync().ConfigureAwait(false); }
                 catch { }
             }
             finally
@@ -77,8 +77,8 @@ namespace TerminalServer.CliServer
         }
         static Guid GetSessionId(WebSocket ws)
         {
-            Guid sessionId = Guid.Empty;
-            Cookie cookie = ws.HttpRequest.Cookies[ConnectionManager.UserSessionCookieName] ?? ws.HttpResponse.Cookies[ConnectionManager.UserSessionCookieName];
+            var sessionId = Guid.Empty;
+            var cookie = ws.HttpRequest.Cookies[ConnectionManager.UserSessionCookieName] ?? ws.HttpResponse.Cookies[ConnectionManager.UserSessionCookieName];
             if (cookie != null && Guid.TryParse(cookie.Value, out sessionId))
                 return sessionId;
             else

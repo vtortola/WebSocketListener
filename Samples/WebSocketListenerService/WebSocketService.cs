@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -11,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
+using vtortola.WebSockets.Rfc6455;
 
 namespace WebSocketListenerService
 {
@@ -20,6 +20,7 @@ namespace WebSocketListenerService
 
         WebSocketListener _listener;
         CancellationTokenSource _cancellation;
+        private WebSocketListenerOptions _options;
 
         public WebSocketService()
         {
@@ -36,13 +37,11 @@ namespace WebSocketListenerService
         protected override void OnStart(string[] args)
         {
             _cancellation = new CancellationTokenSource();
-            _listener = new WebSocketListener(new IPEndPoint(IPAddress.Any, _port));
-            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(_listener);
-            _listener.Standards.RegisterStandard(rfc6455);
+            _options = new WebSocketListenerOptions();
+            _options.Standards.RegisterRfc6455();
+            _listener = new WebSocketListener(new IPEndPoint(IPAddress.Any, _port), _options);
 
-            var task = Task.Run(() => AcceptWebSocketClientsAsync(_listener, _cancellation.Token));
-
-            _listener.Start();
+            AcceptWebSocketClientsAsync(_listener, _cancellation.Token);
         }
 
         protected override void OnStop()
@@ -58,6 +57,10 @@ namespace WebSocketListenerService
 
         private async Task AcceptWebSocketClientsAsync(WebSocketListener server, CancellationToken token)
         {
+            await Task.Yield();
+
+            await _listener.StartAsync();
+
             while (!token.IsCancellationRequested)
             {
                 try
@@ -82,13 +85,13 @@ namespace WebSocketListenerService
                 {
                     String msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
                     if (msg != null)
-                        ws.WriteString(msg);
+                        await ws.WriteStringAsync(msg).ConfigureAwait(false);
                 }
             }
             catch (Exception aex)
             {
                 Log("Error Handling connection: " + aex.GetBaseException().Message);
-                try { ws.Close(); }
+                try { await ws.CloseAsync().ConfigureAwait(false); }
                 catch { }
             }
             finally

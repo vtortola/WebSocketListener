@@ -52,14 +52,14 @@ namespace TerminalServer.CliServer
         }
         public void Input(String value, Int32 commandCorrelationId)
         {
-            List<String> lines = new List<String>();
+            var lines = new List<String>();
             try
             {
                 _proc.Commands.Clear();
                 _proc.AddCommand(value);
                 _proc.AddCommand("Out-String");
                 
-                foreach (PSObject result in _proc.Invoke())
+                foreach (var result in _proc.Invoke())
                     lines.Add(result.ToString());
             }
             catch (Exception ex)

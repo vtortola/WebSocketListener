@@ -3,6 +3,7 @@ using System.Threading;
 using System.Net;
 using vtortola.WebSockets;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Rfc6455;
 
 namespace MonoEchoServer
 {
@@ -15,21 +16,22 @@ namespace MonoEchoServer
 
 		public static void Main (string[] args)
 		{
-			CancellationTokenSource cancellation = new CancellationTokenSource();
+			var cancellation = new CancellationTokenSource();
 
 			var endpoint = new IPEndPoint(IPAddress.Any, 8005);
-			WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions(){ SubProtocols = new []{"text"}});
-			var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
-			server.Standards.RegisterStandard(rfc6455);
-			server.Start();
+		    var options = new WebSocketListenerOptions() {SubProtocols = new[] {"text"}};
+		    options.Standards.RegisterRfc6455();
+            var server = new WebSocketListener(endpoint, options);
 
+		    server.StartAsync().Wait();
 			Log("Mono Echo Server started at " + endpoint.ToString());
 
 			var task = Task.Run(() => AcceptWebSocketClientsAsync(server, cancellation.Token));
 
 			Console.ReadKey(true);
 			Log("Server stoping");
-			cancellation.Cancel();
+		    server.StopAsync().Wait();
+
 			task.Wait();
 			Console.ReadKey(true);
 		}
@@ -40,7 +42,7 @@ namespace MonoEchoServer
 			{
 				try
 				{
-					var ws = await server.AcceptWebSocketAsync(token);
+					var ws = await server.AcceptWebSocketAsync(token).ConfigureAwait(false);
 					Log("Connected " + ws??"Null");
 					if (ws != null)
 						Task.Run(()=>HandleConnectionAsync(ws, token));
@@ -59,15 +61,15 @@ namespace MonoEchoServer
 			{
 				while (ws.IsConnected && !cancellation.IsCancellationRequested)
 				{
-					String msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
+					var msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
 					Log("Message: " + msg);
-					ws.WriteString(msg);
+					await ws.WriteStringAsync(msg, cancellation).ConfigureAwait(false);
 				}
 			}
 			catch (Exception aex)
 			{
 				Log("Error Handling connection: " + aex.GetBaseException().Message);
-				try { ws.Close(); }
+				try { await ws.CloseAsync().ConfigureAwait(false); }
 				catch { }
 			}
 			finally

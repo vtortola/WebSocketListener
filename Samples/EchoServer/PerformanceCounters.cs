@@ -14,7 +14,7 @@ namespace WebSocketListenerTests.Echo
 
         public static bool CreatePerformanceCounters()
         {
-            string categoryName = "WebSocketListener_Test";
+            var categoryName = "WebSocketListener_Test";
 
             if (!PerformanceCounterCategory.Exists(categoryName))
             {

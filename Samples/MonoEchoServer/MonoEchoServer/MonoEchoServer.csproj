@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -33,25 +33,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Threading.Tasks.Dataflow">
-      <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.9\lib\net45\System.Threading.Tasks.Dataflow.dll</HintPath>
-    </Reference>
-    <Reference Include="vtortola.WebSockets.Deflate">
-      <HintPath>..\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.Deflate.dll</HintPath>
-    </Reference>
-    <Reference Include="vtortola.WebSockets">
-      <HintPath>..\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.dll</HintPath>
-    </Reference>
-    <Reference Include="vtortola.WebSockets.Rfc6455">
-      <HintPath>..\packages\vtortola.WebSocketListener.2.0.0.0\lib\net45\vtortola.WebSockets.Rfc6455.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
 </Project>

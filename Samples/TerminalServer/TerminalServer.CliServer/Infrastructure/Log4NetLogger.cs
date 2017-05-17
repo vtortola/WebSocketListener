@@ -79,7 +79,7 @@ namespace TerminalServer.CliServer
             {
                 if (_logger.IsWarnEnabled)
                 {
-                    String guid = Guid.NewGuid().ToString();
+                    var guid = Guid.NewGuid().ToString();
                     _logger.Warn(message, exception);
                     return guid;
                 }
@@ -99,7 +99,7 @@ namespace TerminalServer.CliServer
             {
                 if (_logger.IsErrorEnabled)
                 {
-                    String guid = Guid.NewGuid().ToString();
+                    var guid = Guid.NewGuid().ToString();
                     _logger.ErrorFormat("[ErrorTicket:" + guid + "]" + format, args);
                     return guid;
                 }
@@ -120,7 +120,7 @@ namespace TerminalServer.CliServer
 
                 if (_logger.IsErrorEnabled)
                 {
-                    String guid = Guid.NewGuid().ToString();
+                    var guid = Guid.NewGuid().ToString();
                     _logger.Error("[ErrorTicket:" + guid + "]" + message, exception);
                     return guid;
                 }

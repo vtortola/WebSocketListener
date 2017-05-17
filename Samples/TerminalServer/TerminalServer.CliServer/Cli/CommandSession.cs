@@ -75,7 +75,7 @@ namespace TerminalServer.CliServer
                 _lastCommand = null;
                 if (_errorBuffer.Count != 0)
                 {
-                    for (int i = 0; i < _errorBuffer.Count; i++)
+                    for (var i = 0; i < _errorBuffer.Count; i++)
                         Output(_errorBuffer[i], _commandCorrelationId, i == _errorBuffer.Count-1);
                     _errorBuffer.Clear();
                 }

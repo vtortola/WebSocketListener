@@ -39,7 +39,7 @@ namespace TerminalServer.CliServer
         }
         private async Task CheckForDisconnectedAsync()
         {
-            List<UserConnection> disconnectedConnections = new List<UserConnection>();
+            var disconnectedConnections = new List<UserConnection>();
             while (!_cancel.IsCancellationRequested)
             {
                 foreach (var disconnected in disconnectedConnections)
