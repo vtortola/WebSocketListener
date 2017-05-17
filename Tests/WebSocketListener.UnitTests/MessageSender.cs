@@ -94,8 +94,7 @@ namespace vtortola.WebSockets.UnitTests
                 sendMessages[i] = this.SendMessagesAsync(clients[i], messages, cancellation).IgnoreFaultOrCancellation();
                 receiveMessages[i] = this.ReceiveMessagesAsync(clients[i], messages, cancellation).IgnoreFaultOrCancellation();
             }
-
-
+            
             await Task.WhenAll(sendMessages).ConfigureAwait(false);
             await Task.WhenAll(receiveMessages).ConfigureAwait(false);
 
@@ -169,7 +168,7 @@ namespace vtortola.WebSockets.UnitTests
                     received++;
                     Interlocked.Increment(ref this.MessagesReceived);
 
-                    if (received == message.Length)
+                    if (received == messages.Length)
                         return received;
                 }
             }

@@ -190,11 +190,17 @@ namespace vtortola.WebSockets.UnitTests
         [InlineData("tcp://localhost:10100/", 30, 10)]
         [InlineData("tcp://localhost:10101/", 30, 100)]
         [InlineData("tcp://localhost:10102/", 30, 1000)]
+        [InlineData("tcp://localhost:10103/", 30, 10000)]
         public async Task LocalEchoServerMassClientsAsync(string address, int timeoutSeconds, int maxClients)
         {
             var messages = new string[] { new string('a', 126), new string('a', 127), new string('a', 128), new string('a', ushort.MaxValue - 1), new string('a', ushort.MaxValue), new string('a', ushort.MaxValue + 2) };
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
-            var options = new WebSocketListenerOptions { Logger = new TestLogger(this.logger) { IsDebugEnabled = false } };
+            var options = new WebSocketListenerOptions
+            {
+                BacklogSize = maxClients,
+                NegotiationQueueCapacity = maxClients,
+                Logger = new TestLogger(this.logger) { IsDebugEnabled = false }
+            };
             options.Standards.RegisterRfc6455();
             options.Transports.RegisterTransport(new NamedPipeTransport());
             var prefixes = new[] { new Uri(address) };
@@ -208,7 +214,14 @@ namespace vtortola.WebSockets.UnitTests
             await messageSender.ConnectAsync(maxClients, cancellation).ConfigureAwait(false);
             this.logger.Debug($"[TEST] {messageSender.ConnectedClients} Client connected.");
             this.logger.Debug($"[TEST] Sending {maxClients * messages.Length} messages.");
-            await messageSender.SendMessagesAsync(messages, cancellation).ConfigureAwait(false);
+            var sendTask = messageSender.SendMessagesAsync(messages, cancellation);
+            while (sendTask.IsCompleted == false)
+            {
+                await Task.Delay(1000);
+                this.logger.Debug($"[TEST] Server: r={server.ReceivedMessages}, s={server.SentMessages}, e={server.Errors}. " +
+                    $"Clients: r={messageSender.MessagesReceived}, s={messageSender.MessagesSent}, e={messageSender.Errors}.");
+            }
+            await sendTask.ConfigureAwait(false);
 
             this.logger.Debug("[TEST] Stopping echo server.");
             await server.StopAsync().ConfigureAwait(false);
