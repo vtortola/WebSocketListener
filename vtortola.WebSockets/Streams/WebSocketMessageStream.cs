@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using vtortola.WebSockets.Threading;
+using vtortola.WebSockets.Async;
 using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
@@ -115,7 +115,11 @@ namespace vtortola.WebSockets
         [Obsolete("Do not use synchronous IO operation on network streams. Use ReadAsync() instead.")]
         public override int Read(byte[] buffer, int offset, int count)
         {
+#if UAP10_0
+            return this.EndRead(this.BeginRead(buffer, offset, count, null, null));
+#else
             return this.ReadAsync(buffer, offset, count, CancellationToken.None).Result;
+#endif
         }
         [Obsolete("Do not use synchronous IO operation on network streams. Use WriteAsync() instead.")]
         public sealed override void WriteByte(byte value)
@@ -125,12 +129,17 @@ namespace vtortola.WebSockets
         [Obsolete("Do not use synchronous IO operation on network streams. Use WriteAsync() instead.")]
         public override void Write(byte[] buffer, int offset, int count)
         {
+#if UAP10_0
+            this.EndWrite(this.BeginWrite(buffer, offset, count, null, null));
+#else
             this.WriteAsync(buffer, offset, count).Wait();
+#endif
+
         }
         [Obsolete("Do not use synchronous IO operation on network streams. Use FlushAsync() instead.")]
         public override void Flush()
         {
-            
+
         }
 #if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
         [Obsolete("Do not use synchronous IO operation on network streams. Use CloseAsync() instead.")]

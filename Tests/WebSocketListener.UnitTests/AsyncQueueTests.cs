@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using vtortola.WebSockets.Threading;
+using vtortola.WebSockets.Async;
 using vtortola.WebSockets.Tools;
 using Xunit;
 using Xunit.Abstractions;

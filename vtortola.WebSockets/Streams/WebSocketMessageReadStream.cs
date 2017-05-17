@@ -2,7 +2,6 @@
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using vtortola.WebSockets.Threading;
 
 namespace vtortola.WebSockets
 {

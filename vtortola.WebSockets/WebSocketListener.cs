@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Async;
 using vtortola.WebSockets.Http;
-using vtortola.WebSockets.Threading;
 using vtortola.WebSockets.Tools;
 using vtortola.WebSockets.Transports;
 

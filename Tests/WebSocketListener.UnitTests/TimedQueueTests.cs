@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
-using vtortola.WebSockets.Threading;
+using vtortola.WebSockets.Async;
 using Xunit;
 using Xunit.Abstractions;
 
