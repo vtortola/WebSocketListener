@@ -112,13 +112,13 @@ namespace vtortola.WebSockets.UnitTests
             options.Standards.RegisterRfc6455();
             options.Transports.RegisterNamedPipes();
 
-            var prefixes = new[] { new Uri(address) };
-            var server = new EchoServer(prefixes, options);
+            var listenEndPoints = new[] { new Uri(address) };
+            var server = new EchoServer(listenEndPoints, options);
 
             this.logger.Debug("[TEST] Starting echo server.");
             await server.StartAsync().ConfigureAwait(false);
 
-            var messageSender = new MessageSender(prefixes[0], options);
+            var messageSender = new MessageSender(listenEndPoints[0], options);
             this.logger.Debug("[TEST] Connecting clients.");
             await messageSender.ConnectAsync(maxClients, cancellation).ConfigureAwait(false);
             this.logger.Debug($"[TEST] {messageSender.ConnectedClients} Client connected.");
@@ -160,13 +160,13 @@ namespace vtortola.WebSockets.UnitTests
             };
             options.Standards.RegisterRfc6455();
             options.Transports.Add(new NamedPipeTransport());
-            var prefixes = new[] { new Uri(address) };
-            var server = new EchoServer(prefixes, options);
+            var listenEndPoints = new[] { new Uri(address) };
+            var server = new EchoServer(listenEndPoints, options);
 
             this.logger.Debug("[TEST] Starting echo server.");
             await server.StartAsync().ConfigureAwait(false);
 
-            var messageSender = new MessageSender(prefixes[0], options);
+            var messageSender = new MessageSender(listenEndPoints[0], options);
             this.logger.Debug("[TEST] Connecting clients.");
             await messageSender.ConnectAsync(maxClients, cancellation).ConfigureAwait(false);
             this.logger.Debug($"[TEST] {messageSender.ConnectedClients} Client connected.");

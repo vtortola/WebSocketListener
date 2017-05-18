@@ -12,9 +12,9 @@ namespace vtortola.WebSockets
         public const int DEFAULT_SEND_BUFFER_SIZE = 8 * 1024;
         public static readonly string[] NoSubProtocols = new string[0];
 
-        public WebSocketTransportCollection Transports { get; }
-        public WebSocketFactoryCollection Standards { get; }
-        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; }
+        public WebSocketTransportCollection Transports { get; private set; }
+        public WebSocketFactoryCollection Standards { get; private set; }
+        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
 
         public TimeSpan PingTimeout { get; set; }
         public TimeSpan PingInterval => this.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5);
@@ -101,6 +101,9 @@ namespace vtortola.WebSockets
         {
             var cloned = (WebSocketListenerOptions)this.MemberwiseClone();
             cloned.SubProtocols = (string[])this.SubProtocols.Clone();
+            cloned.Transports = this.Transports.Clone();
+            cloned.Standards = this.Standards.Clone();
+            cloned.ConnectionExtensions = this.ConnectionExtensions.Clone();
             return cloned;
         }
         public void SetUsed(bool isUsed)

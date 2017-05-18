@@ -27,7 +27,7 @@ namespace vtortola.WebSockets
         private readonly ILogger log;
         private readonly HttpNegotiationQueue negotiationQueue;
         private readonly WebSocketListenerOptions options;
-        private readonly Uri[] listeningPrefixes;
+        private readonly Uri[] listenEndPoints;
         private volatile AsyncConditionSource stopConditionSource;
         private volatile Listener[] listeners;
         private volatile EndPoint[] localEndPoints;
@@ -46,11 +46,11 @@ namespace vtortola.WebSockets
         {
 
         }
-        public WebSocketListener(Uri[] prefixes, WebSocketListenerOptions options)
+        public WebSocketListener(Uri[] listenEndPoints, WebSocketListenerOptions options)
         {
-            if (prefixes == null) throw new ArgumentNullException(nameof(prefixes));
-            if (prefixes.Length == 0) throw new ArgumentException("At least one prefix should be specified.", nameof(prefixes));
-            if (prefixes.Any(p => p == null)) throw new ArgumentException("Null objects passed in array.", nameof(prefixes));
+            if (listenEndPoints == null) throw new ArgumentNullException(nameof(listenEndPoints));
+            if (listenEndPoints.Length == 0) throw new ArgumentException("At least one prefix should be specified.", nameof(listenEndPoints));
+            if (listenEndPoints.Any(p => p == null)) throw new ArgumentException("Null objects passed in array.", nameof(listenEndPoints));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             options.CheckCoherence();
@@ -63,7 +63,7 @@ namespace vtortola.WebSockets
 
             this.listeners = EmptyListeners;
             this.localEndPoints = EmptyEndPoints;
-            this.listeningPrefixes = prefixes;
+            this.listenEndPoints = listenEndPoints;
 
             this.negotiationQueue = new HttpNegotiationQueue(options.Standards, options.ConnectionExtensions, this.options);
         }
@@ -83,15 +83,15 @@ namespace vtortola.WebSockets
                 if (this.log.IsDebugEnabled)
                     this.log.Debug($"{nameof(WebSocketListener)} is starting.");
 
-                var endPoints = new Tuple<Uri, WebSocketTransport>[this.listeningPrefixes.Length];
-                for (var i = 0; i < this.listeningPrefixes.Length; i++)
+                var endPoints = new Tuple<Uri, WebSocketTransport>[this.listenEndPoints.Length];
+                for (var i = 0; i < this.listenEndPoints.Length; i++)
                 {
-                    var prefix = this.listeningPrefixes[i];
+                    var listenEndPoint = this.listenEndPoints[i];
                     var transport = default(WebSocketTransport);
-                    if (this.options.Transports.TryGetWebSocketTransport(prefix, out transport) == false)
-                        throw new WebSocketException($"Unable to find transport for '{prefix}'. Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes).Distinct())}.");
+                    if (this.options.Transports.TryGetWebSocketTransport(listenEndPoint, out transport) == false)
+                        throw new WebSocketException($"Unable to find transport for '{listenEndPoint}'. Available transports are: {string.Join(", ", this.options.Transports.SelectMany(t => t.Schemes).Distinct())}.");
 
-                    endPoints[i] = Tuple.Create(prefix, transport);
+                    endPoints[i] = Tuple.Create(listenEndPoint, transport);
                 }
 
                 listeners = new Listener[endPoints.Length];

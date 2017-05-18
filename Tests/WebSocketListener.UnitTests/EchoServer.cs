@@ -15,13 +15,13 @@ namespace vtortola.WebSockets.UnitTests
         public int SentMessages;
         public int Errors;
 
-        public EchoServer(Uri[] prefixes, WebSocketListenerOptions options)
+        public EchoServer(Uri[] listenEndPoints, WebSocketListenerOptions options)
         {
-            if (prefixes == null) throw new ArgumentNullException(nameof(prefixes));
+            if (listenEndPoints == null) throw new ArgumentNullException(nameof(listenEndPoints));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             this.log = options.Logger;
-            this.listener = new WebSocketListener(prefixes, options);
+            this.listener = new WebSocketListener(listenEndPoints, options);
         }
 
         public async Task StartAsync()
