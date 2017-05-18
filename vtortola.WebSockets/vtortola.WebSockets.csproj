@@ -111,9 +111,15 @@
     <Compile Include="Transports\NamedPipes\NamedPipeEndPoint.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeListener.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeTransport.cs" />
+    <Compile Include="Transports\Sockets\SocketConnection.cs" />
+    <Compile Include="Transports\Sockets\SocketListener.cs" />
+    <Compile Include="Transports\Sockets\SocketTransport.cs" />
     <Compile Include="Transports\Tcp\TcpConnection.cs" />
     <Compile Include="Transports\Tcp\TcpListener.cs" />
     <Compile Include="Transports\Tcp\TcpTransport.cs" />
+    <Compile Include="Transports\UnixSockets\UnixSocketConnection.cs" />
+    <Compile Include="Transports\UnixSockets\UnixSocketListener.cs" />
+    <Compile Include="Transports\UnixSockets\UnixSocketTransport.cs" />
     <Compile Include="Transports\WebSocketTransport.cs" />
     <Compile Include="Transports\WebSocketTransportCollection.cs" />
     <Compile Include="WebSocket.cs" />

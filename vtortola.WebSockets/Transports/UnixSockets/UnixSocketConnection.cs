@@ -2,29 +2,19 @@
 using System.Net.Sockets;
 using vtortola.WebSockets.Transports.Sockets;
 
-namespace vtortola.WebSockets.Transports.Tcp
+namespace vtortola.WebSockets.Transports.UnixSockets
 {
-    public sealed class TcpConnection : SocketConnection
+    public sealed class UnixSocketConnection : SocketConnection
     {
         private readonly Socket socket;
 
         public int Available => this.socket.Available;
         public bool IsConnected => this.socket.Connected;
 
-        public bool ExclusiveAddressUse
-        {
-            get { return this.socket.ExclusiveAddressUse; }
-            set { this.socket.ExclusiveAddressUse = value; }
-        }
         public LingerOption LingerState
         {
             get { return this.socket.LingerState; }
             set { this.socket.LingerState = value; }
-        }
-        public bool NoDelay
-        {
-            get { return this.socket.NoDelay; }
-            set { this.socket.NoDelay = value; }
         }
         public int ReceiveBufferSize
         {
@@ -48,8 +38,10 @@ namespace vtortola.WebSockets.Transports.Tcp
         }
 
         /// <inheritdoc />
-        public TcpConnection(Socket socket, bool shouldBeSecure) : base(socket, shouldBeSecure)
+        public UnixSocketConnection(Socket socket, bool shouldBeSecure) : base(socket, shouldBeSecure)
         {
+            if (socket == null) throw new ArgumentNullException(nameof(socket));
+
             this.socket = socket;
         }
 
@@ -57,8 +49,8 @@ namespace vtortola.WebSockets.Transports.Tcp
         public override string ToString()
         {
             // ReSharper disable HeapView.BoxingAllocation
-            return $"{nameof(TcpConnection)}, local: {this.LocalEndPoint}, remote: {this.RemoteEndPoint}, " +
-                $"connected: {this.IsConnected}, available (bytes){this.Available}, no delay: {this.NoDelay}" +
+            return $"{nameof(UnixSocketConnection)}, local: {this.LocalEndPoint}, remote: {this.RemoteEndPoint}, " +
+                $"connected: {this.IsConnected}, available (bytes){this.Available}" +
                 $"receive buffer: {this.ReceiveBufferSize}, receive timeout: {TimeSpan.FromMilliseconds(this.ReceiveTimeout)}, " +
                 $"send buffer: {this.SendBufferSize}, send timeout: {TimeSpan.FromMilliseconds(this.SendTimeout)}";
             // ReSharper restore HeapView.BoxingAllocation

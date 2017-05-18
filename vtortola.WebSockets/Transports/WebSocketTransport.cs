@@ -9,8 +9,8 @@ namespace vtortola.WebSockets.Transports
     {
         public abstract IReadOnlyCollection<string> Schemes { get; }
 
-        public abstract Task<Listener> ListenAsync(Uri endPoint, WebSocketListenerOptions options);
-        public abstract Task<Connection> ConnectAsync(Uri endPoint, WebSocketListenerOptions options, CancellationToken cancellation);
+        public abstract Task<Listener> ListenAsync(Uri address, WebSocketListenerOptions options);
+        public abstract Task<Connection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation);
 
         /// <inheritdoc />
         public virtual WebSocketTransport Clone()

@@ -14,17 +14,17 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         /// <inheritdoc />
         public override IReadOnlyCollection<string> Schemes => SupportedSchemes;
         /// <inheritdoc />
-        public override Task<Listener> ListenAsync(Uri endPoint, WebSocketListenerOptions options)
+        public override Task<Listener> ListenAsync(Uri address, WebSocketListenerOptions options)
         {
-            return Task.FromResult((Listener)new NamedPipeListener(endPoint, options));
+            return Task.FromResult((Listener)new NamedPipeListener(address, options));
         }
         /// <inheritdoc />
-        public override Task<Connection> ConnectAsync(Uri endPoint, WebSocketListenerOptions options, CancellationToken cancellation)
+        public override Task<Connection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation)
         {
-            if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
+            if (address == null) throw new ArgumentNullException(nameof(address));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            var pipeName = endPoint.GetComponents(UriComponents.Host | UriComponents.Path, UriFormat.SafeUnescaped);
+            var pipeName = address.GetComponents(UriComponents.Host | UriComponents.Path, UriFormat.SafeUnescaped);
             var clientPipeStream = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
 
             clientPipeStream.Connect();

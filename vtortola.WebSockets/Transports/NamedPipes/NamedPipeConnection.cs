@@ -11,6 +11,13 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         private readonly PipeStream pipeStream;
 
         public string PipeName { get; }
+
+        public virtual int OutBufferSize => this.pipeStream.OutBufferSize;
+        public virtual int InBufferSize => this.pipeStream.InBufferSize;
+        public bool IsConnected => this.IsConnected;
+        public bool CanWrite => this.CanWrite;
+        public bool CanRead => this.CanRead;
+
         /// <inheritdoc />
         public override EndPoint LocalEndPoint { get; }
         /// <inheritdoc />
@@ -41,7 +48,10 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{nameof(NamedPipeConnection)}, pipe: {this.PipeName}";
+            // ReSharper disable HeapView.BoxingAllocation
+            return $"{nameof(NamedPipeConnection)}, pipe: {this.PipeName}, connected: {this.IsConnected}, " +
+                $"can write: {this.CanWrite}, can read: {this.CanRead} in buffer: {this.InBufferSize}, out buffer: {this.OutBufferSize}";
+            // ReSharper restore HeapView.BoxingAllocation
         }
     }
 }

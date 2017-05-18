@@ -2,29 +2,26 @@
 using System.Net.Sockets;
 using vtortola.WebSockets.Transports.Sockets;
 
-#pragma warning disable 420
-
-namespace vtortola.WebSockets.Transports.Tcp
+namespace vtortola.WebSockets.Transports.UnixSockets
 {
-    public sealed class TcpListener : SocketListener
+    public sealed class UnixSocketListener : SocketListener
     {
         /// <inheritdoc />
-        public TcpListener(EndPoint[] endPointsToListen, WebSocketListenerOptions options)
-            : base(endPointsToListen, ProtocolType.Tcp, options)
+        public UnixSocketListener(EndPoint[] endPointsToListen, WebSocketListenerOptions options) : base(endPointsToListen, ProtocolType.Unspecified, options)
         {
         }
 
         /// <inheritdoc />
         protected override Connection CreateConnection(Socket socket)
         {
-            return new TcpConnection(socket, false);
+            return new UnixSocketConnection(socket, false);
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
             // ReSharper disable once CoVariantArrayConversion
-            return $"{nameof(TcpListener)}, {string.Join(", ", this.LocalEndpoints)}";
+            return $"{nameof(UnixSocketListener)}, {string.Join(", ", this.LocalEndpoints)}";
         }
     }
 }

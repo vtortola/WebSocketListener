@@ -3,13 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
-using vtortola.WebSockets.Async;
+using vtortola.WebSockets.Transports.Sockets;
 
 namespace vtortola.WebSockets.Transports.Tcp
 {
-    public sealed class TcpTransport : WebSocketTransport
+    public sealed class TcpTransport : SocketTransport
     {
         private const int DEFAULT_PORT = 80;
         private const int DEFAULT_SECURE_PORT = 443;
@@ -20,95 +19,47 @@ namespace vtortola.WebSockets.Transports.Tcp
         public override IReadOnlyCollection<string> Schemes => SupportedSchemes;
 
         /// <inheritdoc />
-        public override async Task<Listener> ListenAsync(Uri endPoint, WebSocketListenerOptions options)
+        public override async Task<Listener> ListenAsync(Uri address, WebSocketListenerOptions options)
         {
-            if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
+            if (address == null) throw new ArgumentNullException(nameof(address));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            var isSecure = string.Equals(endPoint.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
+            var isSecure = string.Equals(address.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
             var defaultPort = isSecure ? DEFAULT_SECURE_PORT : DEFAULT_PORT;
-            var ipAddresses = await Dns.GetHostAddressesAsync(endPoint.DnsSafeHost).ConfigureAwait(false);
-            var ipEndPoints = Array.ConvertAll(ipAddresses, a => new IPEndPoint(a, endPoint.Port <= 0 ? defaultPort : endPoint.Port));
+            var ipAddresses = await Dns.GetHostAddressesAsync(address.DnsSafeHost).ConfigureAwait(false);
+            var ipEndPoints = Array.ConvertAll(ipAddresses, a => new IPEndPoint(a, address.Port <= 0 ? defaultPort : address.Port));
 
             return new TcpListener(ipEndPoints, options);
         }
+
         /// <inheritdoc />
-        public override async Task<Connection> ConnectAsync(Uri endPoint, WebSocketListenerOptions options, CancellationToken cancellation)
+        protected override bool IsSecureConnectionRequired(Uri address)
         {
-            if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
-            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (address == null) throw new ArgumentNullException(nameof(address));
 
-            var isSecure = string.Equals(endPoint.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
-            // prepare socket
+            return string.Equals(address.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
+        }
+        /// <inheritdoc />
+        protected override EndPoint GetRemoteEndPoint(Uri address)
+        {
 #if DUAL_MODE
-            var remoteEndpoint = new DnsEndPoint(endPoint.DnsSafeHost, endPoint.Port <= 0 ? DEFAULT_PORT : endPoint.Port, AddressFamily.Unspecified);
+            var remoteEndpoint = new DnsEndPoint(address.DnsSafeHost, address.Port <= 0 ? DEFAULT_PORT : address.Port, AddressFamily.InterNetworkV6);
 #else
-            var remoteEndpoint = new DnsEndPoint(endPoint.DnsSafeHost, endPoint.Port <= 0 ? DEFAULT_PORT : endPoint.Port, AddressFamily.InterNetwork);
+            var remoteEndpoint = new DnsEndPoint(address.DnsSafeHost, address.Port <= 0 ? DEFAULT_PORT : address.Port, AddressFamily.InterNetwork);
 #endif
-
-            var addressFamily = remoteEndpoint.AddressFamily;
+            return remoteEndpoint;
+        }
+        /// <inheritdoc />
+        protected override ProtocolType GetProtocolType(Uri address, EndPoint remoteEndPoint)
+        {
+            return ProtocolType.Tcp;
+        }
+        /// <inheritdoc />
+        protected override void SetupClientSocket(Socket socket)
+        {
 #if DUAL_MODE
-            if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
-                addressFamily = AddressFamily.InterNetworkV6;
+            socket.DualMode = true;
 #endif
-            var protocolType = addressFamily == AddressFamily.Unix ? ProtocolType.Unspecified : ProtocolType.Tcp;
-            var socket = new Socket(addressFamily, SocketType.Stream, protocolType)
-            {
-                NoDelay = !(options.UseNagleAlgorithm ?? false),
-                SendTimeout = (int)Math.Round(options.WebSocketSendTimeout.TotalMilliseconds),
-                ReceiveTimeout = (int)Math.Round(options.WebSocketReceiveTimeout.TotalMilliseconds)
-            };
-            try
-            {
-#if DUAL_MODE
-                if (remoteEndpoint.AddressFamily == AddressFamily.Unspecified)
-                    socket.DualMode = true;
-#endif
-
-                // prepare connection
-                var socketConnectedCondition = new AsyncConditionSource
-                {
-                    ContinueOnCapturedContext = false
-                };
-                var socketAsyncEventArgs = new SocketAsyncEventArgs
-                {
-                    RemoteEndPoint = remoteEndpoint,
-                    UserToken = socketConnectedCondition
-                };
-
-                // connect
-                socketAsyncEventArgs.Completed += (_, e) => ((AsyncConditionSource)e.UserToken).Set();
-
-                // interrupt connection when cancellation token is set
-                var connectInterruptRegistration = cancellation.CanBeCanceled ?
-                    cancellation.Register(s => ((AsyncConditionSource)s).Interrupt(new OperationCanceledException()), socketConnectedCondition) :
-                    default(CancellationTokenRegistration);
-                using (connectInterruptRegistration)
-                {
-                    if (socket.ConnectAsync(socketAsyncEventArgs) == false)
-                        socketConnectedCondition.Set();
-
-                    await socketConnectedCondition;
-                }
-                cancellation.ThrowIfCancellationRequested();
-
-                // check connection result
-                if (socketAsyncEventArgs.ConnectByNameError != null)
-                    throw socketAsyncEventArgs.ConnectByNameError;
-
-                if (socketAsyncEventArgs.SocketError != SocketError.Success)
-                    throw new WebSocketException($"Failed to open socket to '{endPoint}' due error '{socketAsyncEventArgs.SocketError}'.",
-                        new SocketException((int)socketAsyncEventArgs.SocketError));
-
-                var connection = new TcpConnection(socket, isSecure);
-                socket = null;
-                return connection;
-            }
-            finally
-            {
-                if (socket != null)
-                    SafeEnd.Dispose(socket, options.Logger);
-            }
         }
     }
 }
