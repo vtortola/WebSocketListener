@@ -22,7 +22,7 @@ namespace vtortola.WebSockets
             var clone = (WebSocketFactory)this.MemberwiseClone();
             clone.MessageExtensions = new WebSocketMessageExtensionCollection();
             foreach (var extension in this.MessageExtensions)
-                clone.MessageExtensions.RegisterExtension(extension.Clone());
+                clone.MessageExtensions.Add(extension.Clone());
             return clone;
         }
     }

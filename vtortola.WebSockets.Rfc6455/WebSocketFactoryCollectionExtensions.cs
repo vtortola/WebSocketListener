@@ -11,7 +11,7 @@ namespace vtortola.WebSockets.Rfc6455
             var factory = new WebSocketFactoryRfc6455();
             configure?.Invoke(factory);
 
-            collection.RegisterStandard(factory);
+            collection.Add(factory);
 
             return collection;
         }

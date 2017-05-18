@@ -59,7 +59,6 @@ namespace vtortola.WebSockets
 #else
             Logger = NullLogger.Instance;
 #endif
-            this.Transports.RegisterTransport(new TcpTransport()); // tcp transport is always available            
         }
 
         public void CheckCoherence()
@@ -96,6 +95,9 @@ namespace vtortola.WebSockets
 
             if (this.Logger == null)
                 throw new WebSocketException("Logger should be set.");
+
+            if (this.Transports.Count == 0)
+                this.Transports.RegisterTcp();
         }
 
         public WebSocketListenerOptions Clone()

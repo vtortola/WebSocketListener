@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -20,12 +21,15 @@ namespace vtortola.WebSockets
             this.extensions = new List<IWebSocketConnectionExtension>();
         }
 
-        public void RegisterExtension(IWebSocketConnectionExtension extension)
+        public void Add(IWebSocketConnectionExtension extension)
         {
             if (extension == null) throw new ArgumentNullException(nameof(extension));
 
             if (this.IsReadOnly)
-                throw new WebSocketException("Extensions cannot be added after the service is started");
+                throw new WebSocketException($"New entries cannot be added because this collection is used in running {nameof(WebSocketClient)} or {nameof(WebSocketListener)}.");
+
+            if (this.extensions.Any(ext => ext.GetType() == extension.GetType()))
+                throw new WebSocketException($"Can't add extension '{extension}' because another extension of type '{extension.GetType().Name}' is already exists in collection.");
 
             this.extensions.Add(extension);
         }
@@ -38,7 +42,7 @@ namespace vtortola.WebSockets
             if (certificate == null) throw new ArgumentNullException(nameof(certificate));
 
             var extension = new WebSocketSecureConnectionExtension(certificate, validation, supportedSslProtocols);
-            this.RegisterExtension(extension);
+            this.Add(extension);
             return this;
         }
 

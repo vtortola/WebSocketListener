@@ -8,7 +8,7 @@ namespace vtortola.WebSockets.Deflate
         {
             if (collection == null) throw new ArgumentNullException(nameof(collection));
 
-            collection.RegisterExtension(new WebSocketDeflateExtension());
+            collection.Add(new WebSocketDeflateExtension());
             return collection;
         }
     }

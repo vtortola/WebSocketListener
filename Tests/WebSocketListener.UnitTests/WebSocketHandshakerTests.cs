@@ -24,7 +24,7 @@ namespace vtortola.WebSockets.UnitTests
         {
             this.logger = new TestLogger(output);
             this.factories = new WebSocketFactoryCollection();
-            this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
+            this.factories.Add(new WebSocketFactoryRfc6455());
         }
 
         [Fact]
@@ -228,9 +228,9 @@ namespace vtortola.WebSockets.UnitTests
                      .Returns(true);
 
             var factory = new WebSocketFactoryRfc6455();
-            factory.MessageExtensions.RegisterExtension(extension.Object);
+            factory.MessageExtensions.Add(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterStandard(factory);
+            factories.Add(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
                 Logger = this.logger,
@@ -293,9 +293,9 @@ namespace vtortola.WebSockets.UnitTests
                      .Returns(true);
 
             var factory = new WebSocketFactoryRfc6455();
-            factory.MessageExtensions.RegisterExtension(extension.Object);
+            factory.MessageExtensions.Add(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterStandard(factory);
+            factories.Add(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
                 Logger = this.logger,
@@ -401,9 +401,9 @@ namespace vtortola.WebSockets.UnitTests
                      .Returns(true);
 
             var factory = new WebSocketFactoryRfc6455();
-            factory.MessageExtensions.RegisterExtension(extension.Object);
+            factory.MessageExtensions.Add(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterStandard(factory);
+            factories.Add(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
                 Logger = this.logger,
@@ -472,9 +472,9 @@ namespace vtortola.WebSockets.UnitTests
                      .Returns(true);
 
             var factory = new WebSocketFactoryRfc6455();
-            factory.MessageExtensions.RegisterExtension(extension.Object);
+            factory.MessageExtensions.Add(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterStandard(factory);
+            factories.Add(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
                 Logger = this.logger,
@@ -927,9 +927,9 @@ namespace vtortola.WebSockets.UnitTests
                      .Returns(true);
 
             var factory = new WebSocketFactoryRfc6455();
-            factory.MessageExtensions.RegisterExtension(extension.Object);
+            factory.MessageExtensions.Add(extension.Object);
             var factories = new WebSocketFactoryCollection();
-            factories.RegisterStandard(factory);
+            factories.Add(factory);
             var handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions
             {
                 Logger = this.logger,

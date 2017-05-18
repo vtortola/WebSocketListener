@@ -18,15 +18,15 @@ namespace vtortola.WebSockets
             this.extensions = new List<IWebSocketMessageExtension>();
         }
 
-        public void RegisterExtension(IWebSocketMessageExtension extension)
+        public void Add(IWebSocketMessageExtension extension)
         {
             if (extension == null) throw new ArgumentNullException(nameof(extension));
 
             if (this.IsReadOnly)
-                throw new WebSocketException("Extensions cannot be added after the service is started.");
+                throw new WebSocketException($"New entries cannot be added because this collection is used in running {nameof(WebSocketClient)} or {nameof(WebSocketListener)}.");
 
-            if (this.extensions.Any(e => e.GetType() == extension.GetType()))
-                throw new WebSocketException($"Extension {extension.GetType().Name} is already added.");
+            if (this.extensions.Any(ext => ext.GetType() == extension.GetType()))
+                throw new WebSocketException($"Can't add extension '{extension}' because another extension of type '{extension.GetType().Name}' is already exists in collection.");
 
             this.extensions.Add(extension);
         }

@@ -20,16 +20,19 @@ namespace vtortola.WebSockets
             this.factoryByVersion = new Dictionary<short, WebSocketFactory>();
         }
 
-        public void RegisterStandard(WebSocketFactory factory)
+        public void Add(WebSocketFactory factory)
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
 
             if (this.IsReadOnly)
-                throw new WebSocketException("Factories cannot be added after the service is started.");
+                throw new WebSocketException($"New entries cannot be added because this collection is used in running {nameof(WebSocketClient)} or {nameof(WebSocketListener)}.");
 
             if (this.factoryByVersion.ContainsKey(factory.Version))
-                throw new WebSocketException("There is already a WebSocketFactory registered with that version.");
-
+            {
+                throw new WebSocketException($"Can't add {nameof(WebSocketFactory)} '{factory}' because another {nameof(WebSocketFactory)} with " +
+                    $"version '{factory.Version}' is already exists in collection.");
+            }
+            
             this.factoryByVersion.Add(factory.Version, factory);
         }
 

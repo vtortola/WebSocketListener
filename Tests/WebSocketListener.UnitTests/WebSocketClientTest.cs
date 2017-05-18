@@ -105,7 +105,7 @@ namespace vtortola.WebSockets.UnitTests
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
             var options = new WebSocketListenerOptions { Logger = this.logger };
             options.Standards.RegisterRfc6455();
-            options.Transports.RegisterTransport(new NamedPipeTransport());
+            options.Transports.Add(new NamedPipeTransport());
             var listener = new vtortola.WebSockets.WebSocketListener(new[] { new Uri(address) }, options);
             this.logger.Debug("[TEST] Starting listener.");
             await listener.StartAsync().ConfigureAwait(false);
@@ -202,7 +202,7 @@ namespace vtortola.WebSockets.UnitTests
                 Logger = new TestLogger(this.logger) { IsDebugEnabled = false }
             };
             options.Standards.RegisterRfc6455();
-            options.Transports.RegisterTransport(new NamedPipeTransport());
+            options.Transports.Add(new NamedPipeTransport());
             var prefixes = new[] { new Uri(address) };
             var server = new EchoServer(prefixes, options);
 

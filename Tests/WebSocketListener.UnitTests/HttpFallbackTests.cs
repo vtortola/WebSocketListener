@@ -22,7 +22,7 @@ namespace vtortola.WebSockets.UnitTests
         {
             this.logger = new TestLogger(output);
             this.factories = new WebSocketFactoryCollection();
-            this.factories.RegisterStandard(new WebSocketFactoryRfc6455());
+            this.factories.Add(new WebSocketFactoryRfc6455());
 
             this.fallback = new Mock<IHttpFallback>();
             this.fallback.Setup(x => x.Post(It.IsAny<IHttpRequest>(), It.IsAny<Stream>()))
