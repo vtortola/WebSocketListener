@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using vtortola.WebSockets.Transports.Tcp;
 
 namespace vtortola.WebSockets.Transports
 {
@@ -17,6 +18,8 @@ namespace vtortola.WebSockets.Transports
         public WebSocketTransportCollection()
         {
             this.transportByScheme = new Dictionary<string, WebSocketTransport>(StringComparer.OrdinalIgnoreCase);
+
+            this.Add(new TcpTransport());
         }
 
         public void Add(WebSocketTransport transport)
@@ -33,12 +36,6 @@ namespace vtortola.WebSockets.Transports
                 this.transportByScheme.Add(scheme, transport);
         }
 
-        public WebSocketTransportCollection RegisterTcp()
-        {
-            var transport = new Tcp.TcpTransport();
-            this.Add(transport);
-            return this;
-        }
         public WebSocketTransportCollection RegisterNamedPipes()
         {
             var transport = new NamedPipes.NamedPipeTransport();

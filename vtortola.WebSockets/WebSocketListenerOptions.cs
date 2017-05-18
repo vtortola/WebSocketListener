@@ -95,9 +95,6 @@ namespace vtortola.WebSockets
 
             if (this.Logger == null)
                 throw new WebSocketException("Logger should be set.");
-
-            if (this.Transports.Count == 0)
-                this.Transports.RegisterTcp();
         }
 
         public WebSocketListenerOptions Clone()
