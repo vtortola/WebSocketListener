@@ -39,7 +39,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>WebSocketListener.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\WebSocketListener.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="JetBrains.Annotations, Version=10.2.1.0, Culture=neutral, PublicKeyToken=1010a0d8d6380325, processorArchitecture=MSIL">
@@ -130,8 +130,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <None Include="..\WebSocketListener.snk">
+      <Link>WebSocketListener.snk</Link>
+    </None>
     <None Include="packages.config" />
-    <None Include="WebSocketListener.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

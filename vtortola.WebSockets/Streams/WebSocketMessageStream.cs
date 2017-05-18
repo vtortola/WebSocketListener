@@ -62,7 +62,7 @@ namespace vtortola.WebSockets
 #if (NET45 || NET451 || NET452 || NET46)
         public sealed override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #elif (DNX451 || DNX452 || DNX46 || NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        public virtual IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
 #endif
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));

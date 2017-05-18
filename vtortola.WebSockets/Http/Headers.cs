@@ -9,7 +9,9 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Http
 {
+#if (NET45 || NET451 || NET452 || NET46)
     [Serializable]
+#endif
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
     public sealed partial class Headers<KnownHeaderT> : IDictionary<string, string>
     {
