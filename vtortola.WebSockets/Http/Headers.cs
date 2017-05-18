@@ -34,6 +34,7 @@ namespace vtortola.WebSockets.Http
         private int version;
 
         public int Count => (this.customHeaders?.Count ?? 0) + this.knownHeadersCount;
+        public int FlatCount => this.customHeaders.Values.Sum(v => v.Count) + this.knownHeaders.Sum(v => v.Count);
         public bool IsReadOnly => this.isReadOnly;
 
         public string this[KnownHeaderT knownHeader]
@@ -429,28 +430,24 @@ namespace vtortola.WebSockets.Http
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            var result = new DictionaryEntry[this.Count];
+            var result = new DictionaryEntry[this.FlatCount];
             var i = 0;
             foreach (var kv in this)
             {
                 foreach (var value in kv.Value)
-                {
                     result[i++] = new DictionaryEntry(kv.Key, value);
-                }
             }
 
             return result.GetEnumerator();
         }
         IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator()
         {
-            var result = new KeyValuePair<string, string>[this.Count];
+            var result = new KeyValuePair<string, string>[this.FlatCount];
             var i = 0;
             foreach (var kv in this)
             {
                 foreach (var value in kv.Value)
-                {
                     result[i++] = new KeyValuePair<string, string>(kv.Key, value);
-                }
             }
 
             return ((IEnumerable<KeyValuePair<string, string>>)result).GetEnumerator();
