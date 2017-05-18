@@ -26,10 +26,20 @@ namespace vtortola.WebSockets.Transports.Tcp
 
             var isSecure = string.Equals(address.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
             var defaultPort = isSecure ? DEFAULT_SECURE_PORT : DEFAULT_PORT;
-            var ipAddresses = await Dns.GetHostAddressesAsync(address.DnsSafeHost).ConfigureAwait(false);
-            var ipEndPoints = Array.ConvertAll(ipAddresses, a => new IPEndPoint(a, address.Port <= 0 ? defaultPort : address.Port));
+            var port = address.Port <= 0 ? defaultPort : address.Port;
+            var endPoints = default(EndPoint[]);
+            var ipAddress = default(IPAddress);
+            if (IPAddress.TryParse(address.DnsSafeHost, out ipAddress))
+            {
+                endPoints = new EndPoint[] { new IPEndPoint(ipAddress, port) };
+            }
+            else
+            {
+                var ipAddresses = await Dns.GetHostAddressesAsync(address.DnsSafeHost).ConfigureAwait(false);
+                endPoints = Array.ConvertAll(ipAddresses, ipAddr => (EndPoint)new IPEndPoint(ipAddr, port));
+            }
 
-            return new TcpListener(ipEndPoints, options);
+            return new TcpListener(endPoints, options);
         }
 
         /// <inheritdoc />
