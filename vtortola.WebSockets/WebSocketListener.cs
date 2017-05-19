@@ -167,7 +167,7 @@ namespace vtortola.WebSockets
             await Task.Yield();
 
             var listeners = this.listeners;
-            var acceptTasks = new Task<Connection>[listeners.Length];
+            var acceptTasks = new Task<NetworkConnection>[listeners.Length];
             var listenerIndex = 0; // this is prevent starvation of array-end listeners when using 'choose from any' algorithm
             try
             {
@@ -183,7 +183,7 @@ namespace vtortola.WebSockets
                         }
                         catch (Exception acceptError) when (acceptError is ThreadAbortException == false)
                         {
-                            acceptTasks[i] = TaskHelper.FailedTask<Connection>(acceptError);
+                            acceptTasks[i] = TaskHelper.FailedTask<NetworkConnection>(acceptError);
                         }
                     }
 

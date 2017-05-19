@@ -13,7 +13,7 @@ namespace vtortola.WebSockets.Http
     internal sealed class HttpNegotiationQueue : IDisposable
     {
         private readonly ILogger log;
-        private readonly AsyncQueue<Connection> _connections;
+        private readonly AsyncQueue<NetworkConnection> _connections;
         private readonly AsyncQueue<WebSocketNegotiationResult> _negotiations;
         private readonly CancellationTokenSource _cancel;
         private readonly WebSocketHandshaker _handShaker;
@@ -35,7 +35,7 @@ namespace vtortola.WebSockets.Http
             _cancel = new CancellationTokenSource();
             _semaphore = new SemaphoreSlim(options.ParallelNegotiations);
 
-            _connections = new AsyncQueue<Connection>(options.NegotiationQueueCapacity);
+            _connections = new AsyncQueue<NetworkConnection>(options.NegotiationQueueCapacity);
             _negotiations = new AsyncQueue<WebSocketNegotiationResult>();
 
             //_cancel.Token.Register(() => this._connections.Close(new OperationCanceledException()));
@@ -64,16 +64,16 @@ namespace vtortola.WebSockets.Http
                 }
                 catch (Exception negotiateError)
                 {
-                    if (this.log.IsWarningEnabled)
-                        this.log.Warning("An error occurred while negotiating WebSocket request.", negotiateError);
+                    if (this.log.IsWarningEnabled && negotiateError.Unwrap() is OperationCanceledException == false)
+                        this.log.Warning("An error occurred while negotiating WebSocket request.", negotiateError.Unwrap());
                     _cancel.Cancel();
                 }
             }
         }
 
-        private async Task NegotiateWebSocket(Connection client)
+        private async Task NegotiateWebSocket(NetworkConnection networkConnection)
         {
-            if (client == null) throw new ArgumentNullException(nameof(client));
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
 
             await Task.Yield();
 
@@ -82,37 +82,35 @@ namespace vtortola.WebSockets.Http
             {
                 var timeoutTask = Task.Delay(_options.NegotiationTimeout);
 
-                var stream = client.GetDataStream();
-
                 foreach (var conExt in _extensions)
                 {
-                    var extTask = conExt.ExtendConnectionAsync(stream);
+                    var extTask = conExt.ExtendConnectionAsync(networkConnection);
                     await Task.WhenAny(timeoutTask, extTask).ConfigureAwait(false);
                     if (timeoutTask.IsCompleted)
                         throw new WebSocketException($"Negotiation timeout (Extension: {conExt.GetType().Name})");
 
-                    stream = await extTask;
+                    networkConnection = await extTask.ConfigureAwait(false);
                 }
 
-                var handshakeTask = _handShaker.HandshakeAsync(stream, client.LocalEndPoint, client.RemoteEndPoint);
+                var handshakeTask = _handShaker.HandshakeAsync(networkConnection);
                 await Task.WhenAny(timeoutTask, handshakeTask).ConfigureAwait(false);
                 if (timeoutTask.IsCompleted)
                     throw new WebSocketException("Negotiation timeout");
 
-                var handshake = await handshakeTask;
+                var handshake = await handshakeTask.ConfigureAwait(false);
 
                 if (handshake.IsValidWebSocketRequest)
                 {
-                    result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(stream, _options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
+                    result = new WebSocketNegotiationResult(handshake.Factory.CreateWebSocket(networkConnection, _options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions));
                 }
                 else if (handshake.IsValidHttpRequest && _options.HttpFallback != null)
                 {
-                    _options.HttpFallback.Post(handshake.Request, stream);
+                    _options.HttpFallback.Post(handshake.Request, networkConnection);
                     return;
                 }
                 else
                 {
-                    SafeEnd.Dispose(client, this.log);
+                    SafeEnd.Dispose(networkConnection, this.log);
                     result = new WebSocketNegotiationResult(handshake.Error);
                 }
 
@@ -131,7 +129,7 @@ namespace vtortola.WebSockets.Http
                 if (this.log.IsDebugEnabled)
                     this.log.Debug("An error occurred while negotiating WebSocket request.", negotiationError);
 
-                SafeEnd.Dispose(client, this.log);
+                SafeEnd.Dispose(networkConnection, this.log);
                 result = new WebSocketNegotiationResult(ExceptionDispatchInfo.Capture(negotiationError));
             }
             finally
@@ -140,7 +138,7 @@ namespace vtortola.WebSockets.Http
             }
         }
 
-        public void Queue(Connection connection)
+        public void Queue(NetworkConnection connection)
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
@@ -158,8 +156,6 @@ namespace vtortola.WebSockets.Http
             SafeEnd.Dispose(_semaphore, this.log);
 
             _cancel?.Cancel(throwOnFirstException: false);
-            SafeEnd.Dispose(_cancel, this.log);
-            this.log.Debug("DISPOSE");
             foreach (var connection in this._connections.CloseAndReceiveAll(closeError: new OperationCanceledException()))
                 SafeEnd.Dispose(connection, this.log);
             foreach (var negotiation in this._negotiations.CloseAndReceiveAll(closeError: new OperationCanceledException()))

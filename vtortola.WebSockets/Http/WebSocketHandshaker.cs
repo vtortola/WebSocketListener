@@ -7,8 +7,10 @@ using System.Net.Security;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Extensibility;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Tools;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
@@ -28,23 +30,23 @@ namespace vtortola.WebSockets
             this.options = options;
         }
 
-        public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream, EndPoint localEndpoint = null, EndPoint remoteEndpoint = null)
+        public async Task<WebSocketHandshake> HandshakeAsync(NetworkConnection networkConnection)
         {
-            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
 
             var request = new WebSocketHttpRequest(HttpRequestDirection.Incoming)
             {
-                LocalEndPoint = localEndpoint ?? WebSocketHttpRequest.NoAddress,
-                RemoteEndPoint = remoteEndpoint ?? WebSocketHttpRequest.NoAddress,
-                IsSecure = clientStream is SslStream
+                LocalEndPoint = networkConnection.LocalEndPoint ?? WebSocketHttpRequest.NoAddress,
+                RemoteEndPoint = networkConnection.RemoteEndPoint ?? WebSocketHttpRequest.NoAddress,
+                IsSecure = networkConnection is SslNetworkConnection
             };
             var handshake = new WebSocketHandshake(request);
             try
             {
-                ReadHttpRequest(clientStream, handshake);
+                ReadHttpRequest(networkConnection, handshake);
                 if (!IsWebSocketRequestValid(handshake))
                 {
-                    await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
+                    await WriteHttpResponseAsync(handshake, networkConnection).ConfigureAwait(false);
                     return handshake;
                 }
 
@@ -53,7 +55,7 @@ namespace vtortola.WebSockets
                 var factory = default(WebSocketFactory);
                 if (this.factories.TryGetWebSocketFactory(handshake.Request, out factory) == false)
                 {
-                    await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
+                    await WriteHttpResponseAsync(handshake, networkConnection).ConfigureAwait(false);
                     return handshake;
                 }
 
@@ -68,7 +70,7 @@ namespace vtortola.WebSockets
                 if (await this.RunHttpNegotiationHandlerAsync(handshake).ConfigureAwait(false) == false)
                     throw new WebSocketException("HTTP authentication failed.");
 
-                await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
+                await WriteHttpResponseAsync(handshake, networkConnection).ConfigureAwait(false);
             }
             catch (Exception handshakeError)
             {
@@ -78,7 +80,7 @@ namespace vtortola.WebSockets
                 handshake.Error = ExceptionDispatchInfo.Capture(handshakeError);
                 if (!handshake.IsResponseSent)
                 {
-                    try { WriteHttpResponse(handshake, clientStream); }
+                    try { WriteHttpResponse(handshake, networkConnection); }
                     catch (Exception writeResponseError)
                     {
                         if (this.log.IsDebugEnabled)
@@ -141,29 +143,29 @@ namespace vtortola.WebSockets
                 }
             }
         }
-        private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
+        private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, NetworkConnection networkConnection)
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
-            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
 
             if (!handshake.IsWebSocketRequest && handshake.IsValidHttpRequest && this.options.HttpFallback != null)
                 return;
 
             handshake.IsResponseSent = true;
-            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            using (var writer = new StreamWriter(networkConnection.AsStream(), Encoding.ASCII, 1024, true))
             {
                 WriteResponseInternal(handshake, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
             }
         }
 
-        private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
+        private void WriteHttpResponse(WebSocketHandshake handshake, NetworkConnection networkConnection)
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
-            if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
 
             handshake.IsResponseSent = true;
-            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            using (var writer = new StreamWriter(networkConnection.AsStream(), Encoding.ASCII, 1024, true))
             {
                 WriteResponseInternal(handshake, writer);
                 writer.Flush();
@@ -195,12 +197,12 @@ namespace vtortola.WebSockets
                 SendNegotiationErrorResponse(writer, handshake.Response.Status);
             }
         }
-        private void ReadHttpRequest(Stream clientStream, WebSocketHandshake handshake)
+        private void ReadHttpRequest(NetworkConnection clientStream, WebSocketHandshake handshake)
         {
             if (clientStream == null) throw new ArgumentNullException(nameof(clientStream));
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
 
-            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, 1024, true))
+            using (var sr = new StreamReader(clientStream.AsStream(), Encoding.ASCII, false, 1024, true))
             {
                 string line = sr.ReadLine();
 

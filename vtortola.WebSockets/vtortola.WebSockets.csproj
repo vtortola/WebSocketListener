@@ -51,6 +51,7 @@
     <Compile Include="Extensibility\IHttpFallback.cs" />
     <Compile Include="Extensibility\IWebSocketConnectionExtension.cs" />
     <Compile Include="Extensibility\IWebSocketMessageExtensionContext.cs" />
+    <Compile Include="Extensibility\SslNetworkConnection.cs" />
     <Compile Include="Extensibility\WebSocketSecureConnectionExtension.cs" />
     <Compile Include="Extensibility\WebSocketConnectionExtensionCollection.cs" />
     <Compile Include="Extensibility\WebSocketMessageExtensionCollection.cs" />
@@ -103,7 +104,7 @@
     <Compile Include="Tools\SafeEnd.cs" />
     <Compile Include="Tools\ThreadStaticRandom.cs" />
     <Compile Include="Transports\Listener.cs" />
-    <Compile Include="Transports\Connection.cs" />
+    <Compile Include="Transports\NetworkConnection.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeConnection.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeEndPoint.cs" />
     <Compile Include="Transports\NamedPipes\NamedPipeListener.cs" />

@@ -4,6 +4,8 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Extensibility;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
@@ -36,14 +38,14 @@ namespace vtortola.WebSockets
             _validation = validation;
             _protocols = supportedSslProtocols;
         }
-        
-        public async Task<Stream> ExtendConnectionAsync(Stream stream)
-        {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
 
-            var ssl = new SslStream(stream, false, _validation);
+        public async Task<NetworkConnection> ExtendConnectionAsync(NetworkConnection networkConnection)
+        {
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
+
+            var ssl = new SslStream(networkConnection.AsStream(), false, _validation);
             await ssl.AuthenticateAsServerAsync(_certificate, _validation != null, _protocols, false).ConfigureAwait(false);
-            return ssl;
+            return new SslNetworkConnection(ssl, networkConnection);
         }
         /// <inheritdoc />
         public IWebSocketConnectionExtension Clone()

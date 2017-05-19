@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Async;
+using vtortola.WebSockets.Extensibility;
 using vtortola.WebSockets.Http;
 using vtortola.WebSockets.Tools;
 using vtortola.WebSockets.Transports;
@@ -81,7 +82,6 @@ namespace vtortola.WebSockets
                 if (cancellation.CanBeCanceled || workCancellation.CanBeCanceled || negotiationCancellation.CanBeCanceled)
                     cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, workCancellation, negotiationCancellation).Token;
 
-                
                 var request = new WebSocketHttpRequest(HttpRequestDirection.Outgoing)
                 {
                     RequestUri = address,                
@@ -136,7 +136,7 @@ namespace vtortola.WebSockets
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
 
-            var connection = default(Connection);
+            var connection = default(NetworkConnection);
             var webSocket = default(WebSocket);
             try
             {
@@ -152,7 +152,7 @@ namespace vtortola.WebSockets
 
                 connection = await transport.ConnectAsync(requestUri, this.options, cancellation).ConfigureAwait(false);
 
-                handshake.Request.IsSecure = connection.ShouldBeSecure;
+                handshake.Request.IsSecure = transport.ShouldUseSsl(requestUri);
                 handshake.Request.LocalEndPoint = connection.LocalEndPoint;
                 handshake.Request.RemoteEndPoint = connection.RemoteEndPoint;
 
@@ -165,14 +165,14 @@ namespace vtortola.WebSockets
                     SafeEnd.Dispose(connection, this.log);
             }
         }
-        private async Task<WebSocket> NegotiateRequestAsync(WebSocketHandshake handshake, Connection connection, CancellationToken cancellation)
+        private async Task<WebSocket> NegotiateRequestAsync(WebSocketHandshake handshake, NetworkConnection connection, CancellationToken cancellation)
         {
             if (handshake == null) throw new ArgumentNullException(nameof(handshake));
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             cancellation.ThrowIfCancellationRequested();
 
-            var stream = connection.GetDataStream();
+            var stream = connection.AsStream();
 
             if (handshake.Request.IsSecure)
             {
@@ -180,6 +180,7 @@ namespace vtortola.WebSockets
                 var host = handshake.Request.RequestUri.DnsSafeHost;
                 var secureStream = new SslStream(stream, false, this.options.CertificateValidationHandler);
                 await secureStream.AuthenticateAsClientAsync(host, null, protocols, checkCertificateRevocation: false).ConfigureAwait(false);
+                connection = new SslNetworkConnection(secureStream, connection);
                 stream = secureStream;
             }
 
@@ -196,7 +197,7 @@ namespace vtortola.WebSockets
             if (await (this.options.HttpAuthenticationHandler?.Invoke(handshake.Request, handshake.Response) ?? Task.FromResult(false)).ConfigureAwait(false))
                 throw new WebSocketException("HTTP authentication failed.");
 
-            var webSocket = handshake.Factory.CreateWebSocket(stream, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
+            var webSocket = handshake.Factory.CreateWebSocket(connection, this.options, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
 
             return webSocket;
         }

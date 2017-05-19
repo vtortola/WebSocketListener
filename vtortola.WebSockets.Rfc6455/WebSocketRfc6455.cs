@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Http;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -21,10 +22,10 @@ namespace vtortola.WebSockets.Rfc6455
         public override TimeSpan Latency => this.Connection.Latency;
         public override string SubProtocol { get; }
         
-        public WebSocketRfc6455(Stream networkStream, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocketRfc6455(NetworkConnection networkConnection, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
             : base(httpRequest, httpResponse)
         {
-            if (networkStream == null) throw new ArgumentNullException(nameof(networkStream));
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (httpRequest == null) throw new ArgumentNullException(nameof(httpRequest));
             if (httpResponse == null) throw new ArgumentNullException(nameof(httpResponse));
@@ -35,7 +36,7 @@ namespace vtortola.WebSockets.Rfc6455
             this.RemoteEndpoint = httpRequest.RemoteEndPoint;
             this.LocalEndpoint = httpRequest.RemoteEndPoint;
 
-            this.Connection = new WebSocketConnectionRfc6455(networkStream, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
+            this.Connection = new WebSocketConnectionRfc6455(networkConnection, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
             this.extensions = extensions;
             this.SubProtocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
                 httpResponse.Headers[ResponseHeader.WebSocketProtocol] : default(string);
@@ -56,7 +57,7 @@ namespace vtortola.WebSockets.Rfc6455
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
             if (!this.Connection.IsConnected)
-                throw new WebSocketException("The connection is closed");
+                throw new WebSocketException("Unable to write new message because underlying connection is closed.");
 
             this.Connection.BeginWriting();
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);

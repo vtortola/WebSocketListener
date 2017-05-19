@@ -101,9 +101,9 @@ namespace vtortola.WebSockets.Async
                 {
                     throw new OperationCanceledException();
                 }
-                catch (OperationCanceledException te)
+                catch (OperationCanceledException cancelError)
                 {
-                    dispatchInfo = ExceptionDispatchInfo.Capture(te);
+                    dispatchInfo = ExceptionDispatchInfo.Capture(cancelError);
                 }
             }
             else dispatchInfo = ExceptionDispatchInfo.Capture(error);

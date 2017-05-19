@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets.Rfc6455
 {
@@ -18,7 +19,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         private readonly ILogger log;
         private readonly SemaphoreSlim _writeSemaphore;
-        private readonly Stream _networkStream;
+        private readonly NetworkConnection networkConnection;
         private readonly WebSocketListenerOptions _options;
         private readonly PingHandler _ping;
         private readonly bool _maskData;
@@ -28,6 +29,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public ILogger Log => this.log;
         public bool IsConnected => _isClosed == 0;
+        public bool IsClosed => _isClosed > 0;
         public TimeSpan Latency
         {
             get
@@ -38,9 +40,9 @@ namespace vtortola.WebSockets.Rfc6455
             }
         }
 
-        public WebSocketConnectionRfc6455(Stream networkStream, bool maskData, WebSocketListenerOptions options)
+        public WebSocketConnectionRfc6455(NetworkConnection networkConnection, bool maskData, WebSocketListenerOptions options)
         {
-            if (networkStream == null) throw new ArgumentNullException(nameof(networkStream));
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             const int HEADER_SEGMENT_SIZE = 16;
@@ -58,7 +60,7 @@ namespace vtortola.WebSockets.Rfc6455
             _writeSemaphore = new SemaphoreSlim(1);
             _options = options;
 
-            _networkStream = networkStream;
+            this.networkConnection = networkConnection;
             _maskData = maskData;
 
             var bufferSize = HEADER_SEGMENT_SIZE +
@@ -120,7 +122,7 @@ namespace vtortola.WebSockets.Rfc6455
                     // try read minimal frame first
                     while (buffered < estimatedHeaderLength && !cancellation.IsCancellationRequested)
                     {
-                        var read = await this._networkStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset + buffered, estimatedHeaderLength - buffered, cancellation).ConfigureAwait(false);
+                        var read = await this.networkConnection.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset + buffered, estimatedHeaderLength - buffered, cancellation).ConfigureAwait(false);
                         if (read == 0)
                         {
                             buffered = 0;
@@ -177,7 +179,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             try
             {
-                var read = await this._networkStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+                var read = await this.networkConnection.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
                 CurrentHeader.DecodeBytes(buffer, offset, read);
                 return read;
             }
@@ -245,7 +247,7 @@ namespace vtortola.WebSockets.Rfc6455
                             throw new WebSocketException($"Write operation lock timeout ({timeout.TotalMilliseconds:F2}ms).");
                     }
 
-                    await this._networkStream.WriteAsync(frame.Array, frame.Offset, frame.Count, cancellation).ConfigureAwait(false);
+                    await this.networkConnection.WriteAsync(frame.Array, frame.Offset, frame.Count, cancellation).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -304,7 +306,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             if (!header.Flags.Option.IsData())
             {
-                await ProcessControlFrameAsync(this._networkStream).ConfigureAwait(false);
+                await ProcessControlFrameAsync().ConfigureAwait(false);
                 CurrentHeader = null;
             }
             else
@@ -320,7 +322,7 @@ namespace vtortola.WebSockets.Rfc6455
                     this.log.Warning($"({this.GetHashCode():X}) An error occurred while trying to call {this._ping.GetType().Name}.{nameof(this._ping.NotifyActivity)}() method.", notifyPingError);
             }
         }
-        private async Task ProcessControlFrameAsync(Stream clientStream)
+        private async Task ProcessControlFrameAsync()
         {
             switch (CurrentHeader.Flags.Option)
             {
@@ -343,7 +345,7 @@ namespace vtortola.WebSockets.Rfc6455
                     var read = 0;
                     while (CurrentHeader.RemainingBytes > 0)
                     {
-                        read = await clientStream.ReadAsync(_pongBuffer.Array, _pongBuffer.Offset + read, contentLength - read).ConfigureAwait(false);
+                        read = await this.networkConnection.ReadAsync(_pongBuffer.Array, _pongBuffer.Offset + read, contentLength - read, CancellationToken.None).ConfigureAwait(false);
                         CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, read);
                     }
 
@@ -378,14 +380,12 @@ namespace vtortola.WebSockets.Rfc6455
                 if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 1)
                     return;
 
-                using (this._networkStream)
-                {
-                    ((ushort)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
-                    var messageType = (WebSocketMessageType)WebSocketFrameOption.ConnectionClose;
-                    var closeFrame = this.PrepareFrame(_closeBuffer, 2, true, false, messageType, WebSocketExtensionFlags.None);
-                    await this.SendFrameAsync(closeFrame, CancellationToken.None).ConfigureAwait(false);
-                    await this._networkStream.FlushAsync().ConfigureAwait(false);
-                }
+                ((ushort)reason).ToBytesBackwards(_closeBuffer.Array, _closeBuffer.Offset);
+                var messageType = (WebSocketMessageType)WebSocketFrameOption.ConnectionClose;
+                var closeFrame = this.PrepareFrame(_closeBuffer, 2, true, false, messageType, WebSocketExtensionFlags.None);
+                await this.SendFrameAsync(closeFrame, CancellationToken.None).ConfigureAwait(false);
+                await this.networkConnection.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+                await this.networkConnection.CloseAsync().ConfigureAwait(false);
             }
             catch (Exception closeError) when (closeError.Unwrap() is ThreadAbortException == false)
             {
@@ -426,7 +426,7 @@ namespace vtortola.WebSockets.Rfc6455
             _options.BufferManager.ReturnBuffer(this._closeBuffer.Array);
 
             SafeEnd.Dispose(_writeSemaphore, this.log);
-            SafeEnd.Dispose(_networkStream, this.log);
+            SafeEnd.Dispose(this.networkConnection, this.log);
         }
     }
 

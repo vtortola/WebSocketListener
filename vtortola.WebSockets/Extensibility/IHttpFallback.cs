@@ -1,9 +1,10 @@
 ﻿using System.IO;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
     public interface IHttpFallback
     {
-        void Post(IHttpRequest request, Stream stream);
+        void Post(IHttpRequest request, NetworkConnection networkConnection);
     }
 }
