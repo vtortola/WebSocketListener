@@ -34,7 +34,7 @@ namespace vtortola.WebSockets.Http
         private int version;
 
         public int Count => (this.customHeaders?.Count ?? 0) + this.knownHeadersCount;
-        public int FlatCount => this.customHeaders.Values.Sum(v => v.Count) + this.knownHeaders.Sum(v => v.Count);
+        public int FlatCount => (this.customHeaders?.Values.Sum(v => v.Count) ?? 0) + (this.knownHeaders?.Sum(v => v.Count) ?? 0);
         public bool IsReadOnly => this.isReadOnly;
 
         public string this[KnownHeaderT knownHeader]
