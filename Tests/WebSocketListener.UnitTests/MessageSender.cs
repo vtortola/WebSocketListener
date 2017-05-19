@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,8 @@ namespace vtortola.WebSockets.UnitTests
         public int MessagesReceived;
         public int Errors;
 
+        public List<Exception> DetailedErrors;
+
         public MessageSender(Uri address, WebSocketListenerOptions options)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
@@ -28,6 +31,7 @@ namespace vtortola.WebSockets.UnitTests
             this.log = options.Logger;
             this.client = new WebSocketClient(options);
             this.connectedClients = new ConcurrentQueue<WebSocket>();
+            this.DetailedErrors = new List<Exception>();
             this.factory = async cancellation =>
             {
                 var webSocket = default(WebSocket);
@@ -37,9 +41,11 @@ namespace vtortola.WebSockets.UnitTests
                     webSocket = await this.client.ConnectAsync(address, cancellation).ConfigureAwait(false);
                     Interlocked.Increment(ref this.ConnectedClients);
                 }
-                catch
+                catch (Exception error)
                 {
                     Interlocked.Increment(ref this.Errors);
+                    lock (this.DetailedErrors)
+                        this.DetailedErrors.Add(error.Unwrap());
                     throw;
                 }
                 finally
@@ -62,8 +68,10 @@ namespace vtortola.WebSockets.UnitTests
                 {
                     connections[i] = this.factory(cancellation);
                 }
-                catch
+                catch (Exception error)
                 {
+                    lock (this.DetailedErrors)
+                        this.DetailedErrors.Add(error.Unwrap());
                     Interlocked.Increment(ref this.Errors);
                     connections[i] = Task.FromResult(default(WebSocket));
                 }
@@ -94,7 +102,7 @@ namespace vtortola.WebSockets.UnitTests
                 sendMessages[i] = this.SendMessagesAsync(clients[i], messages, cancellation).IgnoreFaultOrCancellation();
                 receiveMessages[i] = this.ReceiveMessagesAsync(clients[i], messages, cancellation).IgnoreFaultOrCancellation();
             }
-            
+
             await Task.WhenAll(sendMessages).ConfigureAwait(false);
             await Task.WhenAll(receiveMessages).ConfigureAwait(false);
 
@@ -120,6 +128,8 @@ namespace vtortola.WebSockets.UnitTests
                 catch (Exception error) when (error is ThreadAbortException == false)
                 {
                     disconnectTasks[i] = TaskHelper.FailedTask(error);
+                    lock (this.DetailedErrors)
+                        this.DetailedErrors.Add(error.Unwrap());
                     Interlocked.Decrement(ref this.Errors);
                 }
             }
@@ -139,13 +149,20 @@ namespace vtortola.WebSockets.UnitTests
             {
                 foreach (var message in messages)
                 {
+                    if (client.IsConnected == false)
+                    {
+                        Interlocked.Increment(ref this.Errors);
+                        return sent;
+                    }
                     await client.WriteStringAsync(message, cancellation).ConfigureAwait(false);
                     sent++;
                     Interlocked.Increment(ref this.MessagesSent);
                 }
             }
-            catch
+            catch (Exception error)
             {
+                lock (this.DetailedErrors)
+                    this.DetailedErrors.Add(error.Unwrap());
                 Interlocked.Increment(ref this.Errors);
             }
 
@@ -172,12 +189,27 @@ namespace vtortola.WebSockets.UnitTests
                         return received;
                 }
             }
-            catch
+            catch (Exception error)
             {
+                lock (this.DetailedErrors)
+                    this.DetailedErrors.Add(error.Unwrap());
                 Interlocked.Increment(ref this.Errors);
             }
             return received;
 
+        }
+
+        public void PushErrorMessagesTo(SortedDictionary<string, int> errorMessages)
+        {
+            if (errorMessages == null) throw new ArgumentNullException(nameof(errorMessages));
+
+            var ct = 0;
+            lock (this.DetailedErrors)
+                foreach (var error in this.DetailedErrors)
+                    if (errorMessages.TryGetValue(error.Message, out ct))
+                        errorMessages[error.Message] = ct + 1;
+                    else
+                        errorMessages[error.Message] = 1;
         }
     }
 }

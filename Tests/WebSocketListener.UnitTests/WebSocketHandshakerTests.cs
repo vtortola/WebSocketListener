@@ -40,9 +40,11 @@ namespace vtortola.WebSockets.UnitTests
                     }
                 });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -54,21 +56,21 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                connectionInput.Seek(0, SeekOrigin.Begin);
+
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.False((bool)result.IsValidWebSocketRequest);
                 Assert.NotNull(result.Error);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Position = 0;
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 500 Internal Server Error");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -81,9 +83,11 @@ namespace vtortola.WebSockets.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -95,10 +99,9 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Position = 0;
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.True((bool)result.IsVersionSupported);
@@ -113,7 +116,7 @@ namespace vtortola.WebSockets.UnitTests
                 Assert.NotNull(result.Request.LocalEndPoint);
                 Assert.NotNull(result.Request.RemoteEndPoint);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Position = 0;
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -122,7 +125,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -135,9 +138,11 @@ namespace vtortola.WebSockets.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -149,16 +154,12 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms, new IPEndPoint(IPAddress.Parse("10.0.0.1"), 8888),
-                                           new IPEndPoint(IPAddress.Parse("192.168.0.2"), 9999))
-                                       .Result;
-                Assert.Equal("10.0.0.1", ((IPEndPoint)result.Request.LocalEndPoint).Address.ToString());
-                Assert.Equal(8888, ((IPEndPoint)result.Request.LocalEndPoint).Port);
-                Assert.Equal("192.168.0.2", ((IPEndPoint)result.Request.RemoteEndPoint).Address.ToString());
-                Assert.Equal(9999, ((IPEndPoint)result.Request.RemoteEndPoint).Port);
+                var result = handshaker.HandshakeAsync(connection).Result;
+
+                Assert.Equal(connection.LocalEndPoint.ToString(), result.Request.LocalEndPoint.ToString());
+                Assert.Equal(connection.RemoteEndPoint.ToString(), result.Request.RemoteEndPoint.ToString());
             }
         }
 
@@ -167,9 +168,11 @@ namespace vtortola.WebSockets.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -181,10 +184,9 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.True((bool)result.IsVersionSupported);
@@ -196,7 +198,7 @@ namespace vtortola.WebSockets.UnitTests
                 Assert.Equal((string)"key", (string)cookie.Name);
                 Assert.Equal((string)@"W9g/8FLW8RAFqSCWBvB9Ag==#5962c0ace89f4f780aa2a53febf2aae5", (string)cookie.Value);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -205,7 +207,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -240,9 +242,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -256,21 +260,21 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.False((bool)result.IsVersionSupported);
-                ms.Seek(position, SeekOrigin.Begin);
+
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 426 Upgrade Required");
                 sb.AppendLine(@"Sec-WebSocket-Version: 13");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -305,28 +309,30 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.False((bool)result.IsWebSocketRequest);
                 Assert.False((bool)result.IsVersionSupported);
-                ms.Seek(position, SeekOrigin.Begin);
+
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -346,9 +352,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -362,16 +370,15 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -381,7 +388,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Protocol: superchat");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -413,9 +420,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -429,16 +438,15 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -449,7 +457,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Extensions: test-extension");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -484,9 +492,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -500,16 +510,15 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -520,7 +529,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Extensions: test-extension;optionA");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -540,9 +549,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -555,16 +566,15 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.Equal(new Uri("http://example.com"), new Uri(result.Request.Headers[RequestHeader.Origin]));
                 Assert.Equal((string)"superchat", (string)result.Response.Headers[ResponseHeader.WebSocketProtocol]);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -574,7 +584,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Protocol: superchat");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -652,9 +662,11 @@ namespace vtortola.WebSockets.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -666,10 +678,9 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
 
                 Assert.Equal(2, result.Request.Cookies.Count);
@@ -691,9 +702,11 @@ namespace vtortola.WebSockets.UnitTests
                     }
                 });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -705,13 +718,12 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -722,7 +734,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -744,9 +756,11 @@ namespace vtortola.WebSockets.UnitTests
                     }
                 });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -758,21 +772,20 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.False((bool)result.IsValidWebSocketRequest);
                 Assert.NotNull(result.Error);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 401 Unauthorized");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -785,9 +798,11 @@ namespace vtortola.WebSockets.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -799,10 +814,9 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsValidWebSocketRequest);
                 Assert.Equal(1, result.Request.Cookies.Count);
@@ -822,9 +836,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -837,10 +853,9 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.True((bool)result.IsVersionSupported);
@@ -848,7 +863,7 @@ namespace vtortola.WebSockets.UnitTests
                 Assert.True((bool)result.IsValidWebSocketRequest);
                 Assert.True(string.IsNullOrEmpty(result.Response.Headers[ResponseHeader.WebSocketProtocol]));
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -857,7 +872,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -870,9 +885,11 @@ namespace vtortola.WebSockets.UnitTests
         {
             var handshaker = new WebSocketHandshaker(this.factories, new WebSocketListenerOptions { Logger = this.logger });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -885,17 +902,16 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Origin: http://example.com");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.True((bool)result.IsWebSocketRequest);
                 Assert.True((bool)result.IsVersionSupported);
                 Assert.Null(result.Error);
                 Assert.True((bool)result.IsValidWebSocketRequest);
 
-                ms.Seek(position, SeekOrigin.Begin);
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 101 Switching Protocols");
@@ -904,7 +920,7 @@ namespace vtortola.WebSockets.UnitTests
                 sb.AppendLine(@"Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);
@@ -939,9 +955,11 @@ namespace vtortola.WebSockets.UnitTests
                 }
             });
 
-            using (var ms = new MemoryStream())
+            using (var connectionInput = new MemoryStream())
+            using (var connectionOutput = new MemoryStream())
+            using (var connection = new DummyNetworkConnection(connectionInput, connectionOutput))
             {
-                using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
+                using (var sw = new StreamWriter(connectionInput, Encoding.ASCII, 1024, true))
                 {
                     sw.WriteLine(@"GET /chat HTTP/1.1");
                     sw.WriteLine(@"Host: server.example.com");
@@ -952,20 +970,20 @@ namespace vtortola.WebSockets.UnitTests
                     sw.WriteLine(@"Sec-WebSocket-Protoco");
                 }
 
-                var position = ms.Position;
-                ms.Seek(0, SeekOrigin.Begin);
+                connectionInput.Seek(0, SeekOrigin.Begin);
 
-                var result = handshaker.HandshakeAsync(ms).Result;
+                var result = handshaker.HandshakeAsync(connection).Result;
                 Assert.NotNull(result);
                 Assert.False((bool)result.IsWebSocketRequest);
                 Assert.False((bool)result.IsVersionSupported);
-                ms.Seek(position, SeekOrigin.Begin);
+
+                connectionOutput.Seek(0, SeekOrigin.Begin);
 
                 var sb = new StringBuilder();
                 sb.AppendLine(@"HTTP/1.1 400 Bad Request");
                 sb.AppendLine();
 
-                using (var sr = new StreamReader(ms))
+                using (var sr = new StreamReader(connectionOutput))
                 {
                     var s = sr.ReadToEnd();
                     Assert.Equal(sb.ToString(), s);

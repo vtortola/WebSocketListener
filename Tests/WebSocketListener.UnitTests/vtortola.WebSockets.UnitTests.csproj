@@ -61,6 +61,8 @@
   <ItemGroup>
     <Compile Include="AsyncConditionSourceTests.cs" />
     <Compile Include="AsyncQueueTests.cs" />
+    <Compile Include="CombinedStream.cs" />
+    <Compile Include="DummyNetworkConnection.cs" />
     <Compile Include="EchoServer.cs" />
     <Compile Include="MessageSender.cs" />
     <Compile Include="TestLogger.cs" />

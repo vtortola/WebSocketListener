@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
@@ -15,6 +16,8 @@ namespace vtortola.WebSockets.UnitTests
         public int SentMessages;
         public int Errors;
 
+        public List<Exception> DetailedErrors;
+
         public EchoServer(Uri[] listenEndPoints, WebSocketListenerOptions options)
         {
             if (listenEndPoints == null) throw new ArgumentNullException(nameof(listenEndPoints));
@@ -22,6 +25,7 @@ namespace vtortola.WebSockets.UnitTests
 
             this.log = options.Logger;
             this.listener = new WebSocketListener(listenEndPoints, options);
+            this.DetailedErrors = new List<Exception>();
         }
 
         public async Task StartAsync()
@@ -67,14 +71,36 @@ namespace vtortola.WebSockets.UnitTests
 
                     Interlocked.Increment(ref this.ReceivedMessages);
 
+                    if (webSocket.IsConnected == false)
+                    {
+                        Interlocked.Increment(ref this.Errors);
+                        return;
+                    }
+
                     await webSocket.WriteStringAsync(message, cancellation).ConfigureAwait(false);
                     Interlocked.Increment(ref this.SentMessages);
                 }
             }
-            catch
+            catch (Exception error)
             {
+                lock (this.DetailedErrors)
+                    this.DetailedErrors.Add(error.Unwrap());
+
                 Interlocked.Increment(ref this.Errors);
             }
+        }
+
+        public void PushErrorMessagesTo(SortedDictionary<string, int> errorMessages)
+        {
+            if (errorMessages == null) throw new ArgumentNullException(nameof(errorMessages));
+
+            var ct = 0;
+            lock (this.DetailedErrors)
+                foreach (var error in this.DetailedErrors)
+                    if (errorMessages.TryGetValue(error.Message, out ct))
+                        errorMessages[error.Message] = ct + 1;
+                    else
+                        errorMessages[error.Message] = 1;
         }
 
         /// <inheritdoc />
@@ -82,5 +108,6 @@ namespace vtortola.WebSockets.UnitTests
         {
             this.listener?.Dispose();
         }
+
     }
 }
