@@ -38,7 +38,7 @@ namespace vtortola.WebSockets.Transports.UnixSockets
         }
 
         /// <inheritdoc />
-        public UnixSocketConnection(Socket socket, bool shouldBeSecure) : base(socket, shouldBeSecure)
+        public UnixSocketConnection(Socket socket) : base(socket)
         {
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 

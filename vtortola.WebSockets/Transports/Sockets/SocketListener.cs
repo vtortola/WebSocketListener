@@ -84,7 +84,7 @@ namespace vtortola.WebSockets.Transports.Sockets
         }
 
         /// <inheritdoc />
-        public sealed override async Task<Connection> AcceptConnectionAsync()
+        public sealed override async Task<NetworkConnection> AcceptConnectionAsync()
         {
             if (Interlocked.CompareExchange(ref this.state, STATE_ACCEPTING, STATE_LISTENING) != STATE_LISTENING)
             {
@@ -131,14 +131,14 @@ namespace vtortola.WebSockets.Transports.Sockets
                         return this.AcceptSocketAsConnection(acceptTask);
                     }
                 }
-                throw new OperationCanceledException();
+                throw new TaskCanceledException();
             }
             finally
             {
                 Interlocked.CompareExchange(ref this.state, STATE_LISTENING, STATE_ACCEPTING);
             }
         }
-        private Connection AcceptSocketAsConnection(Task<Socket> acceptTask)
+        private NetworkConnection AcceptSocketAsConnection(Task<Socket> acceptTask)
         {
             var socket = acceptTask.Result;
             if (this.log.IsDebugEnabled)
@@ -207,7 +207,7 @@ namespace vtortola.WebSockets.Transports.Sockets
             }
         }
 
-        protected abstract Connection CreateConnection(Socket socket);
+        protected abstract NetworkConnection CreateConnection(Socket socket);
 
         private void ThrowIfDisposed()
         {

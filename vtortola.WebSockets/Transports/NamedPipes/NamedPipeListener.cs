@@ -41,7 +41,7 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         }
 
         /// <inheritdoc />
-        public override async Task<Connection> AcceptConnectionAsync()
+        public override async Task<NetworkConnection> AcceptConnectionAsync()
         {
             if (Interlocked.CompareExchange(ref this.state, STATE_ACCEPTING, STATE_LISTENING) != STATE_LISTENING)
             {

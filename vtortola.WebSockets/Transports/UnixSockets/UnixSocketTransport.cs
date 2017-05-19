@@ -47,7 +47,7 @@ namespace vtortola.WebSockets.Transports.UnixSockets
             return Task.FromResult((Listener)listener);
         }
         /// <inheritdoc />
-        protected override bool IsSecureConnectionRequired(Uri address)
+        public override bool ShouldUseSsl(Uri address)
         {
             return false;
         }

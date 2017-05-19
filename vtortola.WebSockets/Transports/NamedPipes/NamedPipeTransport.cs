@@ -19,7 +19,7 @@ namespace vtortola.WebSockets.Transports.NamedPipes
             return Task.FromResult((Listener)new NamedPipeListener(address, options));
         }
         /// <inheritdoc />
-        public override Task<Connection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation)
+        public override Task<NetworkConnection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
             if (options == null) throw new ArgumentNullException(nameof(options));
@@ -29,7 +29,14 @@ namespace vtortola.WebSockets.Transports.NamedPipes
 
             clientPipeStream.Connect();
 
-            return Task.FromResult((Connection)new NamedPipeConnection(clientPipeStream, pipeName));
+            return Task.FromResult((NetworkConnection)new NamedPipeConnection(clientPipeStream, pipeName));
+        }
+        /// <inheritdoc />
+        public override bool ShouldUseSsl(Uri requestUri)
+        {
+            if (requestUri == null) throw new ArgumentNullException(nameof(requestUri));
+
+            return false;
         }
     }
 }

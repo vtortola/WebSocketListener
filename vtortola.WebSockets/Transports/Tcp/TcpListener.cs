@@ -15,9 +15,9 @@ namespace vtortola.WebSockets.Transports.Tcp
         }
 
         /// <inheritdoc />
-        protected override Connection CreateConnection(Socket socket)
+        protected override NetworkConnection CreateConnection(Socket socket)
         {
-            return new TcpConnection(socket, false);
+            return new TcpConnection(socket);
         }
 
         /// <inheritdoc />

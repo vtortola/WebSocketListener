@@ -48,7 +48,7 @@ namespace vtortola.WebSockets.Transports.Tcp
         }
 
         /// <inheritdoc />
-        public TcpConnection(Socket socket, bool shouldBeSecure) : base(socket, shouldBeSecure)
+        public TcpConnection(Socket socket) : base(socket)
         {
             this.socket = socket;
         }

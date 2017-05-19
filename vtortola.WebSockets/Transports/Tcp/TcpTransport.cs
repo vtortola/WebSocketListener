@@ -43,7 +43,7 @@ namespace vtortola.WebSockets.Transports.Tcp
         }
 
         /// <inheritdoc />
-        protected override bool IsSecureConnectionRequired(Uri address)
+        public override bool ShouldUseSsl(Uri address)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
 

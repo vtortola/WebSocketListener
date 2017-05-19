@@ -9,7 +9,6 @@ namespace vtortola.WebSockets.Transports.Sockets
 {
     public abstract class SocketTransport : WebSocketTransport
     {
-        protected abstract bool IsSecureConnectionRequired(Uri address);
         protected abstract EndPoint GetRemoteEndPoint(Uri address);
         protected abstract ProtocolType GetProtocolType(Uri address, EndPoint remoteEndPoint);
         protected virtual void SetupClientSocket(Socket socket)
@@ -17,12 +16,11 @@ namespace vtortola.WebSockets.Transports.Sockets
         }
 
         /// <inheritdoc />
-        public override async Task<Connection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation)
+        public override async Task<NetworkConnection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
-            var isSecure = this.IsSecureConnectionRequired(address);
             var remoteEndPoint = this.GetRemoteEndPoint(address);
             var protocolType = this.GetProtocolType(address, remoteEndPoint);
             // prepare socket
@@ -70,7 +68,7 @@ namespace vtortola.WebSockets.Transports.Sockets
                     throw new WebSocketException($"Failed to open socket to '{address}' due error '{socketAsyncEventArgs.SocketError}'.",
                         new SocketException((int)socketAsyncEventArgs.SocketError));
 
-                var connection = new SocketConnection(socket, isSecure);
+                var connection = new SocketConnection(socket);
                 socket = null;
                 return connection;
             }

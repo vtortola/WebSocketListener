@@ -9,7 +9,7 @@ namespace vtortola.WebSockets.Transports
     {
         public abstract IReadOnlyCollection<EndPoint> LocalEndpoints { get; }
 
-        public abstract Task<Connection> AcceptConnectionAsync();
+        public abstract Task<NetworkConnection> AcceptConnectionAsync();
 
         protected abstract void Dispose(bool disposed);
 

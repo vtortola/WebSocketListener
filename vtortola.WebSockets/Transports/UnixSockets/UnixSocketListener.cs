@@ -12,9 +12,9 @@ namespace vtortola.WebSockets.Transports.UnixSockets
         }
 
         /// <inheritdoc />
-        protected override Connection CreateConnection(Socket socket)
+        protected override NetworkConnection CreateConnection(Socket socket)
         {
-            return new UnixSocketConnection(socket, false);
+            return new UnixSocketConnection(socket);
         }
 
         /// <inheritdoc />
