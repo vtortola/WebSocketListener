@@ -40,6 +40,8 @@ namespace vtortola.WebSockets.UnitTests
                 Assert.True(asyncQueue.TryReceive(out value), "fail to receive");
                 Assert.Equal(i, value);
             }
+
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Theory]
@@ -63,6 +65,7 @@ namespace vtortola.WebSockets.UnitTests
                 actualSum += value;
 
             Assert.Equal(expectedSum, actualSum);
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Theory]
@@ -75,7 +78,7 @@ namespace vtortola.WebSockets.UnitTests
         [InlineData(1000)]
         public async Task TrySendAndReceiveAsync(int count)
         {
-            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(1000));
             var asyncQueue = new AsyncQueue<int>();
             var items = Enumerable.Range(0, count).ToArray();
             var expectedSum = items.Sum();
@@ -88,13 +91,20 @@ namespace vtortola.WebSockets.UnitTests
 
                 while (cancellation.IsCancellationRequested == false)
                 {
-                    var value = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
-                    this.logger.Debug(value.ToString());
-                    Interlocked.Add(ref actualSum, value);
+                    var receiveValueTask = asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
+                    var value1 = await receiveValueTask;
+                    var value2 = await receiveValueTask;
+
+                    Assert.Equal(value1, value2); // check if awaited values are same
+
+                    this.logger.Debug(value1.ToString());
+                    Interlocked.Add(ref actualSum, value1);
                     if (Interlocked.Increment(ref ct) == count)
                         return;
                 }
             })();
+
+            await Task.Delay(10, cancellation.Token).ConfigureAwait(false);
 
             for (var i = 0; i < count; i++)
                 Assert.True(asyncQueue.TrySend(i), "fail to send");
@@ -102,6 +112,7 @@ namespace vtortola.WebSockets.UnitTests
             await receiveTask.ConfigureAwait(false);
 
             Assert.Equal(expectedSum, actualSum);
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Theory]
@@ -129,6 +140,7 @@ namespace vtortola.WebSockets.UnitTests
                 while (cancellation.IsCancellationRequested == false)
                 {
                     var value = await asyncQueue.ReceiveAsync(cancellation.Token).ConfigureAwait(false);
+
                     Interlocked.Add(ref actualSum, value);
                     if (Interlocked.Increment(ref ct) == count)
                         return;
@@ -140,6 +152,7 @@ namespace vtortola.WebSockets.UnitTests
             await receiveTask.ConfigureAwait(false);
 
             Assert.Equal(expectedSum, actualSum);
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Theory]
@@ -181,7 +194,7 @@ namespace vtortola.WebSockets.UnitTests
             await receiveTask;
             await sendTask;
 
-            Assert.NotEqual(ct, 0);
+            Assert.NotEqual(0, ct);
         }
 
 
@@ -226,7 +239,7 @@ namespace vtortola.WebSockets.UnitTests
             await receiveTask;
             await sendTask;
 
-            Assert.NotEqual(ct, 0);
+            Assert.NotEqual(0, ct);
         }
 
         [Theory]
@@ -270,7 +283,7 @@ namespace vtortola.WebSockets.UnitTests
             await receiveTask;
             await sendTask;
 
-            Assert.NotEqual(ct, 0);
+            Assert.NotEqual(0, ct);
         }
 
         [Theory]
@@ -311,6 +324,7 @@ namespace vtortola.WebSockets.UnitTests
             var expectedSum = Enumerable.Range(0, sendValue).Sum();
 
             Assert.NotEqual(expectedSum, actualSum);
+            Assert.NotEqual(0, asyncQueue.Count);
             cancellation.Cancel();
         }
 
@@ -348,6 +362,7 @@ namespace vtortola.WebSockets.UnitTests
             var expectedSum = Enumerable.Range(0, sendValue).Sum();
 
             Assert.NotEqual(expectedSum, actualSum);
+            Assert.Equal(0, asyncQueue.Count);
             cancellation.Cancel();
         }
 
@@ -368,6 +383,8 @@ namespace vtortola.WebSockets.UnitTests
 
             if (await Task.WhenAny(timeout, recvTask).ConfigureAwait(false) == timeout)
                 throw new TimeoutException();
+
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Fact]
@@ -387,6 +404,8 @@ namespace vtortola.WebSockets.UnitTests
 
             if (await Task.WhenAny(timeout, recvTask).ConfigureAwait(false) == timeout)
                 throw new TimeoutException();
+
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Fact]
@@ -406,6 +425,8 @@ namespace vtortola.WebSockets.UnitTests
 
             if (await Task.WhenAny(timeout, recvTask).ConfigureAwait(false) == timeout)
                 throw new TimeoutException();
+
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Fact]
@@ -427,6 +448,7 @@ namespace vtortola.WebSockets.UnitTests
                 throw new TimeoutException();
 
             Assert.Empty(all);
+            Assert.Equal(0, asyncQueue.Count);
         }
 
         [Theory]
@@ -461,6 +483,7 @@ namespace vtortola.WebSockets.UnitTests
             this.logger.Debug($"[TEST] en-queued: {itemsInAsyncQueue.Count}, total: {count}");
 
             Assert.Equal(count, actualCount);
+            Assert.Equal(0, asyncQueue.Count);
         }
     }
 }

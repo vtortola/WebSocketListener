@@ -30,6 +30,7 @@ namespace vtortola.WebSockets.Async
         private int sendCounter;
 
         public int BoundedCapacity => this.boundedCapacity;
+        public int Count => this.count;
         public bool IsClosed => this.closeError != null;
         public bool IsEmpty => this.IsClosed || this.innerQueue.IsEmpty;
 
@@ -89,15 +90,14 @@ namespace vtortola.WebSockets.Async
             Interlocked.Increment(ref this.sendCounter);
             try
             {
+               if (this.IsClosed)
+                    return false;
+
                 if (Interlocked.Increment(ref this.count) > this.boundedCapacity)
                 {
                     Interlocked.Decrement(ref this.count);
                     return false;
                 }
-
-                if (this.IsClosed)
-                    return false;
-
                 this.innerQueue.Enqueue(value);
             }
             finally
@@ -132,10 +132,10 @@ namespace vtortola.WebSockets.Async
             while (this.innerQueue.TryDequeue(out value))
             {
                 if (resultList == null) resultList = new List<T>(this.innerQueue.Count);
+                Interlocked.Decrement(ref this.count);
                 resultList.Add(value);
             }
 
-            Interlocked.Add(ref this.count, -(resultList?.Count ?? 0));
             this.receiveResult?.ResumeContinuations();
 
             return (IReadOnlyList<T>)resultList ?? EmptyList;
@@ -182,7 +182,7 @@ namespace vtortola.WebSockets.Async
                 return this;
             }
 
-            public bool IsCompleted => this.queue.innerQueue.IsEmpty == false || this.queue.IsClosed || this.cancellation.IsCancellationRequested;
+            public bool IsCompleted => this.queue.innerQueue.IsEmpty == false || this.queue.IsClosed || this.cancellation.IsCancellationRequested || this.resultTaken == RESULT_TAKEN;
 
             [SecuritySafeCritical]
             public void OnCompleted(Action continuation)
@@ -220,9 +220,6 @@ namespace vtortola.WebSockets.Async
             {
                 this.Release();
 
-                this.cancellation.ThrowIfCancellationRequested();
-                this.queue.closeError?.Throw();
-
                 this.TakeResult();
 
                 return this.result;
@@ -232,7 +229,7 @@ namespace vtortola.WebSockets.Async
             {
                 try
                 {
-                    if (Interlocked.CompareExchange(ref this.resultTaken, RESULT_TAKING, RESULT_NONE) == RESULT_TAKING)
+                    if (Interlocked.CompareExchange(ref this.resultTaken, RESULT_TAKING, RESULT_NONE) != RESULT_NONE)
                     {
                         var spinWait = new SpinWait();
 
@@ -242,10 +239,17 @@ namespace vtortola.WebSockets.Async
                             if (spinWait.Count > 1000)
                                 throw new InvalidOperationException("Unable to take value from async queue. Lock timeout.");
                         }
+                        return;
                     }
 
+                    this.cancellation.ThrowIfCancellationRequested();
+                    this.queue.closeError?.Throw();
+
                     if (this.queue.innerQueue.TryDequeue(out this.result))
+                    {
+                        Interlocked.Decrement(ref this.queue.count);
                         return;
+                    }
 
                     this.cancellation.ThrowIfCancellationRequested();
                     this.queue.closeError?.Throw();
