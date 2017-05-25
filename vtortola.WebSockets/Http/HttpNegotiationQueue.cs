@@ -143,7 +143,11 @@ namespace vtortola.WebSockets.Http
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             if (!this._connections.TrySend(connection))
-                SafeEnd.Dispose(connection, this.log);
+            {
+                if (this.log.IsWarningEnabled)
+                    this.log.Warning($"Negotiation queue is full and can't process new connection from '{connection.RemoteEndPoint}'. Connection will be closed.");
+                connection.CloseAsync().ContinueWith(_ => SafeEnd.Dispose(connection, this.log), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }
         }
 
         public AsyncQueue<WebSocketNegotiationResult>.ReceiveResult DequeueAsync(CancellationToken cancel)
