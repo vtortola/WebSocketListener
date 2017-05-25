@@ -21,9 +21,9 @@ namespace vtortola.WebSockets.Rfc6455
                 if (connection == null) throw new ArgumentNullException(nameof(connection));
 
                 _connection = connection;
-                _pingTimeout = connection._options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection._options.PingTimeout;
-                _pingInterval = connection._options.PingInterval;
-                _pingBuffer = connection._pingBuffer;
+                _pingTimeout = connection.options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection.options.PingTimeout;
+                _pingInterval = connection.options.PingInterval;
+                _pingBuffer = connection.pingBuffer;
 
                 this.NotifyActivity();
             }
@@ -43,7 +43,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 var messageType = (WebSocketMessageType)WebSocketFrameOption.Ping;
                 var pingFrame = _connection.PrepareFrame(_pingBuffer, 0, true, false, messageType, WebSocketExtensionFlags.None);
-                await _connection.SendFrameAsync(pingFrame, CancellationToken.None).ConfigureAwait(false);
+                await _connection.SendFrameAsync(pingFrame, TimeSpan.Zero, SendOptions.NoErrors, CancellationToken.None).ConfigureAwait(false);
             }
 
             /// <inheritdoc />

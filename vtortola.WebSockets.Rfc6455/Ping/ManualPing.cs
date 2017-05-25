@@ -19,8 +19,8 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-                _pingTimeout = connection._options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection._options.PingTimeout;
-                _pingBuffer = connection._pingBuffer;
+                _pingTimeout = connection.options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection.options.PingTimeout;
+                _pingBuffer = connection.pingBuffer;
                 _connection = connection;
                 _lastPong = new Stopwatch();
 
@@ -39,7 +39,8 @@ namespace vtortola.WebSockets.Rfc6455
                 var payload = this._pingBuffer.Skip(1);
 
                 var pingFrame = _connection.PrepareFrame(payload, count, true, false, messageType, WebSocketExtensionFlags.None);
-                await _connection.SendFrameAsync(pingFrame, CancellationToken.None).ConfigureAwait(false);
+                if (await _connection.SendFrameAsync(pingFrame, TimeSpan.Zero, SendOptions.NoErrors, CancellationToken.None).ConfigureAwait(false))
+                    this._lastPong.Restart();
             }
             /// <inheritdoc />
             public override void NotifyActivity()

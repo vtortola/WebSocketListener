@@ -18,8 +18,8 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-                _pingTimeout = connection._options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection._options.PingTimeout;
-                _pingBuffer = connection._pingBuffer;
+                _pingTimeout = connection.options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection.options.PingTimeout;
+                _pingBuffer = connection.pingBuffer;
                 _connection = connection;
                 _lastPong = new Stopwatch();
 
@@ -37,9 +37,8 @@ namespace vtortola.WebSockets.Rfc6455
                 var messageType = (WebSocketMessageType)WebSocketFrameOption.Ping;
 
                 var pingFrame = _connection.PrepareFrame(_pingBuffer, 8, true, false, messageType, WebSocketExtensionFlags.None);
-                await _connection.SendFrameAsync(pingFrame, CancellationToken.None).ConfigureAwait(false);
-
-                this._lastPong.Start();
+                if (await _connection.SendFrameAsync(pingFrame, TimeSpan.Zero, SendOptions.NoErrors, CancellationToken.None).ConfigureAwait(false))
+                    this._lastPong.Restart();
             }
             /// <inheritdoc />
             public override void NotifyActivity()
@@ -51,7 +50,7 @@ namespace vtortola.WebSockets.Rfc6455
                 this._lastPong.Stop();
 
                 var timeDelta = TimestampToTimeSpan(Stopwatch.GetTimestamp() - BitConverter.ToInt64(pongBuffer.Array, pongBuffer.Offset));
-                _connection._latency = TimeSpan.FromMilliseconds(Math.Max(0, timeDelta.TotalMilliseconds / 2));
+                _connection.latency = TimeSpan.FromMilliseconds(Math.Max(0, timeDelta.TotalMilliseconds / 2));
             }
         }
     }
