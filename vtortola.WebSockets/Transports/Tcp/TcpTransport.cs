@@ -14,7 +14,22 @@ namespace vtortola.WebSockets.Transports.Tcp
         private const int DEFAULT_PORT = 80;
         private const int DEFAULT_SECURE_PORT = 443;
 
+        public const int DEFAULT_SEND_BUFFER_SIZE = 1024;
+        public const int DEFAULT_RECEIVE_BUFFER_SIZE = 1024;
+        public const int DEFAULT_SEND_TIMEOUT_MS = 5000;
+        public const int DEFAULT_RECEIVE_TIMEOUT_MS = 5000;
+        public const bool DEFAULT_NO_DELAY = false;
+        public const bool DEFAULT_IS_ASYNC = true;
+
         private static readonly string[] SupportedSchemes = { "tcp", "ws", "wss" };
+
+        public LingerOption LingerState { get; set; }
+        public bool NoDelay { get; set; } = DEFAULT_NO_DELAY;
+        public int ReceiveBufferSize { get; set; } = DEFAULT_RECEIVE_BUFFER_SIZE;
+        public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromMilliseconds(DEFAULT_RECEIVE_TIMEOUT_MS);
+        public int SendBufferSize { get; set; } = DEFAULT_SEND_BUFFER_SIZE;
+        public TimeSpan SendTimeout { get; set; } = TimeSpan.FromMilliseconds(DEFAULT_SEND_TIMEOUT_MS);
+        public bool IsAsync { get; set; } = DEFAULT_IS_ASYNC;
 
         /// <inheritdoc />
         public override IReadOnlyCollection<string> Schemes => SupportedSchemes;
@@ -40,7 +55,7 @@ namespace vtortola.WebSockets.Transports.Tcp
                 endPoints = Array.ConvertAll(ipAddresses, ipAddr => (EndPoint)new IPEndPoint(ipAddr, port));
             }
 
-            return new TcpListener(endPoints, options);
+            return new TcpListener(this, endPoints, options);
         }
 
         /// <inheritdoc />
@@ -79,6 +94,14 @@ namespace vtortola.WebSockets.Transports.Tcp
             if (Properties.RuntimeInformation.IsMono == false && remoteEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
                 socket.DualMode = true;
 #endif
+            if (this.LingerState != null)
+                socket.LingerState = this.LingerState;
+            socket.NoDelay = this.NoDelay;
+            socket.ReceiveBufferSize = this.ReceiveBufferSize;
+            socket.ReceiveTimeout = (int)this.ReceiveTimeout.TotalMilliseconds + 1;
+            socket.SendBufferSize = this.SendBufferSize;
+            socket.SendTimeout = (int)this.SendTimeout.TotalMilliseconds + 1;
+            socket.UseOnlyOverlappedIO = this.IsAsync;
         }
     }
 }

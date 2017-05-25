@@ -9,14 +9,21 @@ namespace vtortola.WebSockets.Transports.NamedPipes
 {
     public sealed class NamedPipeTransport : WebSocketTransport
     {
+        public const int DEFAULT_SEND_BUFFER_SIZE = 1024;
+        public const int DEFAULT_RECEIVE_BUFFER_SIZE = 1024;
+
         private static readonly string[] SupportedSchemes = { "pipe" };
+
+        public int MaxConnections { get; set; } = NamedPipeServerStream.MaxAllowedServerInstances;
+        public int SendBufferSize { get; set; } = DEFAULT_SEND_BUFFER_SIZE;
+        public int ReceiveBufferSize { get; set; } = DEFAULT_RECEIVE_BUFFER_SIZE;
 
         /// <inheritdoc />
         public override IReadOnlyCollection<string> Schemes => SupportedSchemes;
         /// <inheritdoc />
         public override Task<Listener> ListenAsync(Uri address, WebSocketListenerOptions options)
         {
-            return Task.FromResult((Listener)new NamedPipeListener(address, options));
+            return Task.FromResult((Listener)new NamedPipeListener(this, address, options));
         }
         /// <inheritdoc />
         public override Task<NetworkConnection> ConnectAsync(Uri address, WebSocketListenerOptions options, CancellationToken cancellation)

@@ -18,22 +18,24 @@ namespace vtortola.WebSockets.Transports.NamedPipes
 
         private readonly ILogger log;
         private readonly int maxInstances;
+        private readonly int sendBufferSize;
+        private readonly int receiveBufferSize;
         private readonly string pipeName;
-        private readonly BufferManager bufferManager;
         private volatile int state;
         private volatile NamedPipeServerStream server;
 
         /// <inheritdoc />
         public override IReadOnlyCollection<EndPoint> LocalEndpoints { get; }
 
-        public NamedPipeListener(Uri endPoint, WebSocketListenerOptions options)
+        public NamedPipeListener(NamedPipeTransport transport, Uri endPoint, WebSocketListenerOptions options)
         {
             if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             this.log = options.Logger;
-            this.bufferManager = options.BufferManager;
-            this.maxInstances = Math.Min(NamedPipeServerStream.MaxAllowedServerInstances, options.BacklogSize ?? int.MaxValue);
+            this.maxInstances = Math.Min(NamedPipeServerStream.MaxAllowedServerInstances, transport.MaxConnections);
+            this.sendBufferSize = transport.SendBufferSize;
+            this.receiveBufferSize = transport.ReceiveBufferSize;
             this.pipeName = endPoint.GetComponents(UriComponents.Host | UriComponents.Path, UriFormat.SafeUnescaped);
             this.SpawnServerPipe();
             this.LocalEndpoints = new EndPoint[] { new NamedPipeEndPoint(this.pipeName) };
@@ -84,8 +86,8 @@ namespace vtortola.WebSockets.Transports.NamedPipes
                 this.maxInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
-                this.bufferManager.SmallBufferSize,
-                this.bufferManager.SmallBufferSize
+                this.receiveBufferSize,
+                this.sendBufferSize
             );
         }
 

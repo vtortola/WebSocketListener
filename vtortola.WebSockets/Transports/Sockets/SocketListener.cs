@@ -13,8 +13,6 @@ namespace vtortola.WebSockets.Transports.Sockets
 {
     public abstract class SocketListener : Listener
     {
-        public const int DEFAULT_BACKLOG_SIZE = 5;
-
         private const int STATE_LISTENING = 0;
         private const int STATE_ACCEPTING = 1;
         private const int STATE_DISPOSED = 2;
@@ -28,25 +26,19 @@ namespace vtortola.WebSockets.Transports.Sockets
         private readonly SocketAsyncEventArgs[] activeAcceptEvents;
         private readonly SocketAsyncEventArgs[] availableAcceptEvents;
         private readonly EndPoint[] localEndPoints;
-        private readonly bool noDelay;
-        private readonly int sendTimeout;
-        private readonly int receiveTimeout;
         private volatile int lastAcceptSocketIndex;
         private volatile int state;
 
         /// <inheritdoc />
         public override IReadOnlyCollection<EndPoint> LocalEndpoints => this.localEndPoints;
-        
-        protected SocketListener(EndPoint[] endPointsToListen, ProtocolType protocolType, WebSocketListenerOptions options)
+
+        protected SocketListener(SocketTransport transport, EndPoint[] endPointsToListen, ProtocolType protocolType, WebSocketListenerOptions options)
         {
             if (endPointsToListen == null) throw new ArgumentNullException(nameof(endPointsToListen));
             if (endPointsToListen.Any(p => p == null)) throw new ArgumentException("Null objects passed in array.", nameof(endPointsToListen));
             if (options == null) throw new ArgumentNullException(nameof(options));
 
             this.log = options.Logger;
-            this.noDelay = !(options.UseNagleAlgorithm ?? false);
-            this.sendTimeout = (int)Math.Round(options.WebSocketSendTimeout.TotalMilliseconds);
-            this.receiveTimeout = (int)Math.Round(options.WebSocketReceiveTimeout.TotalMilliseconds);
             this.sockets = EmptySockets;
             this.localEndPoints = EmptyEndPoints;
 
@@ -60,7 +52,7 @@ namespace vtortola.WebSockets.Transports.Sockets
                 {
                     boundSockets[i] = new Socket(endPointsToListen[i].AddressFamily, SocketType.Stream, protocolType);
                     boundSockets[i].Bind(endPointsToListen[i]);
-                    boundSockets[i].Listen(options.BacklogSize ?? DEFAULT_BACKLOG_SIZE);
+                    boundSockets[i].Listen(transport.BacklogSize);
                     boundEndpoints[i] = boundSockets[i].LocalEndPoint;
                     activeEvents[i] = CreateSocketAsyncEvent();
                     availableEvents[i] = CreateSocketAsyncEvent();
@@ -144,11 +136,12 @@ namespace vtortola.WebSockets.Transports.Sockets
             if (this.log.IsDebugEnabled)
                 this.log.Debug($"New socket accepted. Remote address: '{socket.RemoteEndPoint}', Local address: {socket.LocalEndPoint}.");
 
-            socket.NoDelay = this.noDelay;
-            socket.SendTimeout = this.sendTimeout;
-            socket.ReceiveTimeout = this.receiveTimeout;
-
-            return this.CreateConnection(socket);
+            try { return this.CreateConnection(socket); }
+            catch
+            {
+                SafeEnd.Dispose(socket, this.log);
+                throw;
+            }
         }
 
         private static Task<Socket> AcceptFromSocketAsync(Socket socket, SocketAsyncEventArgs acceptEvent)
@@ -226,7 +219,13 @@ namespace vtortola.WebSockets.Transports.Sockets
 
             foreach (var acceptEvent in this.activeAcceptEvents.Concat(this.availableAcceptEvents))
             {
-                ((TaskCompletionSource<Socket>)acceptEvent.UserToken)?.TrySetCanceled();
+                var acceptCompletion = (TaskCompletionSource<Socket>)acceptEvent.UserToken;
+                if (acceptCompletion != null)
+                {
+                    acceptCompletion.TrySetCanceled();
+                    if (acceptCompletion.Task.Status == TaskStatus.RanToCompletion)
+                        SafeEnd.Dispose(acceptCompletion.Task.Result, this.log);
+                }
                 SafeEnd.Dispose(acceptEvent, this.log);
             }
         }

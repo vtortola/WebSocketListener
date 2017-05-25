@@ -9,6 +9,10 @@ namespace vtortola.WebSockets.Transports.Sockets
 {
     public abstract class SocketTransport : WebSocketTransport
     {
+        public const int DEFAULT_BACKLOG_SIZE = 5;
+
+        public int BacklogSize { get; set; } = DEFAULT_BACKLOG_SIZE;
+        
         protected abstract EndPoint GetRemoteEndPoint(Uri address);
         protected abstract ProtocolType GetProtocolType(Uri address, EndPoint remoteEndPoint);
         protected virtual void SetupClientSocket(Socket socket, EndPoint remoteEndPoint)
@@ -24,12 +28,7 @@ namespace vtortola.WebSockets.Transports.Sockets
             var remoteEndPoint = this.GetRemoteEndPoint(address);
             var protocolType = this.GetProtocolType(address, remoteEndPoint);
             // prepare socket
-            var socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Stream, protocolType)
-            {
-                NoDelay = !(options.UseNagleAlgorithm ?? false),
-                SendTimeout = (int)Math.Round(options.WebSocketSendTimeout.TotalMilliseconds),
-                ReceiveTimeout = (int)Math.Round(options.WebSocketReceiveTimeout.TotalMilliseconds)
-            };
+            var socket = new Socket(remoteEndPoint.AddressFamily, SocketType.Stream, protocolType);
             this.SetupClientSocket(socket, remoteEndPoint);
             try
             {
@@ -78,6 +77,5 @@ namespace vtortola.WebSockets.Transports.Sockets
                     SafeEnd.Dispose(socket, options.Logger);
             }
         }
-
     }
 }

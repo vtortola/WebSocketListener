@@ -11,9 +11,22 @@ namespace vtortola.WebSockets.Transports.UnixSockets
 {
     public sealed class UnixSocketTransport : SocketTransport
     {
+        public const int DEFAULT_SEND_BUFFER_SIZE = 1024;
+        public const int DEFAULT_RECEIVE_BUFFER_SIZE = 1024;
+        public const int DEFAULT_SEND_TIMEOUT_MS = 5000;
+        public const int DEFAULT_RECEIVE_TIMEOUT_MS = 5000;
+        public const bool DEFAULT_IS_ASYNC = true;
+
         private static readonly Func<string, EndPoint> UnixEndPointConstructor;
 
         private static readonly string[] SupportedSchemes = { "unix" };
+
+        public LingerOption LingerState { get; set; }
+        public int ReceiveBufferSize { get; set; } = DEFAULT_RECEIVE_BUFFER_SIZE;
+        public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromMilliseconds(DEFAULT_RECEIVE_TIMEOUT_MS);
+        public int SendBufferSize { get; set; } = DEFAULT_SEND_BUFFER_SIZE;
+        public TimeSpan SendTimeout { get; set; } = TimeSpan.FromMilliseconds(DEFAULT_SEND_TIMEOUT_MS);
+        public bool IsAsync { get; set; } = DEFAULT_IS_ASYNC;
 
         /// <inheritdoc />
         public override IReadOnlyCollection<string> Schemes => SupportedSchemes;
@@ -42,7 +55,7 @@ namespace vtortola.WebSockets.Transports.UnixSockets
         public override Task<Listener> ListenAsync(Uri address, WebSocketListenerOptions options)
         {
             var unixEndPoint = this.GetRemoteEndPoint(address);
-            var listener = new UnixSocketListener(new[] { unixEndPoint }, options);
+            var listener = new UnixSocketListener(this, new[] { unixEndPoint }, options);
 
             return Task.FromResult((Listener)listener);
         }
@@ -62,6 +75,18 @@ namespace vtortola.WebSockets.Transports.UnixSockets
         protected override ProtocolType GetProtocolType(Uri address, EndPoint remoteEndPoint)
         {
             return ProtocolType.Unspecified;
+        }
+
+        /// <inheritdoc />
+        protected override void SetupClientSocket(Socket socket, EndPoint remoteEndPoint)
+        {
+            if (this.LingerState != null)
+                socket.LingerState = this.LingerState;
+            socket.ReceiveBufferSize = this.ReceiveBufferSize;
+            socket.ReceiveTimeout = (int)this.ReceiveTimeout.TotalMilliseconds + 1;
+            socket.SendBufferSize = this.SendBufferSize;
+            socket.SendTimeout = (int)this.SendTimeout.TotalMilliseconds + 1;
+            socket.UseOnlyOverlappedIO = this.IsAsync;
         }
     }
 }

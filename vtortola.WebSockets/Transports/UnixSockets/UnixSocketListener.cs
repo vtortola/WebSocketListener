@@ -6,14 +6,26 @@ namespace vtortola.WebSockets.Transports.UnixSockets
 {
     public sealed class UnixSocketListener : SocketListener
     {
+        private readonly UnixSocketTransport transport;
+
         /// <inheritdoc />
-        public UnixSocketListener(EndPoint[] endPointsToListen, WebSocketListenerOptions options) : base(endPointsToListen, ProtocolType.Unspecified, options)
+        public UnixSocketListener(UnixSocketTransport transport, EndPoint[] endPointsToListen, WebSocketListenerOptions options)
+            : base(transport, endPointsToListen, ProtocolType.Unspecified, options)
         {
+            this.transport = transport;
         }
 
         /// <inheritdoc />
         protected override NetworkConnection CreateConnection(Socket socket)
         {
+            if (this.transport.LingerState != null)
+                socket.LingerState = this.transport.LingerState;
+            socket.ReceiveBufferSize = this.transport.ReceiveBufferSize;
+            socket.ReceiveTimeout = (int)this.transport.ReceiveTimeout.TotalMilliseconds + 1;
+            socket.SendBufferSize = this.transport.SendBufferSize;
+            socket.SendTimeout = (int)this.transport.SendTimeout.TotalMilliseconds + 1;
+            socket.UseOnlyOverlappedIO = this.transport.IsAsync;
+
             return new UnixSocketConnection(socket);
         }
 

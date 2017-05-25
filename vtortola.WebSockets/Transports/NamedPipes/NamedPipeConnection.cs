@@ -20,6 +20,7 @@ namespace vtortola.WebSockets.Transports.NamedPipes
         public bool IsConnected => this.pipeStream.IsConnected;
         public bool CanWrite => this.pipeStream.CanWrite;
         public bool CanRead => this.pipeStream.CanRead;
+        public bool IsAsync => this.pipeStream.IsAsync;
 
         /// <inheritdoc />
         public override EndPoint LocalEndPoint { get; }
