@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using vtortola.WebSockets.Transports.NamedPipes;
 using vtortola.WebSockets.Transports.Tcp;
+using vtortola.WebSockets.Transports.UnixSockets;
 
 namespace vtortola.WebSockets.Transports
 {
@@ -36,15 +38,24 @@ namespace vtortola.WebSockets.Transports
                 this.transportByScheme.Add(scheme, transport);
         }
 
-        public WebSocketTransportCollection RegisterNamedPipes()
+        public WebSocketTransportCollection ConfigureTcp(Action<TcpTransport> configure)
         {
-            var transport = new NamedPipes.NamedPipeTransport();
+            var tcpTransport = (TcpTransport)this.transportByScheme.Values.FirstOrDefault(t => t is TcpTransport);
+            if (tcpTransport != null)
+                configure?.Invoke(tcpTransport);
+            return this;
+        }
+        public WebSocketTransportCollection RegisterNamedPipes(Action<NamedPipeTransport> configure = null)
+        {
+            var transport = new NamedPipeTransport();
+            configure?.Invoke(transport);
             this.Add(transport);
             return this;
         }
-        public WebSocketTransportCollection RegisterUnixSockets()
+        public WebSocketTransportCollection RegisterUnixSockets(Action<UnixSocketTransport> configure = null)
         {
-            var transport = new UnixSockets.UnixSocketTransport();
+            var transport = new UnixSocketTransport();
+            configure?.Invoke(transport);
             this.Add(transport);
             return this;
         }
