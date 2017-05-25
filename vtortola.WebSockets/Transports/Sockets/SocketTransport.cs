@@ -11,7 +11,7 @@ namespace vtortola.WebSockets.Transports.Sockets
     {
         protected abstract EndPoint GetRemoteEndPoint(Uri address);
         protected abstract ProtocolType GetProtocolType(Uri address, EndPoint remoteEndPoint);
-        protected virtual void SetupClientSocket(Socket socket)
+        protected virtual void SetupClientSocket(Socket socket, EndPoint remoteEndPoint)
         {
         }
 
@@ -30,7 +30,7 @@ namespace vtortola.WebSockets.Transports.Sockets
                 SendTimeout = (int)Math.Round(options.WebSocketSendTimeout.TotalMilliseconds),
                 ReceiveTimeout = (int)Math.Round(options.WebSocketReceiveTimeout.TotalMilliseconds)
             };
-            this.SetupClientSocket(socket);
+            this.SetupClientSocket(socket, remoteEndPoint);
             try
             {
                 // prepare connection
@@ -68,7 +68,7 @@ namespace vtortola.WebSockets.Transports.Sockets
                     throw new WebSocketException($"Failed to open socket to '{address}' due error '{socketAsyncEventArgs.SocketError}'.",
                         new SocketException((int)socketAsyncEventArgs.SocketError));
 
-                var connection = new SocketConnection(socket);
+                var connection = new SocketConnection(socket, remoteEndPoint);
                 socket = null;
                 return connection;
             }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets.Transports.Sockets;
 
@@ -52,12 +53,19 @@ namespace vtortola.WebSockets.Transports.Tcp
         /// <inheritdoc />
         protected override EndPoint GetRemoteEndPoint(Uri address)
         {
+            if (address == null) throw new ArgumentNullException(nameof(address));
+
+            var remoteIpAddress = default(IPAddress);
+            var isSecure = this.ShouldUseSsl(address);
+            var port = address.Port <= 0 ? (isSecure ? DEFAULT_SECURE_PORT : DEFAULT_PORT) : address.Port;
+            if (IPAddress.TryParse(address.DnsSafeHost, out remoteIpAddress))
+                return new IPEndPoint(remoteIpAddress, port);
+
 #if DUAL_MODE
-            var remoteEndpoint = new DnsEndPoint(address.DnsSafeHost, address.Port <= 0 ? DEFAULT_PORT : address.Port, AddressFamily.InterNetworkV6);
-#else
-            var remoteEndpoint = new DnsEndPoint(address.DnsSafeHost, address.Port <= 0 ? DEFAULT_PORT : address.Port, AddressFamily.InterNetwork);
+            if (Properties.RuntimeInformation.IsMono == false)
+                return new DnsEndPoint(address.DnsSafeHost, port, AddressFamily.InterNetworkV6);
 #endif
-            return remoteEndpoint;
+            return new DnsEndPoint(address.DnsSafeHost, port, AddressFamily.InterNetwork);
         }
         /// <inheritdoc />
         protected override ProtocolType GetProtocolType(Uri address, EndPoint remoteEndPoint)
@@ -65,10 +73,11 @@ namespace vtortola.WebSockets.Transports.Tcp
             return ProtocolType.Tcp;
         }
         /// <inheritdoc />
-        protected override void SetupClientSocket(Socket socket)
+        protected override void SetupClientSocket(Socket socket, EndPoint remoteEndPoint)
         {
 #if DUAL_MODE
-            socket.DualMode = true;
+            if (Properties.RuntimeInformation.IsMono == false && remoteEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
+                socket.DualMode = true;
 #endif
         }
     }

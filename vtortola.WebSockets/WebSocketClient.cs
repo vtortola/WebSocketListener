@@ -84,7 +84,7 @@ namespace vtortola.WebSockets
 
                 var request = new WebSocketHttpRequest(HttpRequestDirection.Outgoing)
                 {
-                    RequestUri = address,                
+                    RequestUri = address,
                 };
                 var handshake = new WebSocketHandshake(request);
                 var pendingRequest = this.OpenConnectionAsync(handshake, cancellation);

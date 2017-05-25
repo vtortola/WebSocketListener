@@ -10,6 +10,8 @@ namespace vtortola.WebSockets.Transports.Sockets
 {
     public class SocketConnection : NetworkConnection
     {
+        public static EndPoint BrokenEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
         // event come in pair to prevent overlapping during 'Completed' event
         private const int EVENT_ACTIVE_RECEIVE = 0;
         private const int EVENT_PREVIOUS_RECEIVE = 1;
@@ -22,15 +24,32 @@ namespace vtortola.WebSockets.Transports.Sockets
         private readonly SocketAsyncEventArgs[] socketEvents;
 
         /// <inheritdoc />
-        public override EndPoint LocalEndPoint => this.socket.LocalEndPoint;
+        public override EndPoint LocalEndPoint { get; }
         /// <inheritdoc />
-        public override EndPoint RemoteEndPoint => this.socket.RemoteEndPoint;
+        public override EndPoint RemoteEndPoint { get; }
         /// <inheritdoc />
         public virtual bool ReuseSocketOnClose { get; set; }
 
-        public SocketConnection(Socket socket)
+        public SocketConnection(Socket socket, EndPoint originalRemoteEndPoint = null)
         {
             if (socket == null) throw new ArgumentNullException(nameof(socket));
+
+            try { this.LocalEndPoint = socket.LocalEndPoint; }
+            catch (ArgumentException getLocalEndPointError) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
+            {
+#if DEBUG
+                DebugLogger.Instance.Debug($"An error occurred while trying to get '{nameof(socket.LocalEndPoint)}' property of established connection.", getLocalEndPointError);
+#endif
+                this.LocalEndPoint = BrokenEndPoint;
+            }
+            try { this.RemoteEndPoint = socket.RemoteEndPoint; }
+            catch (ArgumentException getRemoteEndPoint) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
+            {
+#if DEBUG
+                DebugLogger.Instance.Debug($"An error occurred while trying to get '{nameof(socket.RemoteEndPoint)}' property of established connection.", getRemoteEndPoint);
+#endif
+                this.RemoteEndPoint = originalRemoteEndPoint = BrokenEndPoint;
+            }
 
             this.socket = socket;
 #if (NET45 || NET451 || NET452 || NET46)
