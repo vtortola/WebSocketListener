@@ -151,10 +151,10 @@ namespace vtortola.WebSockets.UnitTests
         }
 
         [Theory]
-        [InlineData("tcp://localhost:10100/", 10, 10)]
-        [InlineData("tcp://localhost:10101/", 20, 100)]
-        [InlineData("tcp://localhost:10102/", 30, 1000)]
-        [InlineData("tcp://localhost:10103/", 40, 10000)]
+        [InlineData("tcp://127.0.0.1:10100/", 10, 10)]
+        [InlineData("tcp://127.0.0.1:10101/", 20, 100)]
+        [InlineData("tcp://127.0.0.1:10102/", 30, 1000)]
+        [InlineData("tcp://127.0.0.1:10103/", 40, 10000)]
         public async Task EchoServerMassClientsAsync(string address, int timeoutSeconds, int maxClients)
         {
             var messages = new string[] { new string('a', 126), new string('a', 127), new string('a', 128), new string('a', ushort.MaxValue - 1), new string('a', ushort.MaxValue), new string('a', ushort.MaxValue + 2) };
@@ -162,11 +162,19 @@ namespace vtortola.WebSockets.UnitTests
             var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)).Token;
             var options = new WebSocketListenerOptions
             {
-                BacklogSize = maxClients,
                 NegotiationQueueCapacity = maxClients,
-                Logger = new TestLogger(this.logger) { IsDebugEnabled = System.Diagnostics.Debugger.IsAttached }
+                PingTimeout = TimeSpan.FromSeconds(30),
+                Logger = new TestLogger(this.logger) { IsDebugEnabled = false && System.Diagnostics.Debugger.IsAttached }
             };
             options.Standards.RegisterRfc6455();
+            options.Transports.ConfigureTcp(tcp =>
+            {
+                tcp.IsAsync = true;
+                tcp.NoDelay = false;
+                tcp.BacklogSize = maxClients;
+                tcp.SendTimeout = TimeSpan.FromSeconds(15);
+                tcp.ReceiveTimeout = TimeSpan.FromSeconds(15);
+            });
             options.Transports.Add(new NamedPipeTransport());
             var listenEndPoints = new[] { new Uri(address) };
             var server = new EchoServer(listenEndPoints, options);

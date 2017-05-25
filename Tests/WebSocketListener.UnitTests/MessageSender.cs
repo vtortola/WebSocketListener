@@ -64,6 +64,7 @@ namespace vtortola.WebSockets.UnitTests
             var connections = new Task<WebSocket>[count];
             for (var i = 0; i < count; i++)
             {
+                cancellation.ThrowIfCancellationRequested();
                 try
                 {
                     connections[i] = this.factory(cancellation);
@@ -99,6 +100,8 @@ namespace vtortola.WebSockets.UnitTests
             var receiveMessages = new Task<int>[clients.Length];
             for (var i = 0; i < clients.Length; i++)
             {
+                cancellation.ThrowIfCancellationRequested();
+
                 sendMessages[i] = this.SendMessagesAsync(clients[i], messages, cancellation).IgnoreFaultOrCancellation();
                 receiveMessages[i] = this.ReceiveMessagesAsync(clients[i], messages, cancellation).IgnoreFaultOrCancellation();
             }
@@ -149,6 +152,8 @@ namespace vtortola.WebSockets.UnitTests
             {
                 foreach (var message in messages)
                 {
+                    cancellation.ThrowIfCancellationRequested();
+
                     if (client.IsConnected == false)
                     {
                         Interlocked.Increment(ref this.Errors);
@@ -178,6 +183,8 @@ namespace vtortola.WebSockets.UnitTests
             {
                 while (client.IsConnected && cancellation.IsCancellationRequested == false)
                 {
+                    cancellation.ThrowIfCancellationRequested();
+
                     var message = await client.ReadStringAsync(cancellation).ConfigureAwait(false);
                     if (message == null)
                         return received;
