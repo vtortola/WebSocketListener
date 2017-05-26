@@ -32,6 +32,7 @@ namespace vtortola.WebSockets.Transports.Sockets
 
         public SocketConnection(Socket socket, EndPoint originalRemoteEndPoint = null)
         {
+#pragma warning disable 168 // unused local variable
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
             try { this.LocalEndPoint = socket.LocalEndPoint; }
@@ -64,6 +65,7 @@ namespace vtortola.WebSockets.Transports.Sockets
                 socketEvent.Completed += this.OnSocketOperationCompleted;
                 this.socketEvents[i] = socketEvent;
             }
+#pragma warning restore 168
         }
 
         /// <inheritdoc />

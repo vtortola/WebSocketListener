@@ -26,7 +26,7 @@ namespace vtortola.WebSockets.Transports.Sockets
         private readonly SocketAsyncEventArgs[] activeAcceptEvents;
         private readonly SocketAsyncEventArgs[] availableAcceptEvents;
         private readonly EndPoint[] localEndPoints;
-        private volatile int lastAcceptSocketIndex;
+        private volatile int acceptOffset;
         private volatile int state;
 
         /// <inheritdoc />
@@ -99,28 +99,24 @@ namespace vtortola.WebSockets.Transports.Sockets
 
                     await Task.WhenAny(this.acceptTasks).ConfigureAwait(false);
 
-                    this.lastAcceptSocketIndex++;
-
-                    if (this.lastAcceptSocketIndex > ushort.MaxValue)
-                        this.lastAcceptSocketIndex = 0;
+                    this.acceptOffset++;
+                    if (this.acceptOffset > ushort.MaxValue)
+                        this.acceptOffset = 0;
 
                     for (var i = 0; i < this.acceptTasks.Length; i++)
                     {
-                        var taskIndex = (this.lastAcceptSocketIndex + i) % this.acceptTasks.Length;
+                        var taskIndex = (this.acceptOffset + i) % this.acceptTasks.Length;
                         var acceptTask = this.acceptTasks[taskIndex];
                         if (acceptTask == null || acceptTask.IsCompleted == false)
                             continue;
 
                         this.acceptTasks[taskIndex] = null;
-                        var error = acceptTask.Exception.Unwrap();
-                        if (acceptTask.Status != TaskStatus.RanToCompletion)
-                        {
-                            if (this.log.IsDebugEnabled && error != null && error is OperationCanceledException == false && this.state == STATE_ACCEPTING)
-                                this.log.Debug($"Accept on '{this.localEndPoints[i]}' has failed.", error);
-                            continue;
-                        }
 
-                        return this.AcceptSocketAsConnection(acceptTask);
+                        var connection = this.AcceptSocketAsConnection(acceptTask, this.localEndPoints[i]);
+                        if (connection == null)
+                            continue;
+
+                        return connection;
                     }
                 }
                 throw new TaskCanceledException();
@@ -130,8 +126,16 @@ namespace vtortola.WebSockets.Transports.Sockets
                 Interlocked.CompareExchange(ref this.state, STATE_LISTENING, STATE_ACCEPTING);
             }
         }
-        private NetworkConnection AcceptSocketAsConnection(Task<Socket> acceptTask)
+        private NetworkConnection AcceptSocketAsConnection(Task<Socket> acceptTask, EndPoint acceptEndPoint)
         {
+            var error = acceptTask.Exception.Unwrap();
+            if (acceptTask.Status != TaskStatus.RanToCompletion)
+            {
+                if (this.log.IsDebugEnabled && error != null && error is OperationCanceledException == false && this.state == STATE_ACCEPTING)
+                    this.log.Debug($"Accept on '{acceptEndPoint}' has failed.", error);
+                return null;
+            }
+
             var socket = acceptTask.Result;
             if (this.log.IsDebugEnabled)
                 this.log.Debug($"New socket accepted. Remote address: '{socket.RemoteEndPoint}', Local address: {socket.LocalEndPoint}.");
