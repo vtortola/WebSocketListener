@@ -7,9 +7,9 @@ using vtortola.WebSockets;
 using vtortola.WebSockets.Deflate;
 using vtortola.WebSockets.Rfc6455;
 
-namespace WebSocketListenerTests.Echo
+namespace MonoEchoServer
 {
-    class Program
+    internal class Program
     {
         private static readonly Log4NetLogger Log = new Log4NetLogger(typeof(Program));
 
@@ -28,6 +28,13 @@ namespace WebSocketListenerTests.Echo
             Log.Warning("Starting Echo Server");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
+            // opening TLS certificate
+            //X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            //store.Open(OpenFlags.ReadOnly);
+            //store.Certificates.Count.ToString();
+            //var certificate = store.Certificates[1];
+            //store.Close();
 
             var cancellation = new CancellationTokenSource();
 
@@ -55,15 +62,12 @@ namespace WebSocketListenerTests.Echo
                 tcp.ReceiveBufferSize = bufferSize;
                 tcp.SendBufferSize = bufferSize;
             });
-            // register unix socket transport
-            options.Transports.RegisterUnixSockets(unix =>
-             {
-                 unix.ReceiveBufferSize = bufferSize;
-                 unix.SendBufferSize = bufferSize;
-             });
-            
+           
+            // adding the WSS extension
+            //options.ConnectionExtensions.RegisterSecureConnection(certificate);
+
             var listenEndPoints = new Uri[] {
-                new Uri("unix:/tmp/wsocket"),
+               // new Uri("unix:/tmp/wsocket"),
                 new Uri("ws://localhost") // will listen both IPv4 and IPv6
             };
 
@@ -85,7 +89,6 @@ namespace WebSocketListenerTests.Echo
             server.StopAsync().Wait();
             acceptingTask.Wait();
         }
-
 
         private static async Task AcceptWebSocketsAsync(WebSocketListener server, CancellationToken cancellation)
         {
@@ -172,5 +175,6 @@ namespace WebSocketListenerTests.Echo
         {
             Log.Error("Unhandled Exception: ", e.ExceptionObject as Exception);
         }
+
     }
 }

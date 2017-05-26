@@ -4,6 +4,10 @@
     <TargetFramework>net45</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\EchoServer\Log4NetLogger.cs" Link="Log4NetLogger.cs" />
+    <Compile Include="..\EchoServer\PerformanceCounters.cs" Link="PerformanceCounters.cs" />
+  </ItemGroup>
+  <ItemGroup>
   <PackageReference Include="log4net" Version="2.0.5" />
 </ItemGroup>
   <ItemGroup>
@@ -12,7 +16,6 @@
     <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties\" />
     <Folder Include="Properties\" />
   </ItemGroup>
 </Project>
