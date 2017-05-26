@@ -53,11 +53,8 @@ namespace vtortola.WebSockets.Transports.Sockets
             }
 
             this.socket = socket;
-#if (NET45 || NET451 || NET452 || NET46)
+
             this.networkStream = new NetworkStream(socket, FileAccess.ReadWrite, true);
-#elif (DNX451 || DNX452 || DNX46 || NETSTANDARD || UAP10_0  || NETSTANDARDAPP)
-            this.networkStream = new NetworkStream(socket);
-#endif
             this.socketEvents = new SocketAsyncEventArgs[EVENT_COUNT];
             for (var i = 0; i < this.socketEvents.Length; i++)
             {
