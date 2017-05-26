@@ -153,8 +153,8 @@ namespace vtortola.WebSockets.UnitTests
         [Theory]
         [InlineData("tcp://127.0.0.1:10100/", 10, 10)]
         [InlineData("tcp://127.0.0.1:10101/", 20, 100)]
-        [InlineData("tcp://127.0.0.1:10102/", 30, 1000)]
-        [InlineData("tcp://127.0.0.1:10103/", 40, 10000)]
+        //[InlineData("tcp://127.0.0.1:10102/", 30, 1000)]
+        //[InlineData("tcp://127.0.0.1:10103/", 40, 10000)]
         public async Task EchoServerMassClientsAsync(string address, int timeoutSeconds, int maxClients)
         {
             var messages = new string[] { new string('a', 126), new string('a', 127), new string('a', 128), new string('a', ushort.MaxValue - 1), new string('a', ushort.MaxValue), new string('a', ushort.MaxValue + 2) };
@@ -164,7 +164,7 @@ namespace vtortola.WebSockets.UnitTests
             {
                 NegotiationQueueCapacity = maxClients,
                 PingTimeout = TimeSpan.FromSeconds(30),
-                Logger = new TestLogger(this.logger) { IsDebugEnabled = false && System.Diagnostics.Debugger.IsAttached }
+                Logger = new TestLogger(this.logger) { IsDebugEnabled = System.Diagnostics.Debugger.IsAttached }
             };
             options.Standards.RegisterRfc6455();
             options.Transports.ConfigureTcp(tcp =>
