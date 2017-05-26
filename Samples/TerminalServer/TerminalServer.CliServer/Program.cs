@@ -31,7 +31,7 @@ namespace TerminalServer.CliServer
 
             try
             {
-                server.StartAsync();
+                server.StartAsync().Wait();
                 Console.ReadKey(true);
                 server.Dispose();
             }

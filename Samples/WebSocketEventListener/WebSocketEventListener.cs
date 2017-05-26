@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Rfc6455;
+#pragma warning disable 4014
 
 namespace WebSocketEventListenerSample
 {

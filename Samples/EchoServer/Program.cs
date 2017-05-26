@@ -45,7 +45,6 @@ namespace WebSocketListenerTests.Echo
                 NegotiationTimeout = TimeSpan.FromSeconds(5),
                 ParallelNegotiations = 16,
                 NegotiationQueueCapacity = 256,
-                BacklogSize = 1000,
                 Logger = new Log4NetLogger(typeof(Program)),
                 BufferManager = BufferManager.CreateBufferManager((8192 + 1024) * 1000, 8192 + 1024)
             };
@@ -90,7 +89,9 @@ namespace WebSocketListenerTests.Echo
                     if (ws == null)
                         continue;
 
+#pragma warning disable 4014
                     Task.Run(() => HandleConnectionAsync(ws, token));
+#pragma warning restore 4014
                 }
                 catch (Exception aex)
                 {
