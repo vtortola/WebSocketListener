@@ -18,7 +18,7 @@ namespace vtortola.WebSockets.Rfc6455
         private const int CLOSE_STATE_DISPOSED = 2;
 
         //    readonly Byte[] _buffer;
-        private readonly ArraySegment<byte> headerBuffer, pingBuffer, pongBuffer, controlBuffer, keyBuffer, maskBuffer, closeBuffer;
+        private readonly ArraySegment<byte> headerBuffer, pingBuffer, pongBuffer, keyBuffer, maskBuffer, closeBuffer;
         internal readonly ArraySegment<byte> SendBuffer;
 
         private readonly ILogger log;
@@ -78,8 +78,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             var smallBuffer = this.options.BufferManager.TakeBuffer(bufferSize);
             this.headerBuffer = new ArraySegment<byte>(smallBuffer, 0, HEADER_SEGMENT_SIZE);
-            this.controlBuffer = this.headerBuffer.NextSegment(CONTROL_SEGMENT_SIZE);
-            this.pongBuffer = this.controlBuffer.NextSegment(PONG_SEGMENT_SIZE);
+            this.pongBuffer = this.headerBuffer.NextSegment(CONTROL_SEGMENT_SIZE).NextSegment(PONG_SEGMENT_SIZE);
             this.pingBuffer = this.pongBuffer.NextSegment(PING_HEADER_SEGMENT_SIZE).NextSegment(PING_SEGMENT_SIZE);
             this.keyBuffer = this.pingBuffer.NextSegment(KEY_SEGMENT_SIZE);
             this.maskBuffer = this.keyBuffer.NextSegment(MASK_SEGMENT_SIZE);
