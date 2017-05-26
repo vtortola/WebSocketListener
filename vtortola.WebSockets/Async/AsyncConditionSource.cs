@@ -1,4 +1,8 @@
-﻿using System;
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Security;

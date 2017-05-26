@@ -1,4 +1,8 @@
-﻿using System.Net;
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
+using System.Net;
 using System.Net.Sockets;
 using vtortola.WebSockets.Transports.Sockets;
 

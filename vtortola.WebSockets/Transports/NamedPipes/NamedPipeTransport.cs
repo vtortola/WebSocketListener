@@ -1,4 +1,8 @@
-﻿#if !NAMED_PIPES_DISABLE
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
+#if !NAMED_PIPES_DISABLE
 using System;
 using System.Collections.Generic;
 using System.IO.Pipes;

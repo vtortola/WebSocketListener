@@ -1,4 +1,8 @@
-﻿namespace vtortola.WebSockets.Http
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
+namespace vtortola.WebSockets.Http
 {
     /// <summary>
     /// Type is 1:1 convertible to <see cref="System.Net.HttpRequestHeader"/> except ContentDisposition and WebSocket headers.

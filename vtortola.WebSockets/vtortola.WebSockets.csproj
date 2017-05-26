@@ -4,7 +4,7 @@
     <PackageId></PackageId>
     <Description>http://vtortola.github.io/WebSocketListener</Description>
     <Company>vtortola</Company>
-    <Product>vtortola.WebSocketListener</Product>
+    <Product>vtortola.WebSockets</Product>
     <Version>3.0.0</Version>
     <Authors>Valeriano Tortola, Denis Zykov</Authors>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>

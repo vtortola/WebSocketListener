@@ -1,4 +1,7 @@
-﻿#define DUAL_MODE
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
 using System;
 using System.Collections.Concurrent;
 using System.IO;

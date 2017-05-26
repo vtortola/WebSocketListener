@@ -3,12 +3,13 @@
     <TargetFramework>net45</TargetFramework>
 <Description>http://vtortola.github.io/WebSocketListener</Description>
     <Company>vtortola</Company>
-    <Product>vtortola.WebSocketListener</Product>
+    <Product>vtortola.WebSockets.Rfc6455</Product>
     <Version>3.0.0</Version>
     <Authors>Valeriano Tortola</Authors>
 	<SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\WebSocketListener.snk</AssemblyOriginatorKeyFile>
     <DelaySign>False</DelaySign>
+    <PackageId></PackageId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj" />

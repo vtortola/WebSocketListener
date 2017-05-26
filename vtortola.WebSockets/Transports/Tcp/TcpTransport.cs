@@ -1,4 +1,8 @@
-﻿#define DUAL_MODE
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
+#define DUAL_MODE
 using System;
 using System.Collections.Generic;
 using System.Net;
