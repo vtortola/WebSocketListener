@@ -1,81 +1,20 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{72114F0D-EC56-43D5-8C13-43FB013C0C1D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>vtortola.WebSockets.Rfc6455</RootNamespace>
-    <AssemblyName>vtortola.WebSockets.Rfc6455</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NET45</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;NET45</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+<Description>http://vtortola.github.io/WebSocketListener</Description>
+    <Company>vtortola</Company>
+    <Product>vtortola.WebSocketListener</Product>
+    <Version>3.0.0</Version>
+    <Authors>Valeriano Tortola</Authors>
+	<SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\WebSocketListener.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
+    <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Header\ByteArrayExtensions.cs" />
-    <Compile Include="Ping\BandwidthSavingPing.cs" />
-    <Compile Include="Ping\ManualPing.cs" />
-    <Compile Include="Ping\PingHandler.cs" />
-    <Compile Include="Ping\LatencyControlPing.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Streams\WebSocketMessageReadRfc6455Stream.cs" />
-    <Compile Include="Streams\WebSocketMessageWriteRfc6455Stream.cs" />
-    <Compile Include="WebSocketCloseReasons.cs" />
-    <Compile Include="WebSocketFactoryCollectionExtensions.cs" />
-    <Compile Include="WebSocketFactoryRfc6455.cs" />
-    <Compile Include="Header\WebSocketFrameHeader.cs" />
-    <Compile Include="Header\WebSocketFrameHeaderFlags.cs" />
-    <Compile Include="Header\WebSocketFrameOption.cs" />
-    <Compile Include="WebSocketConnectionRfc6455.cs" />
-    <Compile Include="WebSocketRfc6455.cs" />
-    <Compile Include="Header\WebSocketFrameOptionExtensions.cs" />
+    <None Include="..\WebSocketListener.snk" Link="WebSocketListener.snk" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj">
-      <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
-      <Name>vtortola.WebSockets</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\WebSocketListener.snk">
-      <Link>WebSocketListener.snk</Link>
-    </None>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
+
