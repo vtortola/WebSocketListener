@@ -49,7 +49,7 @@ namespace vtortola.WebSockets
 #if DEBUG
             this.Logger = DebugLogger.Instance;
 #else
-            Logger = NullLogger.Instance;
+            this.Logger = NullLogger.Instance;
 #endif
         }
 
@@ -62,22 +62,22 @@ namespace vtortola.WebSockets
                 this.PingTimeout = TimeSpan.FromSeconds(1);
 
             if (this.NegotiationQueueCapacity < 0)
-                throw new WebSocketException("NegotiationQueueCapacity must be 0 or more.");
+                throw new WebSocketException($"{nameof(this.NegotiationQueueCapacity)} must be 0 or more.");
 
             if (this.ParallelNegotiations < 1)
-                throw new WebSocketException("ParallelNegotiations cannot be less than 1.");
+                throw new WebSocketException($"{nameof(this.ParallelNegotiations)} cannot be less than 1.");
 
             if (this.NegotiationTimeout == TimeSpan.Zero)
                 this.NegotiationTimeout = Timeout.InfiniteTimeSpan;
 
-            if (this.SendBufferSize <= 512)
-                throw new WebSocketException("SendBufferSize must be bigger than 512.");
+            if (this.SendBufferSize < 512)
+                throw new WebSocketException($"{nameof(this.SendBufferSize)} must be bigger than 512.");
 
             if (this.BufferManager != null && this.SendBufferSize < this.BufferManager.LargeBufferSize)
-                throw new WebSocketException("BufferManager.MaxBufferSize must be bigger or equals to SendBufferSize.");
+                throw new WebSocketException($"{this.BufferManager}.{this.BufferManager.LargeBufferSize} must be bigger or equals to {nameof(this.SendBufferSize)}.");
 
             if (this.Logger == null)
-                throw new WebSocketException("Logger should be set.");
+                throw new WebSocketException($"{this.Logger} should be set. You can use {nameof(NullLogger)}.{nameof(NullLogger.Instance)} to disable logging.");
         }
 
         public WebSocketListenerOptions Clone()
