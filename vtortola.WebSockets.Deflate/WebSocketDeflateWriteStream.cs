@@ -33,14 +33,21 @@ namespace vtortola.WebSockets.Deflate
             await _deflate.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            return this._deflate.FlushAsync(cancellationToken);
+        }
+
         public override async Task CloseAsync()
         {
             if (_isClosed)
                 return;
 
             _isClosed = true;
-            await _deflate.FlushAsync();
-            await _inner.WriteAsync(BFINAL, 0, 1);
+            await _deflate.FlushAsync().ConfigureAwait(false);
+            _deflate.Dispose(); // TODO DeflateStream cant async flush buffer so this will cause sync Write call and blocks one thread from pool
+            await _inner.WriteAsync(BFINAL, 0, 1).ConfigureAwait(false);
             await _inner.CloseAsync().ConfigureAwait(false);
         }
 
