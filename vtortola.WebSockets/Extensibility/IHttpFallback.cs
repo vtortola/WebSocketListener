@@ -1,5 +1,4 @@
-﻿using System.IO;
-using vtortola.WebSockets.Transports;
+﻿using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {

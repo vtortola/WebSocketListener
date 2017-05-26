@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading;
-using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {

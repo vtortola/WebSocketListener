@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace vtortola.WebSockets
+﻿namespace vtortola.WebSockets
 {
     public sealed class WebSocketExtensionFlags
     {

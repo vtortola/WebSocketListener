@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets.Rfc6455
