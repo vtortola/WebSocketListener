@@ -168,7 +168,7 @@ namespace vtortola.WebSockets
 
             var listeners = this.listeners;
             var acceptTasks = new Task<NetworkConnection>[listeners.Length];
-            var listenerIndex = 0; // this is prevent starvation of array-end listeners when using 'choose from any' algorithm
+            var acceptOffset = 0; // this offset prevents starvation of end-index listeners
             try
             {
                 while (this.IsStarted)
@@ -189,48 +189,61 @@ namespace vtortola.WebSockets
 
                     await Task.WhenAny(acceptTasks).ConfigureAwait(false);
 
-                    if (listenerIndex == ushort.MaxValue)
-                        listenerIndex = 0;
-                    listenerIndex++;
+                    if (acceptOffset == ushort.MaxValue)
+                        acceptOffset = 0;
+                    acceptOffset++;
 
                     for (var i = 0; i < acceptTasks.Length; i++)
                     {
-                        var taskIndex = (listenerIndex + i) % acceptTasks.Length;
+                        var taskIndex = (acceptOffset + i) % acceptTasks.Length;
                         var acceptTask = acceptTasks[taskIndex];
                         if (acceptTask == null || acceptTask.IsCompleted == false)
                             continue;
 
                         acceptTasks[taskIndex] = null;
-                        var error = acceptTask.Exception.Unwrap();
-                        if (acceptTask.Status != TaskStatus.RanToCompletion)
-                        {
-                            if (this.log.IsDebugEnabled && error != null && error is OperationCanceledException == false)
-                                this.log.Debug($"Accept from '{listeners[taskIndex]}' has failed.", error);
-                            continue;
-                        }
-
-                        var connection = acceptTask.Result;
-                        if (this.log.IsDebugEnabled)
-                            this.log.Debug($"New client from '{connection}' is connected.");
-                        this.negotiationQueue.Queue(connection);
+                        this.AcceptNewConnection(acceptTask, listeners[taskIndex]);
                     }
                 }
             }
             finally
             {
                 // dispose pending accepts
-                foreach (var acceptTask in acceptTasks)
-                {
-                    acceptTask?.ContinueWith
-                    (
-                        t => SafeEnd.Dispose(t.Result, this.log),
-                        CancellationToken.None,
-                        TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
-                        TaskScheduler.Current
-                    ).LogFault(this.log);
-                }
-                Array.Clear(acceptTasks, 0, acceptTasks.Length);
+                this.CleanupPendingConnections(acceptTasks);
             }
+        }
+        private void CleanupPendingConnections(Task<NetworkConnection>[] acceptTasks)
+        {
+            if (acceptTasks == null) throw new ArgumentNullException(nameof(acceptTasks));
+
+            foreach (var acceptTask in acceptTasks)
+            {
+                acceptTask?.ContinueWith
+                (
+                    t => SafeEnd.Dispose(t.Result, this.log),
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Current
+                ).LogFault(this.log);
+            }
+            Array.Clear(acceptTasks, 0, acceptTasks.Length);
+        }
+        private void AcceptNewConnection(Task<NetworkConnection> acceptTask, Listener listener)
+        {
+            if (acceptTask == null) throw new ArgumentNullException(nameof(acceptTask));
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
+
+            var error = acceptTask.Exception.Unwrap();
+            if (acceptTask.Status != TaskStatus.RanToCompletion)
+            {
+                if (this.log.IsDebugEnabled && error != null && error is OperationCanceledException == false)
+                    this.log.Debug($"Accept from '{listener}' has failed.", error);
+                return;
+            }
+
+            var connection = acceptTask.Result;
+            if (this.log.IsDebugEnabled)
+                this.log.Debug($"New client from '{connection}' is connected.");
+            this.negotiationQueue.Queue(connection);
         }
 
         public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
