@@ -37,6 +37,7 @@ namespace MonoEchoServer
             //store.Close();
 
             var cancellation = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, __) => cancellation.Cancel();
 
             var bufferSize = 1024 * 8; // 8KiB
             var bufferPoolSize = 100 * bufferSize; // 800KiB pool
