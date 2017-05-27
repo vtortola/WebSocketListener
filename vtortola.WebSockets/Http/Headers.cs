@@ -66,7 +66,8 @@ namespace vtortola.WebSockets.Http
         {
             const int MAX_ENUM_VALUE = 256;
 
-            if (typeof(KnownHeaderT).IsEnum == false)
+            var knownHeaderType = typeof(KnownHeaderT).GetTypeInfo();
+            if (knownHeaderType.IsEnum == false)
                 throw new InvalidOperationException("TKnownHeader should be enum type.");
             if (Enum.GetUnderlyingType(typeof(KnownHeaderT)) != typeof(int))
                 throw new InvalidOperationException("TKnownHeader should be enum with System.Int32 underlying type.");
@@ -76,15 +77,16 @@ namespace vtortola.WebSockets.Http
 
             KeyComparer = StringComparer.OrdinalIgnoreCase;
 
-            var fields = typeof(KnownHeaderT).GetFields(BindingFlags.Public | BindingFlags.Static);
-            var names = new string[fields.Length];
-            var values = new int[fields.Length];
-            var atomic = new bool[fields.Length];
-            for (var i = 0; i < fields.Length; i++)
+            var enumValues = Enum.GetValues(typeof(KnownHeaderT));
+            var names = Enum.GetNames(typeof(KnownHeaderT));
+            var fields = names.ConvertAll(knownHeaderType.GetDeclaredField);
+            var values = new int[enumValues.Length];
+            var atomic = new bool[enumValues.Length];
+            for (var i = 0; i < enumValues.Length; i++)
             {
                 var headerAttribute = fields[i].GetCustomAttributes(typeof(HeaderAttribute), false).Cast<HeaderAttribute>().FirstOrDefault();
                 var name = headerAttribute?.Name ?? fields[i].Name;
-                var value = Convert.ToInt32(fields[i].GetRawConstantValue());
+                var value = Convert.ToInt32(Enum.ToObject(typeof(KnownHeaderT), enumValues.GetValue(i)));
                 var isAtomic = headerAttribute?.IsAtomic ?? false;
 
                 names[i] = name;

@@ -157,7 +157,8 @@ namespace vtortola.WebSockets.Tools
             if (value == null) throw new ArgumentNullException(nameof(value));
             if (startIndex < 0 || startIndex > value.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
 
-            while (startIndex < value.Length && char.GetUnicodeCategory(value[startIndex]) == category)
+
+            while (startIndex < value.Length && CharUnicodeInfo.GetUnicodeCategory(value[startIndex]) == category)
                 startIndex++;
         }
     }

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace vtortola.WebSockets.Tools
 {
@@ -14,6 +15,7 @@ namespace vtortola.WebSockets.Tools
 
         static EnumHelper()
         {
+#if !NETSTANDARD && !UAP
             try
             {
                 // test if platform support of enum interchange in delegates
@@ -28,6 +30,10 @@ namespace vtortola.WebSockets.Tools
             {
                 PlatformSupportEnumInterchange = false;
             }
+#else
+
+            PlatformSupportEnumInterchange = false;
+#endif      
         }
 
         public static byte FromOrToUInt8(byte value) => value;
@@ -51,13 +57,14 @@ namespace vtortola.WebSockets.Tools
         static EnumHelper()
         {
             var enumType = typeof(EnumT);
-            if (enumType.IsEnum == false)
+            if (enumType.GetTypeInfo().IsEnum == false)
                 throw new InvalidOperationException("TKnownHeader should be enum type.");
 
             var underlyingType = Enum.GetUnderlyingType(enumType);
 
             if (EnumHelper.PlatformSupportEnumInterchange)
             {
+#if !NETSTANDARD && !UAP
                 switch (Type.GetTypeCode(underlyingType))
                 {
                     case TypeCode.SByte:
@@ -102,6 +109,7 @@ namespace vtortola.WebSockets.Tools
                         break;
                     default: throw new ArgumentOutOfRangeException($"Unexpected underlying type '{underlyingType}' of enum '{enumType}'.");
                 }
+#endif
             }
             else
             {

@@ -14,12 +14,17 @@ namespace vtortola.WebSockets.Tools
 {
     internal static class DelegateHelper
     {
-        private static readonly HasSingleTargetFn HasSingleTarget;
         private static readonly SendOrPostCallback SendOrPostCallbackRunAction;
+#if !NETSTANDARD && !UAP
+        private static readonly HasSingleTargetFn HasSingleTarget;
         private static readonly WaitCallback WaitCallbackRunAction;
+#endif
 
         static DelegateHelper()
         {
+            SendOrPostCallbackRunAction = RunAction;
+
+#if !NETSTANDARD && !UAP
             const BindingFlags SEARCH_FLAGS = BindingFlags.NonPublic | BindingFlags.Instance;
             var hasSingleTargetMethod = typeof(MulticastDelegate).GetMethod("InvocationListLogicallyNull", SEARCH_FLAGS) ??
                                         typeof(MulticastDelegate).GetMethod("get_HasSingleTarget", SEARCH_FLAGS);
@@ -29,13 +34,16 @@ namespace vtortola.WebSockets.Tools
                 HasSingleTarget = md => md.GetInvocationList().Length == 1;
 
             WaitCallbackRunAction = RunAction;
-            SendOrPostCallbackRunAction = RunAction;
+#endif
         }
 
+
+#if !NETSTANDARD && !UAP
         public static bool IsSingleTarget(MulticastDelegate @delegate)
         {
             return HasSingleTarget(@delegate);
         }
+#endif
 
         public static void InterlockedCombine<DelegateT>(ref DelegateT location, DelegateT value) where DelegateT : class
         {
@@ -80,6 +88,7 @@ namespace vtortola.WebSockets.Tools
         {
             if (continuation == null) throw new ArgumentNullException(nameof(continuation));
 
+#if !NETSTANDARD && !UAP
             if (!IsSingleTarget(continuation))
             {
                 var runErrors = default(List<Exception>);
@@ -100,6 +109,7 @@ namespace vtortola.WebSockets.Tools
                     throw new AggregateException(runErrors);
                 return;
             }
+#endif
 
             var currentScheduler = TaskScheduler.Current ?? TaskScheduler.Default;
             var syncContext = SynchronizationContext.Current;
@@ -110,6 +120,7 @@ namespace vtortola.WebSockets.Tools
             }
             else if (schedule || currentScheduler != TaskScheduler.Default)
             {
+#if !NETSTANDARD && !UAP
                 if (currentScheduler == TaskScheduler.Default)
                 {
                     ThreadPool.UnsafeQueueUserWorkItem(WaitCallbackRunAction, continuation);
@@ -118,6 +129,9 @@ namespace vtortola.WebSockets.Tools
                 {
                     Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, currentScheduler);
                 }
+#else
+                Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, currentScheduler);
+#endif
             }
             else
             {
@@ -129,6 +143,7 @@ namespace vtortola.WebSockets.Tools
         {
             if (continuation == null) throw new ArgumentNullException(nameof(continuation));
 
+#if !NETSTANDARD && !UAP
             if (!IsSingleTarget(continuation))
             {
                 var runErrors = default(List<Exception>);
@@ -149,6 +164,7 @@ namespace vtortola.WebSockets.Tools
                     throw new AggregateException(runErrors);
                 return;
             }
+#endif
 
             var currentScheduler = TaskScheduler.Current ?? TaskScheduler.Default;
             var syncContext = SynchronizationContext.Current;
@@ -159,6 +175,7 @@ namespace vtortola.WebSockets.Tools
             }
             else if (schedule || currentScheduler != TaskScheduler.Default)
             {
+#if !NETSTANDARD && !UAP
                 if (currentScheduler == TaskScheduler.Default)
                 {
                     ThreadPool.QueueUserWorkItem(WaitCallbackRunAction, continuation);
@@ -167,6 +184,9 @@ namespace vtortola.WebSockets.Tools
                 {
                     Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, currentScheduler);
                 }
+#else
+                Task.Factory.StartNew(continuation, CancellationToken.None, TaskCreationOptions.PreferFairness, currentScheduler);
+#endif
             }
             else
             {

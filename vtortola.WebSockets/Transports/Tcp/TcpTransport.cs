@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
 using vtortola.WebSockets.Transports.Sockets;
 
 namespace vtortola.WebSockets.Transports.Tcp
@@ -32,7 +33,9 @@ namespace vtortola.WebSockets.Transports.Tcp
         public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromMilliseconds(DEFAULT_RECEIVE_TIMEOUT_MS);
         public int SendBufferSize { get; set; } = DEFAULT_SEND_BUFFER_SIZE;
         public TimeSpan SendTimeout { get; set; } = TimeSpan.FromMilliseconds(DEFAULT_SEND_TIMEOUT_MS);
+#if !NETSTANDARD && !UAP
         public bool IsAsync { get; set; } = DEFAULT_IS_ASYNC;
+#endif
 
         /// <inheritdoc />
         public override IReadOnlyCollection<string> Schemes => SupportedSchemes;
@@ -55,7 +58,7 @@ namespace vtortola.WebSockets.Transports.Tcp
             else
             {
                 var ipAddresses = await Dns.GetHostAddressesAsync(address.DnsSafeHost).ConfigureAwait(false);
-                endPoints = Array.ConvertAll(ipAddresses, ipAddr => (EndPoint)new IPEndPoint(ipAddr, port));
+                endPoints = ipAddresses.ConvertAll(ipAddr => (EndPoint)new IPEndPoint(ipAddr, port));
             }
 
             return new TcpListener(this, endPoints, options);
@@ -104,7 +107,9 @@ namespace vtortola.WebSockets.Transports.Tcp
             socket.ReceiveTimeout = (int)this.ReceiveTimeout.TotalMilliseconds + 1;
             socket.SendBufferSize = this.SendBufferSize;
             socket.SendTimeout = (int)this.SendTimeout.TotalMilliseconds + 1;
+#if !NETSTANDARD && !UAP
             socket.UseOnlyOverlappedIO = this.IsAsync;
+#endif
         }
     }
 }

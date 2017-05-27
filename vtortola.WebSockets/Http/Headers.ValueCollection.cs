@@ -112,8 +112,10 @@ namespace vtortola.WebSockets.Http
                 {
                     case StringComparison.CurrentCulture: comparer = StringComparer.CurrentCulture; break;
                     case StringComparison.CurrentCultureIgnoreCase: comparer = StringComparer.CurrentCultureIgnoreCase; break;
+#if !NETSTANDARD && !UAP
                     case StringComparison.InvariantCulture: comparer = StringComparer.InvariantCulture; break;
                     case StringComparison.InvariantCultureIgnoreCase: comparer = StringComparer.InvariantCultureIgnoreCase; break;
+#endif
                     case StringComparison.Ordinal: comparer = StringComparer.Ordinal; break;
                     case StringComparison.OrdinalIgnoreCase: comparer = StringComparer.OrdinalIgnoreCase; break;
                     default: comparer = StringComparer.Ordinal; break;

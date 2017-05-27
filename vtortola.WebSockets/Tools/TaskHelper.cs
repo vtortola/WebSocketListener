@@ -98,9 +98,7 @@ namespace vtortola.WebSockets.Tools
                 if (error != null)
                 {
                     Debug.WriteLine("Ignored exception in task:");
-                    Debug.Indent();
                     Debug.WriteLine(error);
-                    Debug.Unindent();
                 }
 #endif
 
@@ -125,9 +123,7 @@ namespace vtortola.WebSockets.Tools
                 if (error != null)
                 {
                     Debug.WriteLine("Ignored exception in task:");
-                    Debug.Indent();
                     Debug.WriteLine(error);
-                    Debug.Unindent();
                 }
 #endif
 
@@ -157,9 +153,7 @@ namespace vtortola.WebSockets.Tools
                 if (error != null)
                 {
                     Debug.WriteLine("Ignored exception in task:");
-                    Debug.Indent();
                     Debug.WriteLine(error);
-                    Debug.Unindent();
                 }
 #endif
             }, CancellationToken.None, options, scheduler);
@@ -184,9 +178,7 @@ namespace vtortola.WebSockets.Tools
                 if (error != null)
                 {
                     Debug.WriteLine("Ignored exception in task:");
-                    Debug.Indent();
                     Debug.WriteLine(error);
-                    Debug.Unindent();
                 }
 #endif
 

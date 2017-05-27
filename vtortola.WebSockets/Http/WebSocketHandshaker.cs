@@ -15,6 +15,9 @@ namespace vtortola.WebSockets
 {
     internal class WebSocketHandshaker
     {
+        private static readonly Version HttpVersion11 = new Version(1,1);
+        private static readonly Version HttpVersion10 = new Version(1,0);
+
         private readonly ILogger log;
         private readonly WebSocketListenerOptions options;
         private readonly WebSocketFactoryCollection factories;
@@ -223,7 +226,7 @@ namespace vtortola.WebSockets
             var parts = line.Split(' ');
             handshake.Request.RequestUri = new Uri(parts[1], UriKind.Relative);
             string version = parts[2];
-            handshake.Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
+            handshake.Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion11 : HttpVersion10;
         }
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
         {

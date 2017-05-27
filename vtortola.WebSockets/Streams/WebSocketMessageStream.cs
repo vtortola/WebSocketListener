@@ -24,6 +24,7 @@ namespace vtortola.WebSockets
         public abstract override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
         public abstract override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
 
+#if !NETSTANDARD && !UAP
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             if (buffer == null) throw new ArgumentNullException(nameof(buffer));
@@ -79,6 +80,7 @@ namespace vtortola.WebSockets
                 throw;
             }
         }
+#endif
 
         public sealed override long Seek(long offset, SeekOrigin origin)
         {
@@ -116,11 +118,13 @@ namespace vtortola.WebSockets
 
         }
 
+#if !NETSTANDARD && !UAP
         [Obsolete("Do not use synchronous IO operation on network streams. Use CloseAsync() instead.")]
         public override void Close()
         {
             base.Close();
         }
+#endif
 #pragma warning restore CS0809 // Obsolete member overrides non-obsolete member
     }
 }

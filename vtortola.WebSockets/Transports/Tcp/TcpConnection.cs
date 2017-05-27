@@ -50,11 +50,13 @@ namespace vtortola.WebSockets.Transports.Tcp
             get { return this.socket.SendTimeout; }
             set { this.socket.SendTimeout = value; }
         }
+#if !NETSTANDARD && !UAP
         public bool IsAsync
         {
             get { return this.socket.UseOnlyOverlappedIO; }
             set { this.socket.UseOnlyOverlappedIO = value; }
         }
+#endif
 
         /// <inheritdoc />
         public TcpConnection(Socket socket) : base(socket)

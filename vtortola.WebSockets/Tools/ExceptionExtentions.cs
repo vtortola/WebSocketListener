@@ -10,6 +10,7 @@ namespace vtortola.WebSockets.Tools
 {
     internal static class ExceptionExtensions
     {
+#if !NETSTANDARD && !UAP
         private static readonly Action<Exception> PreserveStackTrace;
 
         static ExceptionExtensions()
@@ -17,6 +18,7 @@ namespace vtortola.WebSockets.Tools
             var internalPreserveStackTrace = typeof(Exception).GetMethod("InternalPreserveStackTrace", BindingFlags.Instance | BindingFlags.NonPublic);
             if (internalPreserveStackTrace != null) PreserveStackTrace = (Action<Exception>)Delegate.CreateDelegate(typeof(Action<Exception>), internalPreserveStackTrace, false);
         }
+#endif
 
         public static Exception Unwrap(this Exception exception)
         {
@@ -46,12 +48,13 @@ namespace vtortola.WebSockets.Tools
         {
             if (exception == null) throw new ArgumentNullException(nameof(exception), "exception != null");
 
+#if !NETSTANDARD && !UAP
             if (PreserveStackTrace != null)
             {
                 PreserveStackTrace(exception);
                 throw exception;
             }
-
+#endif
             var exceptionDispatchInfo = ExceptionDispatchInfo.Capture(exception);
             exceptionDispatchInfo.Throw();
         }

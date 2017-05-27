@@ -58,7 +58,7 @@ namespace vtortola.WebSockets.Transports.Sockets
 
             this.socket = socket;
 
-            this.networkStream = new NetworkStream(socket, FileAccess.ReadWrite, true);
+            this.networkStream = new NetworkStream(socket, true);
             this.socketEvents = new SocketAsyncEventArgs[EVENT_COUNT];
             for (var i = 0; i < this.socketEvents.Length; i++)
             {
@@ -126,7 +126,12 @@ namespace vtortola.WebSockets.Transports.Sockets
         /// <inheritdoc />
         public override Task CloseAsync()
         {
+#if !NETSTANDARD && !UAP
             return Task.Factory.FromAsync(this.socket.BeginDisconnect, this.socket.EndDisconnect, this.ReuseSocketOnClose, default(object));
+#else
+            this.socket.Shutdown(SocketShutdown.Both);
+            return TaskHelper.CompletedTask;
+#endif
         }
 
         /// <inheritdoc />

@@ -36,8 +36,9 @@ namespace vtortola.WebSockets.Transports.Tcp
             socket.ReceiveTimeout = (int)this.transport.ReceiveTimeout.TotalMilliseconds + 1;
             socket.SendBufferSize = this.transport.SendBufferSize;
             socket.SendTimeout = (int)this.transport.SendTimeout.TotalMilliseconds + 1;
+#if !NETSTANDARD && !UAP
             socket.UseOnlyOverlappedIO = this.transport.IsAsync;
-
+#endif
             return new TcpConnection(socket);
         }
 

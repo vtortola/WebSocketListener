@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace vtortola.WebSockets.Properties
 {
@@ -11,6 +12,9 @@ namespace vtortola.WebSockets.Properties
 
         static RuntimeInformation()
         {
+            IsMono = Type.GetType("Mono.Runtime") != null;
+
+#if !NETSTANDARD && !UAP
             switch (Environment.OSVersion.Platform)
             {
                 case PlatformID.Win32S:
@@ -24,7 +28,13 @@ namespace vtortola.WebSockets.Properties
 
             Is64BitProcess = Environment.Is64BitProcess;
             Is64BitOperatingSystem = Environment.Is64BitOperatingSystem;
-            IsMono = Type.GetType("Mono.Runtime") != null;
+#else
+            Is64BitProcess = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == Architecture.X64 ||
+                System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+            Is64BitOperatingSystem = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == Architecture.X64 ||
+                System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == Architecture.Arm64;
+            IsWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#endif
         }
     }
 }

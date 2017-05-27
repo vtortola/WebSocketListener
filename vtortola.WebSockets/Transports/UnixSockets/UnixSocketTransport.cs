@@ -1,9 +1,10 @@
 ﻿/*
 	Copyright (c) 2017 Denis Zykov
-	License: https://opensource.org/licenses/MIT
+ы	License: https://opensource.org/licenses/MIT
 */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
@@ -37,9 +38,9 @@ namespace vtortola.WebSockets.Transports.UnixSockets
 
         static UnixSocketTransport()
         {
-            var monoPosixAssembly = Assembly.Load("Mono.Posix, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
-            var unixEndPointType = monoPosixAssembly.GetType("Mono.Unix.UnixEndPoint", throwOnError: true);
-            var unixEndPointCtr = unixEndPointType.GetConstructor(new[] { typeof(string) });
+            var monoPosixAssembly = Assembly.Load(new AssemblyName("Mono.Posix, Culture=neutral, PublicKeyToken=0738eb9f132ed756"));
+            var unixEndPointType = monoPosixAssembly.GetType("Mono.Unix.UnixEndPoint").GetTypeInfo();
+            var unixEndPointCtr = unixEndPointType.DeclaredConstructors.FirstOrDefault(ctr => ctr.GetParameters().Length == 1 && ctr.GetParameters()[0].ParameterType == typeof(string));
 
             if (unixEndPointCtr == null) throw new InvalidOperationException($"Unable to find constructor .ctr(string filename) on type {unixEndPointType}.");
 
@@ -90,7 +91,9 @@ namespace vtortola.WebSockets.Transports.UnixSockets
             socket.ReceiveTimeout = (int)this.ReceiveTimeout.TotalMilliseconds + 1;
             socket.SendBufferSize = this.SendBufferSize;
             socket.SendTimeout = (int)this.SendTimeout.TotalMilliseconds + 1;
+#if !NETSTANDARD && !UAP
             socket.UseOnlyOverlappedIO = this.IsAsync;
+#endif
         }
     }
 }

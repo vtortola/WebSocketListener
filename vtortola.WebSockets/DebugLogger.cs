@@ -35,9 +35,7 @@ namespace vtortola.WebSockets
 
             if (error != null)
             {
-                System.Diagnostics.Debug.Indent();
                 System.Diagnostics.Debug.WriteLine(error);
-                System.Diagnostics.Debug.Unindent();
             }
         }
         /// <inheritdoc />
@@ -51,9 +49,7 @@ namespace vtortola.WebSockets
 
             if (error != null)
             {
-                System.Diagnostics.Debug.Indent();
                 System.Diagnostics.Debug.WriteLine(error);
-                System.Diagnostics.Debug.Unindent();
             }
         }
         /// <inheritdoc />
@@ -67,9 +63,7 @@ namespace vtortola.WebSockets
 
             if (error != null)
             {
-                System.Diagnostics.Debug.Indent();
                 System.Diagnostics.Debug.WriteLine(error);
-                System.Diagnostics.Debug.Unindent();
             }
         }
     }
