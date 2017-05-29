@@ -16,6 +16,7 @@ namespace vtortola.WebSockets
         private readonly Dictionary<short, WebSocketFactory> factoryByVersion;
         private volatile int useCounter;
 
+        public IEnumerable<short> SupportedVersions => this.factoryByVersion.Keys;
         public int Count => this.factoryByVersion.Count;
         public bool IsReadOnly => this.useCounter > 0;
 

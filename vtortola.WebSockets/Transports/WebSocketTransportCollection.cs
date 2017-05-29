@@ -20,6 +20,7 @@ namespace vtortola.WebSockets.Transports
         private readonly Dictionary<string, WebSocketTransport> transportByScheme;
         private volatile int useCounter;
 
+        public IEnumerable<string> SupportedSchemes => this.transportByScheme.Keys;
         public int Count => this.transportByScheme.Count;
         public bool IsReadOnly => this.useCounter > 0;
 
