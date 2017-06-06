@@ -3,26 +3,13 @@
 	License: https://opensource.org/licenses/MIT
 */
 using System;
-using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets
 {
-    public sealed class BufferManager
+    public abstract class BufferManager
     {
-        private readonly ObjectPool<byte[]> smallPool;
-        private readonly ObjectPool<byte[]> largePool;
-
-        public readonly int SmallBufferSize;
-        public readonly int LargeBufferSize;
-
-        private BufferManager(int smallBufferSize, int smallPoolSizeLimit, int largeBufferSize, int largePoolSizeLimit)
-        {
-            this.SmallBufferSize = smallBufferSize;
-            this.LargeBufferSize = largeBufferSize;
-            this.smallPool = new ObjectPool<byte[]>(() => new byte[smallBufferSize], smallPoolSizeLimit);
-            this.largePool = new ObjectPool<byte[]>(() => new byte[largeBufferSize], largePoolSizeLimit);
-
-        }
+        public abstract int SmallBufferSize { get; }
+        public abstract int LargeBufferSize { get; }
 
         /// <summary>
         /// Creates a new BufferManager with a specified maximum buffer pool size and a maximum size for each individual buffer in the pool.
@@ -45,48 +32,48 @@ namespace vtortola.WebSockets
             var smallBufferSize = Math.Max(32, largeBufferSize / 256); // small buffer is 256 times less than large buffer
             var smallPoolSizeLimit = (int)Math.Max(2, (maxMemory - largePoolSizeLimit * largeBufferSize) / smallBufferSize); // take another half of maxMemory as small buffers
 
-            return new BufferManager(smallBufferSize, smallPoolSizeLimit, largeBufferSize, largePoolSizeLimit);
+            return new DefaultBufferManager(smallBufferSize, smallPoolSizeLimit, largeBufferSize, largePoolSizeLimit);
+        }
+
+        /// <summary>
+        /// Creates a new BufferManager with a specified large/small buffer size and and size of pools.
+        /// </summary>
+        /// <param name="smallBufferSize">Small buffer size.</param>
+        /// <param name="largeBufferSize">Large buffer size.</param>
+        /// <param name="smallBufferPoolSize">The maximum size of small buffers pool.</param>
+        /// <param name="largeBufferPoolSize">The maximum size of large buffers pool.</param>
+        /// <returns>Returns a System.ServiceModel.Channels.BufferManager object with the specified parameters.</returns>
+        /// <exception cref="System.InsufficientMemoryException">In the .NET for Windows Store apps or the Portable Class Library, catch the base class exception, System.OutOfMemoryException, instead.There was insufficient memory to create the requested buffer pool.</exception>
+        /// <exception cref="System.ArgumentOutOfRangeException"> maxBufferPoolSize or maxBufferSize was less than zero.</exception>
+        public static BufferManager CreateBufferManager(int smallBufferSize, int smallBufferPoolSize, int largeBufferSize, int largeBufferPoolSize)
+        {
+            if (smallBufferSize < 0) throw new ArgumentOutOfRangeException(nameof(smallBufferSize));
+            if (largeBufferSize < 0) throw new ArgumentOutOfRangeException(nameof(largeBufferSize));
+            if (smallBufferPoolSize < 0) throw new ArgumentOutOfRangeException(nameof(smallBufferPoolSize));
+            if (largeBufferPoolSize < 0) throw new ArgumentOutOfRangeException(nameof(largeBufferPoolSize));
+            
+            return new DefaultBufferManager(smallBufferSize, smallBufferPoolSize, largeBufferSize, largeBufferPoolSize);
         }
 
         /// <summary>
         /// Releases the buffers currently cached in the manager.
         /// </summary>
-        public void Clear()
-        {
-            this.smallPool.Clear();
-            this.largePool.Clear();
-        }
+        public abstract void Clear();
+
         /// <summary>
         /// Returns a buffer to the pool.
         /// </summary>
         /// <param name="buffer">A reference to the buffer being returned.</param>
         /// <exception cref="System.ArgumentNullException">buffer reference cannot be null.</exception>
         /// <exception cref="System.ArgumentException">Length of buffer does not match the pool's buffer length property.</exception>
-        public void ReturnBuffer(byte[] buffer)
-        {
-            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+        public abstract void ReturnBuffer(byte[] buffer);
 
-            if (buffer.Length >= this.LargeBufferSize)
-                this.largePool.Return(buffer);
-            else if (buffer.Length >= this.SmallBufferSize)
-                this.smallPool.Return(buffer);
-            else
-                throw new ArgumentException("Length of buffer does not match the pool's buffer length property.", nameof(buffer));
-        }
         /// <summary>
         /// Gets a buffer of at least the specified size from the pool.
         /// </summary>
         /// <param name="bufferSize">The size, in bytes, of the requested buffer.</param>
         /// <returns>A byte array that is the requested size of the buffer.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">bufferSize cannot be less than zero.</exception>
-        public byte[] TakeBuffer(int bufferSize)
-        {
-            if (bufferSize < 0 || bufferSize > this.LargeBufferSize) throw new ArgumentOutOfRangeException(nameof(bufferSize));
-
-            if (bufferSize >= this.SmallBufferSize)
-                return this.largePool.Take();
-            else
-                return this.smallPool.Take();
-        }
+        public abstract byte[] TakeBuffer(int bufferSize);
     }
 }

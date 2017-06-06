@@ -38,14 +38,19 @@ namespace vtortola.WebSockets.Tools
             var item = default(T);
             while (this.items.TryDequeue(out item))
             {
+                Interlocked.Decrement(ref this.count);
                 /* no body */
             }
+
         }
 
         public T Take()
         {
             var item = default(T);
-            if (!this.TryTake(out item)) item = this.ConstructFn();
+            if (this.TryTake(out item))
+            {
+                item = this.ConstructFn();
+            }
 
             return item;
         }
@@ -64,7 +69,7 @@ namespace vtortola.WebSockets.Tools
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
 
-            this.items.Enqueue(item);
+            this.TryReturn(item);
         }
         public bool TryReturn(T item)
         {
