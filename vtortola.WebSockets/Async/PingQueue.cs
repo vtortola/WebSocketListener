@@ -4,8 +4,8 @@
 */
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
+
 using PingSubscriptionList = System.Collections.Concurrent.ConcurrentBag<vtortola.WebSockets.WebSocket>;
 
 namespace vtortola.WebSockets.Async
@@ -21,17 +21,15 @@ namespace vtortola.WebSockets.Async
         }
 
         /// <inheritdoc />
-        protected override PingSubscriptionList CreateNewSubscriptionList()
+        protected override PingSubscriptionList CreateSubscriptionList()
         {
             return this.listPool.Take();
         }
         /// <inheritdoc />
-        protected override async void NotifySubscribers(PingSubscriptionList list)
+        protected override async void NotifySubscribers(PingSubscriptionList subscriptionList)
         {
-            await Task.Yield();
-
             var webSocket = default(WebSocket);
-            while (list.TryTake(out webSocket))
+            while (subscriptionList.TryTake(out webSocket))
             {
                 if (!webSocket.IsConnected)
                     continue;

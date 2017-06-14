@@ -4,8 +4,10 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using vtortola.WebSockets.Tools;
 
 #pragma warning disable 420
@@ -14,203 +16,201 @@ namespace vtortola.WebSockets.Async
 {
     public abstract class TimedQueue<SubscriptionListT> : IDisposable where SubscriptionListT : class
     {
-        private static readonly object DONT_THROW_ON_LOCK_FAILURE = false;
-        private static readonly object THROW_ON_LOCK_FAILURE = true;
+        private static readonly double TicksPerStopwatchTick = TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
+
+        private const int STATE_CREATED = 0;
+        private const int STATE_DISPOSING = 1;
+        private const int STATE_DISPOSED = 2;
 
         private readonly HashSet<Exception> lastErrors;
+        private readonly Action<object> notifySubscribersAction;
+        private readonly TaskScheduler notificationScheduler;
         private readonly Timer notifyTimer;
-        private readonly TimeSpan quantTime;
         private readonly SubscriptionListT[] queue;
-        private readonly ReaderWriterLockSlim queueWriteLock;
-        private readonly long ticksPerQueueItem;
-        private readonly int timeoutEquivalentInQueueItems;
-        private volatile int isDisposed;
-        private volatile int queueHead;
-        private long queueHeadTime;
+        private readonly int timeSlices;
+        private readonly int ticksPerTimeSlice;
+        private volatile int disposeState;
+        private long queueHead;
 
         public TimeSpan Period { get; }
-        public bool IsDisposed => this.isDisposed == 1;
+        public bool IsDisposed => this.disposeState == 1;
 
-        protected TimedQueue(TimeSpan period)
+        protected TimedQueue(TimeSpan period, TaskScheduler notificationScheduler = null)
         {
-            if (period <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(period), "period > TimeSpan.Zero");
+            if (period <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(period), "period should be greater than TimeSpan.Zero");
+            if (period >= TimeSpan.FromTicks(int.MaxValue)) throw new ArgumentOutOfRangeException(nameof(period), "period should be lesser then TimeSpan.FromTicks(int.MaxValue)");
+
+            if (notificationScheduler == null)
+                notificationScheduler = TaskScheduler.Default;
 
             this.Period = period;
+            this.notificationScheduler = notificationScheduler;
+            this.disposeState = STATE_CREATED;
 
-            var quants = 20; // error is +~5%  of timeout
+            this.timeSlices = 20; // error is +~5%  of timeout
             if (period < TimeSpan.FromSeconds(1))
             {
                 period = TimeSpan.FromSeconds(1);
-                quants = 4; // error is +~25% of timeout
+                this.timeSlices = 5; // error is +~20% of timeout
             }
 
-            this.quantTime = new TimeSpan(period.Ticks / quants);
-
-            this.queue = new SubscriptionListT[quants * 2];
-            this.timeoutEquivalentInQueueItems = quants;
-            this.queueHeadTime = DateTime.UtcNow.Ticks;
-            this.queueWriteLock = new ReaderWriterLockSlim();
-            this.ticksPerQueueItem = period.Ticks / quants;
+            this.queue = new SubscriptionListT[this.timeSlices * 2];
+            this.ticksPerTimeSlice = (int)(period.Ticks / this.timeSlices);
+            this.queueHead = PackHead(0, GetCurrentTime(this.ticksPerTimeSlice));
             this.lastErrors = new HashSet<Exception>();
-
-            this.notifyTimer = new Timer(this.OnNotifySubscribers, DONT_THROW_ON_LOCK_FAILURE, this.quantTime, this.quantTime);
+            this.notifyTimer = new Timer(this.OnNotifySubscribers, null, TimeSpan.FromTicks(this.ticksPerTimeSlice), TimeSpan.FromTicks(this.ticksPerTimeSlice));
+            this.notifySubscribersAction = s =>
+            {
+                try
+                {
+                    this.NotifySubscribers((SubscriptionListT)s);
+                }
+                catch (Exception disposeError) when (disposeError is ThreadAbortException == false)
+                {
+                    lock (this.lastErrors)
+                        this.lastErrors.Add(disposeError.Unwrap());
+                }
+            };
         }
 
         public SubscriptionListT GetSubscriptionList()
         {
+            this.ThrowIfDisposed();
+            this.ThrowIfHasErrors();
+
+            // get queue head (current working time) and find tail(current working time + period)
+            // and put/get subscription list from tail
+
+            var head = Volatile.Read(ref this.queueHead);
+            var headIndex = GetHeadIndex(head);
+            var tailIndex = (headIndex + this.timeSlices) % this.queue.Length;
+
+            var list = default(SubscriptionListT);
             var spinWait = new SpinWait();
-            while (DateTime.UtcNow.Ticks - Interlocked.Read(ref this.queueHeadTime) > this.ticksPerQueueItem && !this.IsDisposed)
+            do
             {
-                this.OnNotifySubscribers(THROW_ON_LOCK_FAILURE);
                 spinWait.SpinOnce();
-            }
 
-            if (this.IsDisposed) throw new ObjectDisposedException(this.GetType().FullName);
+                list = Volatile.Read(ref this.queue[tailIndex]);
+                if (list != null)
+                    continue;
 
-            if (this.lastErrors.Count > 0) lock (this.lastErrors) throw new AggregateException("During a background task on subscribers notification an error occurred. More details in inner exceptions.", this.lastErrors);
+                list = this.CreateSubscriptionList();
+                var currentList = Interlocked.CompareExchange(ref this.queue[tailIndex], list, null);
+                if (currentList == null)
+                    continue;
 
-            var item = default(SubscriptionListT);
-            var itemIdx = (this.queueHead + this.timeoutEquivalentInQueueItems + 1) % this.queue.Length;
+                this.ReleaseSubscriptionList(list);
+                list = currentList;
+            } while (Volatile.Read(ref this.queueHead) != head);
 
-            this.queueWriteLock.EnterReadLock();
-            try
-            {
-                item = Volatile.Read(ref this.queue[itemIdx]);
-            }
-            finally
-            {
-                this.queueWriteLock.ExitReadLock();
-            }
-
-            if (item == null)
-            {
-                this.queueWriteLock.EnterWriteLock();
-                try
-                {
-                    item = Volatile.Read(ref this.queue[itemIdx]);
-                    if (item == null)
-                    {
-                        item = this.CreateNewSubscriptionList();
-                        if (item == null) throw new InvalidOperationException("A null subscription list was created by CreateNewSubscriptionList() method");
-
-                        Interlocked.Exchange(ref this.queue[itemIdx], item);
-                    }
-                }
-                finally
-                {
-                    this.queueWriteLock.ExitWriteLock();
-                }
-            }
-
-            return item;
+            return list;
         }
 
         private void OnNotifySubscribers(object state)
         {
-            if (this.IsDisposed) return;
+            if (this.IsDisposed)
+                return;
 
-            var throwOnLockFailure = (bool)state;
-            var elapsedTicks = DateTime.UtcNow.Ticks - Interlocked.Read(ref this.queueHeadTime);
-            var listsToNotify = (int)Math.Min(this.queue.Length, elapsedTicks / this.ticksPerQueueItem);
-            if (listsToNotify <= 0) return;
-
-            var lockTaken = false;
-            try
+            uint headTime;
+            do
             {
-                lockTaken = this.queueWriteLock.TryEnterWriteLock(this.quantTime);
-
-                if (!lockTaken && !throwOnLockFailure)
-                    return; // skip
-                else if (!lockTaken)
-                    throw new InvalidOperationException($"Lock request timeout exceeded. The method 'TimeoutQueue.NotifySubscriptionList()' have been blocked queue for a very long period of time(>{this.Period.TotalSeconds:F2} secs).");
-
-                elapsedTicks = DateTime.UtcNow.Ticks - Interlocked.Read(ref this.queueHeadTime);
-                listsToNotify = (int)Math.Min(this.queue.Length, elapsedTicks / this.ticksPerQueueItem);
-                if (listsToNotify <= 0) return;
-
-                for (var i = 0; i < listsToNotify; i++)
+                long head, newHead;
+                uint headIndex;
+                do
                 {
-                    var listIdx = (this.queueHead + i) % this.queue.Length;
-                    var list = Interlocked.Exchange(ref this.queue[listIdx], null);
+                    head = Volatile.Read(ref this.queueHead);
+                    headIndex = GetHeadIndex(head);
+                    headTime = GetHeadTime(head);
 
-                    if (list == null) continue;
+                    if (headTime > GetCurrentTime(this.ticksPerTimeSlice))
+                        return;
 
-                    try
-                    {
-                        this.NotifySubscribers(list);
-                    }
-                    catch (ThreadAbortException)
-                    {
-                        throw;
-                    }
-                    catch (Exception e)
-                    {
-                        lock (this.lastErrors)
-                        {
-                            if (e is AggregateException) this.lastErrors.AddRange(((AggregateException)e).InnerExceptions);
-                            else this.lastErrors.Add(e);
-                        }
-                    }
-                }
+                    newHead = PackHead((headIndex + 1) % (uint)this.queue.Length, headTime + 1);
 
-                this.queueHead = (this.queueHead + listsToNotify) % this.queue.Length;
-                Interlocked.Exchange(ref this.queueHeadTime, DateTime.UtcNow.Ticks);
-            }
-            finally
-            {
-                if (lockTaken) this.queueWriteLock.ExitWriteLock();
-            }
+                } while (Interlocked.CompareExchange(ref this.queueHead, newHead, head) != head);
+
+                var headList = Volatile.Read(ref this.queue[headIndex]);
+                if (headList == null)
+                    continue;
+
+                Task.Factory.StartNew(this.notifySubscribersAction, headList, CancellationToken.None, TaskCreationOptions.None, this.notificationScheduler);
+
+            } while (headTime + 1 < GetCurrentTime(this.ticksPerTimeSlice));
         }
 
-        protected abstract SubscriptionListT CreateNewSubscriptionList();
-        protected abstract void NotifySubscribers(SubscriptionListT list);
+        protected abstract SubscriptionListT CreateSubscriptionList();
+        protected virtual void ReleaseSubscriptionList(SubscriptionListT subscriptionList)
+        {
+            try
+            {
+                (subscriptionList as IDisposable)?.Dispose();
+            }
+            catch (Exception disposeError) when (disposeError is ThreadAbortException == false)
+            {
+                lock (this.lastErrors)
+                    this.lastErrors.Add(disposeError.Unwrap());
+            }
+        }
+        protected abstract void NotifySubscribers(SubscriptionListT subscriptionList);
 
         public void Dispose()
         {
-            if (Interlocked.CompareExchange(ref this.isDisposed, 1, 0) != 0) return;
+            if (Interlocked.CompareExchange(ref this.disposeState, STATE_DISPOSING, STATE_CREATED) != STATE_CREATED)
+                return;
 
             this.notifyTimer.Dispose();
+            this.OnNotifySubscribers(null);
 
-            this.queueWriteLock.EnterWriteLock();
-            try
+            Interlocked.Exchange(ref this.disposeState, STATE_DISPOSED);
+        }
+
+        private static uint GetHeadTime(long value)
+        {
+            return (uint)((ulong)value & uint.MaxValue);
+        }
+        private static uint GetHeadIndex(long value)
+        {
+            return (uint)((ulong)value >> 32);
+        }
+        private static long PackHead(uint index, uint time)
+        {
+            return ((long)index << 32) | time;
+        }
+        private static uint GetCurrentTime(int ticksPerTimeSlice)
+        {
+            var stopwatchTimestamp = Stopwatch.GetTimestamp();
+            var ticks = (double)stopwatchTimestamp;
+            if (Stopwatch.IsHighResolution)
+                ticks = stopwatchTimestamp * TicksPerStopwatchTick;
+
+            return (uint)Math.Round(ticks / ticksPerTimeSlice);
+        }
+
+        private void ThrowIfHasErrors()
+        {
+            if (this.lastErrors.Count <= 0) return;
+
+            lock (this.lastErrors)
             {
-                for (var i = 0; i < this.queue.Length; i++)
-                {
-                    var list = this.queue[i];
-                    this.queue[i] = null;
-                    if (list == null) continue;
-
-                    try
-                    {
-                        this.NotifySubscribers(list);
-                    }
-                    catch (ThreadAbortException)
-                    {
-                        throw;
-                    }
-                    catch (Exception notifyError)
-                    {
-                        lock (this.lastErrors)
-                        {
-                            if (notifyError is AggregateException)
-                                this.lastErrors.AddRange(((AggregateException)notifyError).InnerExceptions);
-                            else
-                                this.lastErrors.Add(notifyError);
-                        }
-                    }
-                }
+                var errorList = this.lastErrors.ToArray();
+                this.lastErrors.Clear();
+                throw new AggregateException("During a background task on subscribers notification an error occurred. More details in inner exceptions.", errorList);
             }
-            finally
-            {
-                this.queueWriteLock.ExitWriteLock();
-            }
-
-            this.queueWriteLock.Dispose();
+        }
+        private void ThrowIfDisposed()
+        {
+            if (this.IsDisposed)
+                throw new ObjectDisposedException(this.GetType().FullName);
         }
 
         public override string ToString()
         {
-            return string.Format(CultureInfo.InvariantCulture, "{0}, head time: {1:T}", this.GetType().Name, new DateTime(Interlocked.Read(ref this.queueHeadTime), DateTimeKind.Utc));
+            var head = Volatile.Read(ref this.queueHead);
+            var headTime = GetHeadTime(head) * this.ticksPerTimeSlice;
+            var headIndex = GetHeadIndex(head);
+
+            return $"{this.GetType().Name}, head time: {TimeSpan.FromTicks(headTime).ToString()}, head index: {headIndex.ToString()}";
         }
     }
 }

@@ -44,7 +44,7 @@ namespace vtortola.WebSockets
             this.options.SetUsed(true);
 
             if (this.options.NegotiationTimeout > TimeSpan.Zero)
-                this.negotiationsTimeoutQueue = new CancellationQueue(this.options.NegotiationTimeout) { ScheduleCancellation = true };
+                this.negotiationsTimeoutQueue = new CancellationQueue(this.options.NegotiationTimeout);
             if (this.options.PingMode != PingMode.Manual)
                 this.pingQueue = new PingQueue(options.PingInterval);
 

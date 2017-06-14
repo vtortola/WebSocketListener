@@ -47,7 +47,7 @@ namespace vtortola.WebSockets.Tools
         public T Take()
         {
             var item = default(T);
-            if (this.TryTake(out item))
+            if (this.TryTake(out item) == false)
             {
                 item = this.ConstructFn();
             }
