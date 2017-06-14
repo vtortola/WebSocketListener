@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/qsy1wmwaool3mpce?svg=true)](https://ci.appveyor.com/project/vtortola/websocketlistener)
+[![Build status](https://ci.appveyor.com/api/projects/status/o2rf2om0dus3fd4f?svg=true)](https://ci.appveyor.com/project/deniszykov/websocketlistener)
 WebSocketListener 
 =================
 
