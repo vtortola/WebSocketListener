@@ -17,31 +17,27 @@ namespace vtortola.WebSockets.Rfc6455
             _key = keySegment;
         }
 
-        public void DecodeBytes(byte[] buffer, int bufferOffset, int count)
+        public void DecodeBytes(byte[] buffer, int offset, int count)
         {
-            RemainingBytes -= count;
-
-            if (!this.Flags.MASK) return;
-
-            for (var i = bufferOffset; i < bufferOffset + count; i++)
-            {
-                buffer[i] = (byte)(buffer[i] ^ this._key.Array[this._key.Offset + this.cursor++]);
-                if (this.cursor >= 4)
-                    this.cursor = 0;
-            }
+            EncodeBytes(buffer, offset, count);
         }
-        public void EncodeBytes(byte[] buffer, int bufferOffset, int count)
+        public void EncodeBytes(byte[] buffer, int offset, int count)
         {
-            RemainingBytes -= count;
+            this.RemainingBytes -= count;
 
             if (!this.Flags.MASK) return;
 
-            for (var i = bufferOffset; i < bufferOffset + count; i++)
+            var mask = this._key.Array;
+            var maskOffset = this._key.Offset;
+            var maskIndex = this.cursor;
+            var end = offset + count;
+            for (var i = offset; i < end; i++)
             {
-                buffer[i] = (byte)(buffer[i] ^ this._key.Array[this._key.Offset + this.cursor++]);
-                if (this.cursor >= 4)
-                    this.cursor = 0;
+                var maskByte = mask[maskOffset + (maskIndex % 4)];
+                maskIndex++;
+                buffer[i] = (byte)(buffer[i] ^ maskByte);
             }
+            this.cursor = maskIndex % 4;
         }
 
         public int ToBytes(byte[] segment, int offset)
@@ -172,7 +168,7 @@ namespace vtortola.WebSockets.Rfc6455
                 headerLength = 2;
             else if (contentLength <= ushort.MaxValue)
                 headerLength = 4;
-            else 
+            else
                 headerLength = 10;
 
             if (isMasked)
