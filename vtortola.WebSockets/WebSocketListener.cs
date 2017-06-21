@@ -183,7 +183,7 @@ namespace vtortola.WebSockets
 
                         try
                         {
-                            acceptTasks[i] = this.listeners[i].AcceptConnectionAsync();
+                            acceptTasks[i] = listeners[i].AcceptConnectionAsync();
                         }
                         catch (Exception acceptError) when (acceptError is ThreadAbortException == false)
                         {
