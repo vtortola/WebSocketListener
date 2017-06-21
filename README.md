@@ -81,7 +81,6 @@ Setting up a server and start listening for clients is very similar to a `TcpLis
 var options = new WebSocketListenerOptions();
 options.Standards.RegisterRfc6455();
 var server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 8006));
-var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
 await server.StartAsync();
 ```
 [Full Code](Samples/EchoServer/Program.cs)
