@@ -80,7 +80,7 @@ Setting up a server and start listening for clients is very similar to a `TcpLis
 ```cs
 var options = new WebSocketListenerOptions();
 options.Standards.RegisterRfc6455();
-var server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 8006));
+var server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 8006), options);
 await server.StartAsync();
 ```
 [Full Code](Samples/EchoServer/Program.cs)
