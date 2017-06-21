@@ -1,4 +1,5 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/o2rf2om0dus3fd4f?svg=true)](https://ci.appveyor.com/project/deniszykov/websocketlistener)
+
 WebSocketListener 
 =================
 
@@ -26,6 +27,43 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
  * It handles interleaved control frames transparently. The WebSocket specification states that control frames can appear interleaved with data frames, including between partial frames of the same message. The message stream will allow to read just the message data, it will skip the control frames.
 
 Take a look on the [performance and load  tests](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests) on a simple 'echo' server.
+
+About this fork
+=================
+This is a branch from the [project](https://github.com/vtortola/WebSocketListener) that adds new functionality and fixes errors.
+
+Major Features:
+- WebSocketClient
+    - TLS Support
+    - Auto IPv6 address resolution
+    - Same features and options as WebSocketListener
+- Transports
+    - TCP, Unix Sockets, Named Pipes (why not)
+    - Socket is abstracted as NetworkConnection
+    - Graceful disconnection
+    - Fine tuning with WebSocketListenerOptions. Transports collection extensions
+
+Minor Features:
+- Fully async API (it is strongly discouraged to use synchronous API with IO operations)
+- Logging via abstract ILogger
+- No additional dependencies (ServiceModel, TPL Dataflow)
+- New Headers<HeadersT> collections with fast access to known headers
+- custom BufferManager, and use of BufferManager in all operations with buffers
+- More unit-tests
+- WebSocketListener can now listen multiple endpoints from different transports
+- Pings now processed in batches or could be manually batched and sent (WebSocket.PingAsync)
+- WebSocketMessageWriteStream now can be gracefully closed with CloseAsync()
+- Tested to work under load
+
+Lost Features:
+- UWP target platform
+- Sync API on WebSocket and Streams
+- Cookies collection on WebSocketHttpRequest (class is not removed)
+- Removed potentially dangerous feature 'RemoveBOM' on WSWriteStream.Write. Refactored default WriteStringAsync(), ReadStringAsync methods to use UTF-8 without BOM
+
+Known Problems:
+- WebSocketDeflateStream uses sync Stream methods, it should be rewritten to fully support async operations
+- Mono can't handle IPv6 Dual Mode sockets properly (exception in Socket.RemoteEndPoint and Socket.LocalEndPoint)
 
 ### Quickstart
 
