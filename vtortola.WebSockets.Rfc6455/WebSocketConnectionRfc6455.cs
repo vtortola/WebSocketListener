@@ -235,12 +235,12 @@ namespace vtortola.WebSockets.Rfc6455
         }
         public async Task<bool> SendFrameAsync(ArraySegment<byte> frame, TimeSpan timeout, SendOptions sendOptions, CancellationToken cancellation)
         {
+            var noLock = (sendOptions & SendOptions.NoLock) == SendOptions.NoLock;
+            var noError = (sendOptions & SendOptions.NoErrors) == SendOptions.NoErrors;
+            var ignoreClose = (sendOptions & SendOptions.IgnoreClose) == SendOptions.IgnoreClose;
+
             try
             {
-                var noLock = (sendOptions & SendOptions.NoLock) == SendOptions.NoLock;
-                var noError = (sendOptions & SendOptions.NoErrors) == SendOptions.NoErrors;
-                var ignoreClose = (sendOptions & SendOptions.IgnoreClose) == SendOptions.IgnoreClose;
-
                 if (!ignoreClose && this.IsClosed)
                 {
                     if (noError)
@@ -272,6 +272,9 @@ namespace vtortola.WebSockets.Rfc6455
             }
             catch (Exception writeError) when (writeError.Unwrap() is ThreadAbortException == false)
             {
+                if (noError)
+                    return false;
+
                 var writeErrorUnwrap = writeError.Unwrap();
                 if (this.log.IsDebugEnabled && writeErrorUnwrap is OperationCanceledException == false && this.IsConnected)
                     this.log.Debug($"({this.GetHashCode():X}) Write operation on WebSocket stream is failed.", writeErrorUnwrap);
