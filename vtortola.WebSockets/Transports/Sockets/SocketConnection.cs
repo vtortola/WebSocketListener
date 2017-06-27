@@ -3,18 +3,23 @@
 	License: https://opensource.org/licenses/MIT
 */
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets;
 using vtortola.WebSockets.Tools;
+
+#pragma warning disable 420
 
 namespace vtortola.WebSockets.Transports.Sockets
 {
     public class SocketConnection : NetworkConnection
     {
-        public static EndPoint BrokenEndPoint = new IPEndPoint(IPAddress.Any, 0);
+        private static readonly byte[] JunkBytes = new byte[4 * 1024];
+        public static readonly EndPoint BrokenEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
         // event come in pair to prevent overlapping during 'Completed' event
         private const int EVENT_ACTIVE_RECEIVE = 0;
@@ -22,10 +27,16 @@ namespace vtortola.WebSockets.Transports.Sockets
         private const int EVENT_ACTIVE_SEND = 2;
         private const int EVENT_PREVIOUS_SEND = 3;
         private const int EVENT_COUNT = 4;
+        //
+        private const int STATE_OPEN = 0;
+        private const int STATE_CLOSING = 1;
+        private const int STATE_CLOSED = 2;
+        private const int STATE_DISPOSED = 3;
 
         private readonly Socket socket;
         private readonly NetworkStream networkStream;
         private readonly SocketAsyncEventArgs[] socketEvents;
+        private volatile int closeState;
 
         /// <inheritdoc />
         public override EndPoint LocalEndPoint { get; }
@@ -34,16 +45,21 @@ namespace vtortola.WebSockets.Transports.Sockets
         /// <inheritdoc />
         public virtual bool ReuseSocketOnClose { get; set; }
 
+        public bool IsClosed => this.closeState >= STATE_CLOSING;
+
         public SocketConnection(Socket socket, EndPoint originalRemoteEndPoint = null)
         {
 #pragma warning disable 168 // unused local variable
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
+            this.closeState = STATE_OPEN;
+
             try { this.LocalEndPoint = socket.LocalEndPoint; }
             catch (ArgumentException getLocalEndPointError) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
             {
 #if DEBUG
-                DebugLogger.Instance.Debug($"An error occurred while trying to get '{nameof(socket.LocalEndPoint)}' property of established connection.", getLocalEndPointError);
+				if (log.IsDebugEnabled)
+					log.Debug($"An error occurred while trying to get '{nameof(socket.LocalEndPoint)}' property of established connection.", getLocalEndPointError);
 #endif
                 this.LocalEndPoint = BrokenEndPoint;
             }
@@ -51,7 +67,8 @@ namespace vtortola.WebSockets.Transports.Sockets
             catch (ArgumentException getRemoteEndPoint) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
             {
 #if DEBUG
-                DebugLogger.Instance.Debug($"An error occurred while trying to get '{nameof(socket.RemoteEndPoint)}' property of established connection.", getRemoteEndPoint);
+				if (log.IsDebugEnabled)
+					log.Debug($"An error occurred while trying to get '{nameof(socket.RemoteEndPoint)}' property of established connection.", getRemoteEndPoint);
 #endif
                 this.RemoteEndPoint = originalRemoteEndPoint = BrokenEndPoint;
             }
@@ -75,6 +92,12 @@ namespace vtortola.WebSockets.Transports.Sockets
             var receiveCompletionSource = new TaskCompletionSource<int>(TaskCreationOptions.None);
             try
             {
+                if (this.IsClosed)
+                {
+                    this.ThrowIfDisposed();
+                    this.ThrowIfClosed();
+                }
+
                 Swap(ref this.socketEvents[EVENT_ACTIVE_RECEIVE], ref this.socketEvents[EVENT_PREVIOUS_RECEIVE]);
 
                 var receiveEvent = this.socketEvents[EVENT_ACTIVE_RECEIVE];
@@ -98,6 +121,12 @@ namespace vtortola.WebSockets.Transports.Sockets
             var sendCompletionSource = new TaskCompletionSource<int>(TaskCreationOptions.None);
             try
             {
+                if (this.IsClosed)
+                {
+                    this.ThrowIfDisposed();
+                    this.ThrowIfClosed();
+                }
+
                 Swap(ref this.socketEvents[EVENT_ACTIVE_SEND], ref this.socketEvents[EVENT_PREVIOUS_SEND]);
 
                 var sendEvent = this.socketEvents[EVENT_ACTIVE_SEND];
@@ -124,14 +153,60 @@ namespace vtortola.WebSockets.Transports.Sockets
         }
 
         /// <inheritdoc />
-        public override Task CloseAsync()
+        public override async Task CloseAsync()
         {
-#if !NETSTANDARD && !UAP
-            return Task.Factory.FromAsync(this.socket.BeginDisconnect, this.socket.EndDisconnect, this.ReuseSocketOnClose, default(object));
-#else
-            this.socket.Shutdown(SocketShutdown.Both);
-            return TaskHelper.CompletedTask;
-#endif
+            if (Interlocked.CompareExchange(ref this.closeState, STATE_CLOSING, STATE_OPEN) != STATE_OPEN)
+                return;
+
+            // shutdown send
+            try
+            {
+                if (this.socket.Connected)
+                    this.socket.Shutdown(SocketShutdown.Send);
+            }
+            catch (Exception shutdownError) when (shutdownError is ThreadAbortException == false)
+            {
+                /* ignore shutdown errors */
+            }
+
+            // read and discard all remaining data
+            if (this.socket.Connected || this.socket.Available > 0)
+            {
+                try
+                {
+                    var receiveCompletionSource = default(TaskCompletionSource<int>);
+                    do
+                    {
+                        receiveCompletionSource = new TaskCompletionSource<int>();
+                        Swap(ref this.socketEvents[EVENT_ACTIVE_RECEIVE], ref this.socketEvents[EVENT_PREVIOUS_RECEIVE]);
+
+                        var receiveEvent = this.socketEvents[EVENT_ACTIVE_RECEIVE];
+                        receiveEvent.UserToken = receiveCompletionSource;
+                        receiveEvent.SetBuffer(JunkBytes, 0, JunkBytes.Length);
+
+                        if (this.socket.ReceiveAsync(receiveEvent) == false)
+                            this.OnSocketOperationCompleted(this.socket, receiveEvent);
+                    } while (await receiveCompletionSource.Task.ConfigureAwait(false) > 0);
+                }
+                catch (Exception readError) when (readError is ThreadAbortException == false)
+                {
+                    /* ignore shutdown errors */
+                }
+            }
+
+            // close socket
+            try
+            {
+                this.socket.Dispose();
+            }
+            catch (Exception closeError) when (closeError is ThreadAbortException == false)
+            {
+                /* ignore close errors */
+            }
+
+            Interlocked.CompareExchange(ref this.closeState, STATE_CLOSED, STATE_CLOSING);
+
+            SafeEnd.Dispose(this);
         }
 
         /// <inheritdoc />
@@ -174,9 +249,23 @@ namespace vtortola.WebSockets.Transports.Sockets
             }
         }
 
+        protected void ThrowIfClosed()
+        {
+            if (this.IsClosed)
+                throw new InvalidOperationException("Connection is closed and can't perform any IO operations.");
+        }
+        protected void ThrowIfDisposed()
+        {
+            if (this.closeState >= STATE_DISPOSED)
+                throw new ObjectDisposedException(this.GetType().Name);
+        }
+
         /// <inheritdoc />
         public override void Dispose(bool disposed)
         {
+            if (Interlocked.Exchange(ref this.closeState, STATE_DISPOSED) == STATE_DISPOSED)
+                return;
+
             SafeEnd.Dispose(this.socket);
             SafeEnd.Dispose(this.networkStream);
 
