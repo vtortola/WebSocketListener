@@ -69,7 +69,7 @@ namespace vtortola.WebSockets.Transports.Tcp
         {
             // ReSharper disable HeapView.BoxingAllocation
             return $"{nameof(TcpConnection)}, local: {this.LocalEndPoint}, remote: {this.RemoteEndPoint}, " +
-                $"connected: {this.IsConnected}, available (bytes){this.Available}, no delay: {this.NoDelay}" +
+                $"connected: {this.IsConnected}, available (bytes){this.Available}, no delay: {this.NoDelay}, " +
                 $"receive buffer: {this.ReceiveBufferSize}, receive timeout: {TimeSpan.FromMilliseconds(this.ReceiveTimeout)}, " +
                 $"send buffer: {this.SendBufferSize}, send timeout: {TimeSpan.FromMilliseconds(this.SendTimeout)}";
             // ReSharper restore HeapView.BoxingAllocation
