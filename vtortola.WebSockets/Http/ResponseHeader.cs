@@ -9,7 +9,7 @@ namespace vtortola.WebSockets.Http
         [Header("Cache-Control")]
         CacheControl = 0,
         Connection = 1,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Date = 2,
         [Header("Keep-Alive")]
         KeepAlive = 3,
@@ -21,9 +21,9 @@ namespace vtortola.WebSockets.Http
         Via = 8,
         Warning = 9,
         Allow = 10,
-        [Header("Content-Length", IsAtomic = true)]
+        [Header("Content-Length", Flags = HeaderFlags.Singleton)]
         ContentLength = 11,
-        [Header("Content-Type", IsAtomic = true)]
+        [Header("Content-Type", Flags = HeaderFlags.Singleton)]
         ContentType = 12,
         [Header("Content-Encoding")]
         ContentEncoding = 13,
@@ -42,21 +42,21 @@ namespace vtortola.WebSockets.Http
         AcceptRanges = 20,
         Age = 21,
         ETag = 22,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Location = 23,
         [Header("Proxy-Authenticate")]
         ProxyAuthenticate = 24,
         [Header("Retry-After")]
         RetryAfter = 25,
         Server = 26,
-        [Header("Set-Cookie", IsAtomic = true)]
+        [Header("Set-Cookie", Flags = HeaderFlags.Singleton)]
         SetCookie = 27,
         Vary = 28,
         [Header("WWW-Authenticate")]
         WwwAuthenticate = 29,
 
         // extensions to HttpRequestHeaders
-        [Header("Content-Disposition", IsAtomic = true)]
+        [Header("Content-Disposition", Flags = HeaderFlags.Singleton)]
         ContentDisposition = 30,
         [Header("Sec-WebSocket-Extensions")]
         WebSocketExtensions = 31,

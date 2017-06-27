@@ -13,30 +13,37 @@ using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Http
 {
-    [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
     public sealed partial class Headers<KnownHeaderT> : IDictionary<string, string>
     {
-        private static readonly KnownHeaderT FirstKnownHeader;
-        private static readonly KnownHeaderT LastKnownHeader;
+        public static readonly Headers<KnownHeaderT> Empty = new Headers<KnownHeaderT> { IsReadOnly = true };
+
+        //private static readonly KnownHeaderT FirstKnownHeader;
+        //private static readonly KnownHeaderT LastKnownHeader;
         private static readonly int KnownHeadersCapacity;
-        private static readonly string[] KnownHeaderNames;
-        private static readonly bool[] KnownHeaderFlags;
-        private static readonly string[] KnownHeaderSortedNames;
-        private static readonly int[] KnownHeaderSortedValues;
+        private static readonly string[] SortedNames;
+        private static readonly int[] SortedByNameValues;
+        private static readonly int[] SortedValues;
+        private static readonly string[] SortedByValueNames;
+        private static readonly HeaderFlags[] SortedByValueFlags;
         private static readonly StringComparer KeyComparer;
         private static readonly Func<KnownHeaderT, int> ToInt;
         private static readonly Func<int, KnownHeaderT> FromInt;
 
         private Dictionary<string, ValueCollection> customHeaders; // by default is null
-        private bool isReadOnly;
 
         private ValueCollection[] knownHeaders; // by default is null
         private int knownHeadersCount;
         private int version;
 
-        public int Count => (this.customHeaders?.Count ?? 0) + this.knownHeadersCount;
-        public int FlatCount => (this.customHeaders?.Values.Sum(v => v.Count) ?? 0) + (this.knownHeaders?.Sum(v => v.Count) ?? 0);
-        public bool IsReadOnly => this.isReadOnly;
+        public int Count
+        {
+            get { return (this.customHeaders?.Count ?? 0) + this.knownHeadersCount; }
+        }
+        public int FlatCount
+        {
+            get { return (this.customHeaders?.Values.Sum(v => v.Count) ?? 0) + (this.knownHeaders?.Sum(v => v.Count) ?? 0); }
+        }
+        public bool IsReadOnly { get; private set; }
 
         public string this[KnownHeaderT knownHeader]
         {
@@ -51,16 +58,14 @@ namespace vtortola.WebSockets.Http
         string IDictionary<string, string>.this[string key]
         {
             get { return this.Get(key); }
-            set
-            {
-                this.ThrowIfReadOnly();
-
-                this.Set(key, value);
-            }
+            set { this.Set(key, value); }
         }
         ICollection<string> IDictionary<string, string>.Keys { get { return this.Select(kv => kv.Key).ToList(); } }
         ICollection<string> IDictionary<string, string>.Values { get { return this.Select(kv => kv.Value).ToList(); } }
-        bool ICollection<KeyValuePair<string, string>>.IsReadOnly => this.isReadOnly;
+        bool ICollection<KeyValuePair<string, string>>.IsReadOnly
+        {
+            get { return this.IsReadOnly; }
+        }
 
         static Headers()
         {
@@ -72,6 +77,7 @@ namespace vtortola.WebSockets.Http
             if (Enum.GetUnderlyingType(typeof(KnownHeaderT)) != typeof(int))
                 throw new InvalidOperationException("TKnownHeader should be enum with System.Int32 underlying type.");
 
+
             FromInt = (Func<int, KnownHeaderT>)EnumHelper<KnownHeaderT>.FromNumber;
             ToInt = (Func<KnownHeaderT, int>)EnumHelper<KnownHeaderT>.ToNumber;
 
@@ -81,39 +87,61 @@ namespace vtortola.WebSockets.Http
             var names = Enum.GetNames(typeof(KnownHeaderT));
             var fields = names.ConvertAll(knownHeaderType.GetDeclaredField);
             var values = new int[enumValues.Length];
-            var atomic = new bool[enumValues.Length];
-            for (var i = 0; i < enumValues.Length; i++)
+            var flags = new HeaderFlags[fields.Length];
+            for (var i = 0; i < fields.Length; i++)
             {
                 var headerAttribute = fields[i].GetCustomAttributes(typeof(HeaderAttribute), false).Cast<HeaderAttribute>().FirstOrDefault();
                 var name = headerAttribute?.Name ?? fields[i].Name;
                 var value = Convert.ToInt32(Enum.ToObject(typeof(KnownHeaderT), enumValues.GetValue(i)));
-                var isAtomic = headerAttribute?.IsAtomic ?? false;
+                var flag = headerAttribute?.Flags ?? HeaderFlags.None;
 
                 names[i] = name;
                 values[i] = value;
-                atomic[i] = isAtomic;
+                flags[i] = flag;
             }
 
             Array.Sort(values, names); // sort by order
 
-            KnownHeadersCapacity = names.Length;
-            FirstKnownHeader = FromInt(values.Min());
-            LastKnownHeader = FromInt(values.Max());
+            var firstKnownHeader = values.Min();
+            var lastKnownHeader = values.Max();
+            KnownHeadersCapacity = lastKnownHeader + 1;
 
-            if (ToInt(LastKnownHeader) > MAX_ENUM_VALUE)
-                throw new InvalidOperationException($"Max acceptable value for enum TKnownHeader is {MAX_ENUM_VALUE}.");
+            if (firstKnownHeader < 0)
+                throw new InvalidOperationException("Min value for enum TKnownHeader is 0.");
 
-            KnownHeaderNames = names;
-            KnownHeaderFlags = atomic;
+            if (lastKnownHeader > MAX_ENUM_VALUE)
+                throw new InvalidOperationException($"Max value for enum TKnownHeader is {MAX_ENUM_VALUE}.");
 
             var sortedNames = new string[names.Length];
-            var sortedValues = new int[values.Length];
-            names.CopyTo(sortedNames, 0);
-            values.CopyTo(sortedValues, 0);
-            Array.Sort(sortedNames, sortedValues, KeyComparer);
+            var sortedByNameValues = new int[values.Length];
 
-            KnownHeaderSortedNames = sortedNames;
-            KnownHeaderSortedValues = sortedValues;
+            var sortedValues = new int[values.Length];
+            var sortedByValueNames = new string[names.Length];
+            var sortedByValueFlags = new HeaderFlags[flags.Length];
+
+            // name -> value
+            names.CopyTo(sortedNames, 0);
+            values.CopyTo(sortedByNameValues, 0);
+            // value -> name, flag
+            values.CopyTo(sortedValues, 0);
+
+            var sortedByValueIndexes = new int[values.Length];
+            for (var i = 0; i < sortedByValueIndexes.Length; i++) sortedByValueIndexes[i] = i;
+
+            Array.Sort(sortedNames, sortedByNameValues, KeyComparer);
+            Array.Sort(sortedValues, sortedByValueIndexes);
+
+            for (var i = 0; i < sortedByValueNames.Length; i++)
+            {
+                sortedByValueNames[i] = names[sortedByValueIndexes[i]];
+                sortedByValueFlags[i] = flags[sortedByValueIndexes[i]];
+            }
+
+            SortedNames = sortedNames;
+            SortedByNameValues = sortedByNameValues;
+            SortedValues = sortedValues;
+            SortedByValueNames = sortedByValueNames;
+            SortedByValueFlags = sortedByValueFlags;
         }
         public Headers() { }
         public Headers(NameValueCollection nameValueCollection)
@@ -141,15 +169,24 @@ namespace vtortola.WebSockets.Http
 
             this.AddMany(dictionary);
         }
+        private Headers(ValueCollection[] knownHeaders, int knownHeadersCount, Dictionary<string, ValueCollection> customHeaders)
+        {
+            if (knownHeadersCount < 0 || knownHeadersCount > KnownHeadersCapacity)
+                throw new ArgumentOutOfRangeException(nameof(knownHeadersCount), "knownHeadersCount >= 0 && knownHeadersCount <= KnownHeadersCapacity");
+
+            this.knownHeaders = knownHeaders;
+            this.knownHeadersCount = knownHeadersCount;
+            this.customHeaders = customHeaders;
+        }
 
         public void Add(string headerName, string value)
         {
             this.ThrowIfReadOnly();
 
-            var knownHeaderIndex = GetKnownHeaderValue(headerName);
-            if (knownHeaderIndex >= 0 && knownHeaderIndex <= ToInt(LastKnownHeader))
+            var knownHeaderValue = GetKnownHeaderValue(headerName);
+            if (knownHeaderValue >= 0)
             {
-                this.Add(FromInt(knownHeaderIndex), value);
+                this.Add(FromInt(knownHeaderValue), value);
             }
             else
             {
@@ -164,9 +201,37 @@ namespace vtortola.WebSockets.Http
 
             this.ThrowIfReadOnly();
 
-            var values = this.GetKnownHeader(ToInt(knownHeader));
+            var knownHeaderValue = ToInt(knownHeader);
+            var values = this.GetKnownHeader(knownHeaderValue);
             values += new ValueCollection(value);
-            this.SetKnownHeader(ToInt(knownHeader), values);
+            this.SetKnownHeader(knownHeaderValue, values);
+        }
+        public void Add(string headerName, ValueCollection values)
+        {
+            this.ThrowIfReadOnly();
+
+            var knownHeaderValue = GetKnownHeaderValue(headerName);
+            if (knownHeaderValue >= 0)
+            {
+                var currentValues = this.GetKnownHeader(knownHeaderValue);
+                currentValues += values;
+                this.SetKnownHeader(knownHeaderValue, values);
+            }
+            else
+            {
+                var currentValues = this.GetCustomHeader(headerName);
+                currentValues += values;
+                this.SetCustomHeader(headerName, values);
+            }
+        }
+        public void Add(KnownHeaderT knownHeader, ValueCollection values)
+        {
+            this.ThrowIfReadOnly();
+
+            var knownHeaderValue = ToInt(knownHeader);
+            var currentValues = this.GetKnownHeader(knownHeaderValue);
+            currentValues += values;
+            this.SetKnownHeader(knownHeaderValue, values);
         }
         public void AddMany(NameValueCollection nameValueCollection)
         {
@@ -211,9 +276,15 @@ namespace vtortola.WebSockets.Http
 
             this.ThrowIfReadOnly();
 
-            var knownHeaderIndex = GetKnownHeaderValue(headerName);
-            if (knownHeaderIndex >= 0 && knownHeaderIndex <= ToInt(LastKnownHeader)) this.SetKnownHeader(knownHeaderIndex, new ValueCollection(values));
-            else this.SetCustomHeader(headerName, new ValueCollection(values));
+            var knownHeaderValue = GetKnownHeaderValue(headerName);
+            if (knownHeaderValue >= 0)
+            {
+                this.SetKnownHeader(knownHeaderValue, new ValueCollection(values));
+            }
+            else
+            {
+                this.SetCustomHeader(headerName, new ValueCollection(values));
+            }
         }
         public void Set(string headerName, ValueCollection values)
         {
@@ -221,9 +292,15 @@ namespace vtortola.WebSockets.Http
 
             this.ThrowIfReadOnly();
 
-            var knownHeaderIndex = GetKnownHeaderValue(headerName);
-            if (knownHeaderIndex >= 0 && knownHeaderIndex <= ToInt(LastKnownHeader)) this.SetKnownHeader(knownHeaderIndex, values);
-            else this.SetCustomHeader(headerName, values);
+            var knownHeaderValue = GetKnownHeaderValue(headerName);
+            if (knownHeaderValue >= 0)
+            {
+                this.SetKnownHeader(knownHeaderValue, values);
+            }
+            else
+            {
+                this.SetCustomHeader(headerName, values);
+            }
         }
         public void Set(KnownHeaderT knownHeader, IEnumerable<string> values)
         {
@@ -263,7 +340,7 @@ namespace vtortola.WebSockets.Http
             if (knownHeaderValue >= 0)
             {
                 var value = header.Substring(valueStartIndex, valueLength);
-                if (KnownHeaderFlags[knownHeaderValue]) // it is atomic header, so don't split it
+                if ((GetFlags(knownHeaderValue) & HeaderFlags.Singleton) == HeaderFlags.Singleton) // it is atomic header, so don't split it
                 {
                     this.Add(FromInt(knownHeaderValue), value);
                 }
@@ -312,7 +389,6 @@ namespace vtortola.WebSockets.Http
             return values;
         }
 
-
         public string Get(string headerName)
         {
             if (headerName == null) throw new ArgumentNullException(nameof(headerName), "headerName != null");
@@ -340,7 +416,7 @@ namespace vtortola.WebSockets.Http
 
         public void SetReadOnly()
         {
-            this.isReadOnly = true;
+            this.IsReadOnly = true;
         }
         public void Clear()
         {
@@ -357,9 +433,15 @@ namespace vtortola.WebSockets.Http
 
             this.ThrowIfReadOnly();
 
-            var knownHeaderIndex = GetKnownHeaderValue(headerName);
-            if (knownHeaderIndex >= 0 && knownHeaderIndex <= ToInt(LastKnownHeader)) this.SetKnownHeader(knownHeaderIndex, default(ValueCollection));
-            else this.SetCustomHeader(headerName, default(ValueCollection));
+            var knownHeaderValue = GetKnownHeaderValue(headerName);
+            if (knownHeaderValue >= 0)
+            {
+                this.SetKnownHeader(knownHeaderValue, default(ValueCollection));
+            }
+            else
+            {
+                this.SetCustomHeader(headerName, default(ValueCollection));
+            }
         }
         public void Remove(KnownHeaderT knownHeader)
         {
@@ -383,6 +465,15 @@ namespace vtortola.WebSockets.Http
             var values = this.GetHeader(key);
             value = values.ToString();
             return values.IsEmpty;
+        }
+
+        public Headers<KnownHeaderT> Clone()
+        {
+            int knownHeadersCount = this.knownHeadersCount;
+            var knownHeaders = (ValueCollection[])this.knownHeaders?.Clone();
+            var customHeaders = this.customHeaders != null ? new Dictionary<string, ValueCollection>(this.customHeaders) : null;
+
+            return new Headers<KnownHeaderT>(knownHeaders, knownHeadersCount, customHeaders);
         }
 
         bool IDictionary<string, string>.ContainsKey(string key)
@@ -462,7 +553,7 @@ namespace vtortola.WebSockets.Http
 
         private void SetKnownHeader(int knownHeaderValue, ValueCollection valueCollection)
         {
-            if (knownHeaderValue < ToInt(FirstKnownHeader) || knownHeaderValue > ToInt(LastKnownHeader)) throw new ArgumentOutOfRangeException(nameof(knownHeaderValue));
+            if (knownHeaderValue < 0 || knownHeaderValue > KnownHeadersCapacity) throw new ArgumentOutOfRangeException(nameof(knownHeaderValue));
 
             if (this.knownHeaders == null) this.knownHeaders = new ValueCollection[KnownHeadersCapacity];
 
@@ -486,16 +577,21 @@ namespace vtortola.WebSockets.Http
         private ValueCollection GetHeader(string headerName)
         {
             var values = default(ValueCollection);
-            var knownHeaderIndex = GetKnownHeaderValue(headerName);
-            if (knownHeaderIndex >= 0 && knownHeaderIndex <= ToInt(LastKnownHeader)) values = this.GetKnownHeader(knownHeaderIndex);
-            else if (this.customHeaders != null) values = this.GetCustomHeader(headerName);
+            var knownHeaderValue = GetKnownHeaderValue(headerName);
+            if (knownHeaderValue >= 0)
+            {
+                values = this.GetKnownHeader(knownHeaderValue);
+            }
+            else if (this.customHeaders != null)
+            {
+                values = this.GetCustomHeader(headerName);
+            }
 
             return values;
         }
         private ValueCollection GetKnownHeader(int knownHeaderValue)
         {
-            if (knownHeaderValue < ToInt(FirstKnownHeader) || knownHeaderValue > ToInt(LastKnownHeader))
-                throw new ArgumentOutOfRangeException(nameof(knownHeaderValue));
+            if (knownHeaderValue < 0 || knownHeaderValue > KnownHeadersCapacity) throw new ArgumentOutOfRangeException(nameof(knownHeaderValue));
 
             var values = this.knownHeaders?[knownHeaderValue] ?? default(ValueCollection);
             return values;
@@ -510,23 +606,37 @@ namespace vtortola.WebSockets.Http
             return values;
         }
 
-        private static int GetKnownHeaderValue(string headerName)
+        internal static int GetKnownHeaderValue(string headerName)
         {
             if (headerName == null) throw new ArgumentNullException(nameof(headerName), "key != null");
 
-            var binIndex = Array.BinarySearch(KnownHeaderSortedNames, headerName, KeyComparer);
-            if (binIndex >= 0 && binIndex <= KnownHeaderSortedValues.Length)
-                return KnownHeaderSortedValues[binIndex];
+            var binIndex = Array.BinarySearch(SortedNames, headerName, KeyComparer);
+            if (binIndex >= 0 && binIndex < SortedByNameValues.Length)
+                return SortedByNameValues[binIndex];
 
             return -1;
         }
-        private static string GetKnownHeaderName(int knownHeaderValue)
+        internal static string GetKnownHeaderName(int knownHeaderValue)
         {
-            if (!(knownHeaderValue >= 0 && knownHeaderValue < KnownHeadersCapacity)) throw new ArgumentOutOfRangeException(nameof(knownHeaderValue), "index >= 0 && index < KnownHeadersCapacity");
+            if (knownHeaderValue < 0 || knownHeaderValue > KnownHeadersCapacity) throw new ArgumentOutOfRangeException(nameof(knownHeaderValue));
 
-            if (knownHeaderValue > KnownHeaderNames.Length) throw new ArgumentOutOfRangeException();
+            var binIndex = Array.BinarySearch(SortedValues, knownHeaderValue);
+            if (binIndex >= 0 && binIndex < SortedByValueNames.Length)
+                return SortedByValueNames[binIndex];
 
-            return KnownHeaderNames[knownHeaderValue];
+            return null;
+        }
+        internal static HeaderFlags GetFlags(int knownHeaderValue)
+        {
+            var binIndex = Array.BinarySearch(SortedValues, knownHeaderValue);
+            if (binIndex >= 0 && binIndex < SortedByValueFlags.Length)
+                return SortedByValueFlags[binIndex];
+
+            return HeaderFlags.None;
+        }
+        internal static KnownHeaderT ConvertFromInt(int knownHeaderValue)
+        {
+            return FromInt(knownHeaderValue);
         }
 
         public static bool TryGetKnownHeaderByName(string knownHeaderName, out KnownHeaderT knownHeader)
@@ -542,12 +652,12 @@ namespace vtortola.WebSockets.Http
         }
         public static string GetHeaderName(KnownHeaderT knownHeader)
         {
-            return KnownHeaderNames[ToInt(knownHeader)];
+            return GetKnownHeaderName(ToInt(knownHeader));
         }
 
         private void ThrowIfReadOnly()
         {
-            if (this.isReadOnly) throw new InvalidOperationException("Headers collection is read-only.");
+            if (this.IsReadOnly) throw new InvalidOperationException("Headers collection is read-only.");
         }
 
         public override string ToString()

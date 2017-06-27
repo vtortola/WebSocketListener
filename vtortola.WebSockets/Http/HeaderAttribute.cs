@@ -6,11 +6,11 @@ namespace vtortola.WebSockets.Http
     internal class HeaderAttribute : Attribute
     {
         public string Name { get; }
-        public bool IsAtomic { get; set; }
+        public HeaderFlags Flags { get; set; }
 
         public HeaderAttribute()
         {
-            
+
         }
         public HeaderAttribute(string headerName)
         {

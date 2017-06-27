@@ -12,7 +12,7 @@ namespace vtortola.WebSockets.Http
         [Header("Cache-Control")]
         CacheControl = 0,
         Connection = 1,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Date = 2,
         [Header("Keep-Alive")]
         KeepAlive = 3,
@@ -24,9 +24,9 @@ namespace vtortola.WebSockets.Http
         Via = 8,
         Warning = 9,
         Allow = 10,
-        [Header("Content-Length", IsAtomic = true)]
+        [Header("Content-Length", Flags = HeaderFlags.Singleton)]
         ContentLength = 11,
-        [Header("Content-Type", IsAtomic = true)]
+        [Header("Content-Type", Flags = HeaderFlags.Singleton)]
         ContentType = 12,
         [Header("Content-Encoding")]
         ContentEncoding = 13,
@@ -49,45 +49,45 @@ namespace vtortola.WebSockets.Http
         AcceptEncoding = 22,
         [Header("Accept-Language")]
         AcceptLanguage = 23,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Authorization = 24,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Cookie = 25,
         Expect = 26,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         From = 27,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Host = 28,
         [Header("If-Match")]
         IfMatch = 29,
-        [Header("If-Modified-Since", IsAtomic = true)]
+        [Header("If-Modified-Since", Flags = HeaderFlags.Singleton)]
         IfModifiedSince = 30,
         [Header("If-None-Match")]
         IfNoneMatch = 31,
         [Header("If-Range")]
         IfRange = 32,
-        [Header("If-Unmodified-Since", IsAtomic = true)]
+        [Header("If-Unmodified-Since", Flags = HeaderFlags.Singleton)]
         IfUnmodifiedSince = 33,
-        [Header("Max-Forwards", IsAtomic = true)]
+        [Header("Max-Forwards", Flags = HeaderFlags.Singleton)]
         MaxForwards = 34,
-        [Header("Proxy-Authorization", IsAtomic = true)]
+        [Header("Proxy-Authorization", Flags = HeaderFlags.Singleton)]
         ProxyAuthorization = 35,
         // ReSharper disable once IdentifierTypo
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Referer = 36,
         Range = 37,
         [Header("TE")]
         Te = 38,
         Translate = 39,
-        [Header("User-Agent", IsAtomic = true)]
+        [Header("User-Agent", Flags = HeaderFlags.Singleton)]
         UserAgent = 40,
 
         // extensions to HttpRequestHeaders
-        [Header("Content-Disposition", IsAtomic = true)]
+        [Header("Content-Disposition", Flags = HeaderFlags.Singleton)]
         ContentDisposition = 41,
-        [Header(IsAtomic = true)]
+        [Header(Flags = HeaderFlags.Singleton)]
         Origin = 42,
-        [Header("Sec-WebSocket-Key", IsAtomic = true)]
+        [Header("Sec-WebSocket-Key", Flags = HeaderFlags.Singleton)]
         WebSocketKey = 43,
         [Header("Sec-WebSocket-Version")]
         WebSocketVersion = 44,
