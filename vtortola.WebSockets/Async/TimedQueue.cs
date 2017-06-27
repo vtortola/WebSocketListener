@@ -38,7 +38,6 @@ namespace vtortola.WebSockets.Async
         protected TimedQueue(TimeSpan period, TaskScheduler notificationScheduler = null)
         {
             if (period <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(period), "period should be greater than TimeSpan.Zero");
-            if (period >= TimeSpan.FromTicks(int.MaxValue)) throw new ArgumentOutOfRangeException(nameof(period), "period should be lesser then TimeSpan.FromTicks(int.MaxValue)");
 
             if (notificationScheduler == null)
                 notificationScheduler = TaskScheduler.Default;
@@ -83,7 +82,7 @@ namespace vtortola.WebSockets.Async
 
             var head = Volatile.Read(ref this.queueHead);
             var headIndex = GetHeadIndex(head);
-            var tailIndex = (headIndex + this.timeSlices) % this.queue.Length;
+            var tailIndex = (headIndex + this.timeSlices + 1) % this.queue.Length;
 
             var list = default(SubscriptionListT);
             var spinWait = new SpinWait();
@@ -130,7 +129,7 @@ namespace vtortola.WebSockets.Async
 
                 } while (Interlocked.CompareExchange(ref this.queueHead, newHead, head) != head);
 
-                var headList = Volatile.Read(ref this.queue[headIndex]);
+                var headList = Interlocked.Exchange(ref this.queue[headIndex], null);
                 if (headList == null)
                     continue;
 
