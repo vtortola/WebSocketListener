@@ -2,8 +2,12 @@
 	Copyright (c) 2017 Denis Zykov
 	License: https://opensource.org/licenses/MIT
 */
+
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using vtortola.WebSockets.Transports.Sockets;
 
 namespace vtortola.WebSockets.Transports.UnixSockets
@@ -32,6 +36,30 @@ namespace vtortola.WebSockets.Transports.UnixSockets
             socket.UseOnlyOverlappedIO = this.transport.IsAsync;
 #endif
             return new UnixSocketConnection(socket);
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposed)
+        {
+            var endPoints = this.LocalEndpoints;
+            base.Dispose(disposed);
+
+            if (endPoints == null || endPoints.Count == 0)
+                return;
+
+            foreach (var endPoint in endPoints)
+            {
+                try
+                {
+                    var fileName = UnixSocketTransport.GetEndPointFileName(endPoint);
+                    if (File.Exists(fileName))
+                        File.Delete(fileName);
+                }
+                catch (Exception deleteException) when (deleteException is ThreadAbortException == false)
+                {
+                    /* ignore delete exception */
+                }
+            }
         }
 
         /// <inheritdoc />
