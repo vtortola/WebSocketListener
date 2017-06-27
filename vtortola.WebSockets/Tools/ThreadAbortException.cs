@@ -1,4 +1,5 @@
-﻿namespace System
+﻿// ReSharper disable once CheckNamespace
+namespace System.Threading
 {
 #if THREADABORTDUMMY
     internal sealed class ThreadAbortException : Exception
