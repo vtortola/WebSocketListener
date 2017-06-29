@@ -91,7 +91,12 @@ namespace WebSocketListenerTests.Echo
                 {
                     var webSocket = await server.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
                     if (webSocket == null)
-                        break; // stopped
+                    {
+                        if (cancellation.IsCancellationRequested || !server.IsStarted)
+                            break; // stopped
+
+                        continue; // retry
+                    }
 
 #pragma warning disable 4014
                     EchoAllIncomingMessagesAsync(webSocket, cancellation);
