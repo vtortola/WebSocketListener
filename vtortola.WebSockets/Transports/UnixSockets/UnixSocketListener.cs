@@ -55,7 +55,7 @@ namespace vtortola.WebSockets.Transports.UnixSockets
                     if (File.Exists(fileName))
                         File.Delete(fileName);
                 }
-                catch (Exception deleteException) when (deleteException is ThreadAbortException == false)
+                catch (Exception webSocketFileDeleteError) when (webSocketFileDeleteError is ThreadAbortException == false)
                 {
                     /* ignore delete exception */
                 }
