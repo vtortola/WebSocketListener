@@ -307,11 +307,13 @@ namespace vtortola.WebSockets
         {
             if (writer == null) throw new ArgumentNullException(nameof(writer));
 
-            int intCode = (int)code;
+            var intCode = (int)code;
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
             writer.Write(HttpStatusDescription.Get(code));
+            writer.Write("\r\n");
+            writer.Write("Connection: close");
             writer.Write("\r\n\r\n");
         }
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)
