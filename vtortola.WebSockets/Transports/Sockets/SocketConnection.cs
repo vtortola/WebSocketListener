@@ -58,18 +58,17 @@ namespace vtortola.WebSockets.Transports.Sockets
             catch (ArgumentException getLocalEndPointError) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
             {
 #if DEBUG
-				if (log.IsDebugEnabled)
-					log.Debug($"An error occurred while trying to get '{nameof(socket.LocalEndPoint)}' property of established connection.", getLocalEndPointError);
+                System.Diagnostics.Debug.WriteLine($"An error occurred while trying to get '{nameof(socket.LocalEndPoint)}' property of established connection." + getLocalEndPointError.Unwrap());
 #endif
                 this.LocalEndPoint = BrokenEndPoint;
             }
             try { this.RemoteEndPoint = socket.RemoteEndPoint; }
-            catch (ArgumentException getRemoteEndPoint) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
+            catch (ArgumentException getRemoteEndPointError) // Mono B_ug he AddressFamily InterNetworkV6 is not valid for the System.Net.IPEndPoint end point, use InterNetwork instead.
             {
 #if DEBUG
-				if (log.IsDebugEnabled)
-					log.Debug($"An error occurred while trying to get '{nameof(socket.RemoteEndPoint)}' property of established connection.", getRemoteEndPoint);
+                System.Diagnostics.Debug.WriteLine($"An error occurred while trying to get '{nameof(socket.RemoteEndPoint)}' property of established connection." + getRemoteEndPointError.Unwrap());
 #endif
+
                 this.RemoteEndPoint = originalRemoteEndPoint = BrokenEndPoint;
             }
 
