@@ -56,12 +56,18 @@ namespace MonoEchoServer
                 tcp.ReceiveBufferSize = bufferSize;
                 tcp.SendBufferSize = bufferSize;
             });
-           
+            // register unix socket transport
+            options.Transports.RegisterUnixSockets(unix =>
+            {
+                unix.ReceiveBufferSize = bufferSize;
+                unix.SendBufferSize = bufferSize;
+            });
+
             // adding the WSS extension
             //options.ConnectionExtensions.RegisterSecureConnection(certificate);
 
             var listenEndPoints = new Uri[] {
-               // new Uri("unix:/tmp/wsocket"),
+                new Uri("unix:/tmp/wsocket"),
                 new Uri("ws://localhost") // will listen both IPv4 and IPv6
             };
 
