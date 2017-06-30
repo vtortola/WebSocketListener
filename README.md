@@ -28,20 +28,21 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
 
 Take a look on the [performance and load  tests](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-performance-tests) on a simple 'echo' server.
 
-About this fork
+What's new in v4 (this fork)
 =================
-This is a branch from the [project](https://github.com/vtortola/WebSocketListener) that adds new functionality and fixes errors.
+This is a fork from the [project](https://github.com/vtortola/WebSocketListener) that adds new functionality and fixes errors.
 
 Major Features:
 - WebSocketClient
-    - TLS Support
-    - Auto IPv6 address resolution
     - Same features and options as WebSocketListener
+    - TLS support
+    - works with IPv4/IPv6
+    
 - Transports
     - TCP, Unix Sockets, Named Pipes (why not)
-    - Socket is abstracted as NetworkConnection
+    - System.Net.Socket is abstracted as NetworkConnection
     - Graceful disconnection
-    - Fine tuning with WebSocketListenerOptions. Transports collection extensions
+    - Fine tuning with WebSocketListenerOptions. Fluent confuration API.
 
 Minor Features:
 - Fully async API (it is strongly discouraged to use synchronous API with IO operations)
