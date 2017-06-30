@@ -4,6 +4,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using vtortola.WebSockets;
+using vtortola.WebSockets.Rfc6455;
+#pragma warning disable 4014
 
 namespace TerminalServer.CliServer
 {
@@ -31,63 +33,77 @@ namespace TerminalServer.CliServer
                 sbc.ReceiveFrom("loopback://localhost/queue");
             });
 
-            _wsServer = new WebSocketListener(endpoint, new WebSocketListenerOptions()
-            {
+            var options = new WebSocketListenerOptions {
                 PingTimeout = Timeout.InfiniteTimeSpan,
-                OnHttpNegotiation = HttpNegotiation
-            });
-            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(_wsServer);
-            _wsServer.Standards.RegisterStandard(rfc6455);
-        }
-        private void HttpNegotiation(WebSocketHttpRequest request, WebSocketHttpResponse response)
-        {
-            Guid connectionId = Guid.Empty;
-            if (request.RequestUri == null || request.RequestUri.OriginalString.Length < 1 || !Guid.TryParse(request.RequestUri.OriginalString.Substring(1), out connectionId))
-            {
-                connectionId = _sysInfo.Guid();
-                _log.Info("Connection Id created: {0}", connectionId);
-            }
-            else
-                _log.Info("Connection Id from url: {0}", connectionId);
+                HttpAuthenticationHandler = this.HttpNegotiationAsync
+            };
+            options.Standards.RegisterRfc6455();
 
-            request.Items.Add(ConnectionIdKey, connectionId);
-
-            Guid userId;
-            if (request.Cookies[ConnectionManager.UserSessionCookieName] == null)
-            {
-                userId = _sysInfo.Guid();
-                _log.Info("User ID created: {0}", userId);
-            }
-            else
-            {
-                userId = Guid.Parse(request.Cookies[ConnectionManager.UserSessionCookieName].Value);
-                _log.Info("User ID found in cookie: {0}", userId);
-            }
-            
-           Queue.PublishRequest(new ConnectionConnectRequest(connectionId, userId), ctx =>
-            {
-                ctx.HandleFault(f =>
-                {
-                    response.Status = HttpStatusCode.InternalServerError;
-                });
-                ctx.HandleTimeout(TimeSpan.FromSeconds(5), () =>
-                {
-                    response.Status = HttpStatusCode.RequestTimeout;
-                });
-                ctx.Handle<ConnectionConnectResponse>(res =>
-                {
-                    response.Cookies.Add(new Cookie(ConnectionManager.UserSessionCookieName, res.UserId.ToString()));
-                });
-            });
+            _wsServer = new WebSocketListener(endpoint, options);
         }
-        public Task StartAsync()
+        private Task<bool> HttpNegotiationAsync(WebSocketHttpRequest request, WebSocketHttpResponse response)
         {
-            _wsServer.Start();
+            var authResult = new TaskCompletionSource<bool>();
+            try
+            {
+                var connectionId = Guid.Empty;
+                if (request.RequestUri == null || request.RequestUri.OriginalString.Length < 1 || !Guid.TryParse(request.RequestUri.OriginalString.Substring(1), out connectionId))
+                {
+                    connectionId = _sysInfo.Guid();
+                    _log.Info("Connection Id created: {0}", connectionId);
+                }
+                else
+                    _log.Info("Connection Id from url: {0}", connectionId);
+
+                request.Items.Add(ConnectionIdKey, connectionId);
+
+                Guid userId;
+                if (request.Cookies[ConnectionManager.UserSessionCookieName] == null)
+                {
+                    userId = _sysInfo.Guid();
+                    _log.Info("User ID created: {0}", userId);
+                }
+                else
+                {
+                    userId = Guid.Parse(request.Cookies[ConnectionManager.UserSessionCookieName].Value);
+                    _log.Info("User ID found in cookie: {0}", userId);
+                }
+
+                Queue.PublishRequest(new ConnectionConnectRequest(connectionId, userId), ctx =>
+                 {
+                     ctx.HandleFault(f =>
+                     {
+                         response.Status = HttpStatusCode.InternalServerError;
+                         authResult.TrySetResult(false);
+                     });
+                     ctx.HandleTimeout(TimeSpan.FromSeconds(5), () =>
+                     {
+                         response.Status = HttpStatusCode.RequestTimeout;
+                         authResult.TrySetResult(false);
+                     });
+                     ctx.Handle<ConnectionConnectResponse>(res =>
+                     {
+                         response.Cookies.Add(new Cookie(ConnectionManager.UserSessionCookieName, res.UserId.ToString()));
+                         authResult.TrySetResult(true);
+                     });
+                 });
+            }
+            catch (Exception authException)
+            {
+                authResult.SetException(authException);
+            }
+            return authResult.Task;
+        }
+        public async Task StartAsync()
+        {
+            await _wsServer.StartAsync();
             _log.Info("Echo Server started");
-            return AcceptWebSocketClientsAsync(_wsServer);
+            await AcceptWebSocketClientsAsync(_wsServer);
         }
         async Task AcceptWebSocketClientsAsync(WebSocketListener server)
         {
+            await Task.Yield();
+
             while (!_cancellation.IsCancellationRequested)
             {
                 try

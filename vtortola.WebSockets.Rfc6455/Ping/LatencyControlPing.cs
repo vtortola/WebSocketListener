@@ -1,62 +1,57 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    internal sealed class LatencyControlPing : PingStrategy
+    partial class WebSocketConnectionRfc6455
     {
-        readonly ArraySegment<Byte> _pingBuffer;
-        readonly TimeSpan _pingTimeout;
-        readonly WebSocketConnectionRfc6455 _connection;
-
-        DateTime _lastPong;
-        TimeSpan _pingInterval;
-
-        internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
+        private sealed class LatencyControlPing : PingHandler
         {
-            Guard.ParameterCannotBeNull(connection, "connection");
+            private readonly ArraySegment<byte> _pingBuffer;
+            private readonly TimeSpan _pingTimeout;
+            private readonly WebSocketConnectionRfc6455 _connection;
+            private readonly Stopwatch _lastPong;
 
-            _pingTimeout = pingTimeout;
-            _pingBuffer = pingBuffer;
-            _connection = connection;
-        }
-        internal override async Task StartPing()
-        {
-            _lastPong = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Max(500, _pingTimeout.TotalMilliseconds / 2));
-
-            while (_connection.IsConnected)
+            public LatencyControlPing(WebSocketConnectionRfc6455 connection)
             {
-                await Task.Delay(_pingInterval).ConfigureAwait(false);
+                if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-                try
-                {
-                    var now = DateTime.Now;
+                _pingTimeout = connection.options.PingTimeout < TimeSpan.Zero ? TimeSpan.MaxValue : connection.options.PingTimeout;
+                _pingBuffer = connection.pingBuffer;
+                _connection = connection;
+                _lastPong = new Stopwatch();
 
-                    if (_lastPong.Add(_pingTimeout) < now)
-                    {
-                        _connection.Close(WebSocketCloseReasons.GoingAway);
-                    }
-                    else
-                    {
-                        ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
-                        _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
-                    }
-                }
-                catch(Exception ex)
-                {
-                    DebugLog.Fail("LatencyControlPing.StartPing", ex);
-                    _connection.Close(WebSocketCloseReasons.ProtocolError);
-                }
             }
-        }
 
-        internal override void NotifyPong(ArraySegment<Byte> frameContent)
-        {
-            var now = DateTime.Now;
-            _lastPong = now;
-            var timestamp = BitConverter.ToInt64(frameContent.Array, frameContent.Offset);
-            _connection.Latency = TimeSpan.FromTicks((now.Ticks - timestamp) / 2);
+            public override async Task PingAsync()
+            {
+                if (this._lastPong.Elapsed > this._pingTimeout)
+                {
+                    await this._connection.CloseAsync(WebSocketCloseReasons.GoingAway).ConfigureAwait(false);
+                    return;
+                }
+
+                ((ulong)Stopwatch.GetTimestamp()).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
+                var messageType = (WebSocketMessageType)WebSocketFrameOption.Ping;
+
+                var pingFrame = _connection.PrepareFrame(_pingBuffer, 8, true, false, messageType, WebSocketExtensionFlags.None);
+                if (await _connection.SendFrameAsync(pingFrame, TimeSpan.Zero, SendOptions.NoErrors, CancellationToken.None).ConfigureAwait(false))
+                    this._lastPong.Restart();
+            }
+            /// <inheritdoc />
+            public override void NotifyActivity()
+            {
+
+            }
+            public override void NotifyPong(ArraySegment<byte> pongBuffer)
+            {
+                this._lastPong.Stop();
+
+                var timeDelta = TimestampToTimeSpan(Stopwatch.GetTimestamp() - BitConverter.ToInt64(pongBuffer.Array, pongBuffer.Offset));
+                _connection.latency = TimeSpan.FromMilliseconds(Math.Max(0, timeDelta.TotalMilliseconds / 2));
+            }
         }
     }
 }

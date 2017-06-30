@@ -1,44 +1,79 @@
-﻿using System.Collections.Generic;
+﻿/*
+	Copyright (c) 2017 Denis Zykov
+	License: https://opensource.org/licenses/MIT
+*/
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace vtortola.WebSockets
 {
     public sealed class WebSocketMessageExtensionCollection : IReadOnlyCollection<IWebSocketMessageExtension>
     {
-        readonly List<IWebSocketMessageExtension> _extensions;
-        readonly WebSocketListener _listener;
+        private readonly List<IWebSocketMessageExtension> extensions;
+        private volatile int useCounter;
+
+        public int Count => this.extensions.Count;
+        public bool IsReadOnly => this.useCounter > 0;
 
         public WebSocketMessageExtensionCollection()
         {
-            _extensions = new List<IWebSocketMessageExtension>();
+            this.extensions = new List<IWebSocketMessageExtension>();
         }
 
-        public WebSocketMessageExtensionCollection(WebSocketListener webSocketListener)
-            :this()
+        public void Add(IWebSocketMessageExtension extension)
         {
-            _listener = webSocketListener;
+            if (extension == null) throw new ArgumentNullException(nameof(extension));
+
+            if (this.IsReadOnly)
+                throw new WebSocketException($"New entries cannot be added because this collection is used in running {nameof(WebSocketClient)} or {nameof(WebSocketListener)}.");
+
+            if (this.extensions.Any(ext => ext.GetType() == extension.GetType()))
+                throw new WebSocketException($"Can't add extension '{extension}' because another extension of type '{extension.GetType().Name}' is already exists in collection.");
+
+            this.extensions.Add(extension);
         }
 
-        public void RegisterExtension(IWebSocketMessageExtension extension)
-        {  
-            if (_listener != null && _listener.IsStarted)
-                throw new WebSocketException("Extensions cannot be added after the service is started");
-
-            _extensions.Add(extension);
-        }
-
-        public int Count
+        IEnumerator<IWebSocketMessageExtension> IEnumerable<IWebSocketMessageExtension>.GetEnumerator()
         {
-            get { return _extensions.Count; }
+            return this.extensions.GetEnumerator();
         }
-
-        public IEnumerator<IWebSocketMessageExtension> GetEnumerator()
-        {
-            return _extensions.GetEnumerator();
-        }
-
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return _extensions.GetEnumerator();
+            return this.extensions.GetEnumerator();
+        }
+
+        public List<IWebSocketMessageExtension>.Enumerator GetEnumerator()
+        {
+            return this.extensions.GetEnumerator();
+        }
+
+        internal WebSocketMessageExtensionCollection Clone()
+        {
+            var cloned = new WebSocketMessageExtensionCollection();
+            foreach (var item in this.extensions)
+                cloned.extensions.Add(item.Clone());
+            return cloned;
+        }
+
+        internal void SetUsed(bool isUsed)
+        {
+#pragma warning disable 420
+            var newValue = default(int);
+            if (isUsed)
+                newValue = Interlocked.Increment(ref this.useCounter);
+            else
+                newValue = Interlocked.Decrement(ref this.useCounter);
+            if (newValue < 0)
+                throw new InvalidOperationException("The collection is released more than once.");
+#pragma warning restore 420
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return string.Join(", ", this.extensions);
         }
     }
 }

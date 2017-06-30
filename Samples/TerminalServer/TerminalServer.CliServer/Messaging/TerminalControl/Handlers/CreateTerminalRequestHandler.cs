@@ -27,7 +27,7 @@ namespace TerminalServer.CliServer
             if (factory == null)
                 throw new ArgumentException("There is no factory for this type");
 
-            UserConnection connection = _connections.GetConnection(message.ConnectionId);
+            var connection = _connections.GetConnection(message.ConnectionId);
             if (connection == null)
                 throw new ArgumentException("The connection does not exists");
             var id = _sysinfo.Guid();

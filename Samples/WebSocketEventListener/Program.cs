@@ -26,6 +26,7 @@ namespace WebSocketEventListenerSample
 
                 server.Start();
                 Console.ReadKey(true);
+                server.Stop();
             }
 
             

@@ -1,89 +1,101 @@
 ﻿using System;
-using System.ServiceModel.Channels;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Threading;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
-    public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
-
-    public enum PingModes { LatencyControl, BandwidthSaving }
-
     public sealed class WebSocketListenerOptions
     {
-        public TimeSpan PingTimeout { get; set; }
-        public Int32 NegotiationQueueCapacity { get; set; }
-        public Int32? TcpBacklog { get; set; }
-        public Int32 ParallelNegotiations { get; set; }
-        public TimeSpan NegotiationTimeout { get; set; }
-        public TimeSpan WebSocketSendTimeout { get; set; }
-        public TimeSpan WebSocketReceiveTimeout { get; set; }
-        public Int32 SendBufferSize { get; set; }
-        public String[] SubProtocols { get; set; }
-        public BufferManager BufferManager { get; set; }
-        public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
-        public Boolean? UseNagleAlgorithm { get; set; }
-        public PingModes PingMode { get; set; }
-        public IHttpFallback HttpFallback { get; set; }
+        public const int DEFAULT_SEND_BUFFER_SIZE = 8 * 1024;
+        public static readonly string[] NoSubProtocols = new string[0];
 
-        static readonly String[] _noSubProtocols = new String[0];
+        public WebSocketTransportCollection Transports { get; private set; }
+        public WebSocketFactoryCollection Standards { get; private set; }
+        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
+
+        public TimeSpan PingTimeout { get; set; }
+        public TimeSpan PingInterval => this.PingTimeout > TimeSpan.Zero ? TimeSpan.FromTicks(this.PingTimeout.Ticks / 2) : TimeSpan.FromSeconds(5);
+
+        public int NegotiationQueueCapacity { get; set; }
+        public int ParallelNegotiations { get; set; }
+        public TimeSpan NegotiationTimeout { get; set; }
+        public int SendBufferSize { get; set; }
+        public string[] SubProtocols { get; set; }
+        public BufferManager BufferManager { get; set; }
+        public HttpAuthenticationCallback HttpAuthenticationHandler { get; set; }
+        public RemoteCertificateValidationCallback CertificateValidationHandler { get; set; }
+        public SslProtocols SupportedSslProtocols { get; set; }
+        public PingMode PingMode { get; set; }
+        public IHttpFallback HttpFallback { get; set; }
+        public ILogger Logger { get; set; }
+
         public WebSocketListenerOptions()
         {
-            PingTimeout = TimeSpan.FromSeconds(5);
-            NegotiationQueueCapacity = Environment.ProcessorCount * 10;
-            ParallelNegotiations = Environment.ProcessorCount * 2;
-            NegotiationTimeout = TimeSpan.FromSeconds(5);
-            WebSocketSendTimeout = TimeSpan.FromSeconds(5);
-            WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
-            SendBufferSize = 8192;
-            SubProtocols = _noSubProtocols;
-            OnHttpNegotiation = null;
-            UseNagleAlgorithm = true;
-            PingMode = PingModes.LatencyControl;
+            this.PingTimeout = TimeSpan.FromSeconds(5);
+            this.Transports = new WebSocketTransportCollection();
+            this.Standards = new WebSocketFactoryCollection();
+            this.ConnectionExtensions = new WebSocketConnectionExtensionCollection();
+            this.NegotiationQueueCapacity = Environment.ProcessorCount * 10;
+            this.ParallelNegotiations = Environment.ProcessorCount * 2;
+            this.NegotiationTimeout = TimeSpan.FromSeconds(5);
+            this.SendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
+            this.SubProtocols = NoSubProtocols;
+            this.HttpAuthenticationHandler = null;
+            this.CertificateValidationHandler = null;
+            this.PingMode = PingMode.LatencyControl;
+            this.SupportedSslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12;
+#if DEBUG
+            this.Logger = DebugLogger.Instance;
+#else
+            this.Logger = NullLogger.Instance;
+#endif
         }
+
         public void CheckCoherence()
         {
-            if (PingTimeout == TimeSpan.Zero)
-                PingTimeout = Timeout.InfiniteTimeSpan;
+            if (this.PingTimeout <= TimeSpan.Zero)
+                this.PingTimeout = Timeout.InfiniteTimeSpan;
 
-            if (NegotiationQueueCapacity < 0)
-                throw new WebSocketException("NegotiationQueueCapacity must be 0 or more");
+            if (this.PingTimeout <= TimeSpan.FromSeconds(1))
+                this.PingTimeout = TimeSpan.FromSeconds(1);
 
-            if (TcpBacklog.HasValue && TcpBacklog.Value < 1)
-                throw new WebSocketException("TcpBacklog value must be bigger than 0");
+            if (this.NegotiationQueueCapacity < 0)
+                throw new WebSocketException($"{nameof(this.NegotiationQueueCapacity)} must be 0 or more.");
 
-            if (ParallelNegotiations < 1)
-                throw new WebSocketException("ParallelNegotiations cannot be less than 1");
+            if (this.ParallelNegotiations < 1)
+                throw new WebSocketException($"{nameof(this.ParallelNegotiations)} cannot be less than 1.");
 
-            if (NegotiationTimeout == TimeSpan.Zero)
-                NegotiationTimeout = Timeout.InfiniteTimeSpan;
-            
-            if (WebSocketSendTimeout == TimeSpan.Zero)
-                WebSocketSendTimeout = Timeout.InfiniteTimeSpan;
+            if (this.NegotiationTimeout == TimeSpan.Zero)
+                this.NegotiationTimeout = Timeout.InfiniteTimeSpan;
 
-            if (WebSocketReceiveTimeout == TimeSpan.Zero)
-                WebSocketReceiveTimeout = Timeout.InfiniteTimeSpan;
+            if (this.SendBufferSize < 512)
+                throw new WebSocketException($"{nameof(this.SendBufferSize)} must be bigger than 512.");
 
-            if(SendBufferSize <= 0)
-                throw new WebSocketException("SendBufferSize must be bigger than 0.");
+            if (this.BufferManager != null && this.SendBufferSize < this.BufferManager.LargeBufferSize)
+                throw new WebSocketException($"{this.BufferManager}.{this.BufferManager.LargeBufferSize} must be bigger or equals to {nameof(this.SendBufferSize)}.");
+
+            if (this.Logger == null)
+                throw new WebSocketException($"{this.Logger} should be set. You can use {nameof(NullLogger)}.{nameof(NullLogger.Instance)} to disable logging.");
         }
+
         public WebSocketListenerOptions Clone()
         {
-            return new WebSocketListenerOptions()
-            {
-                PingTimeout = this.PingTimeout,
-                NegotiationQueueCapacity = this.NegotiationQueueCapacity,
-                ParallelNegotiations = this.ParallelNegotiations,
-                NegotiationTimeout = this.NegotiationTimeout,
-                WebSocketSendTimeout = this.WebSocketSendTimeout,
-                WebSocketReceiveTimeout = this.WebSocketReceiveTimeout,
-                SendBufferSize = this.SendBufferSize,
-                SubProtocols = this.SubProtocols??_noSubProtocols,
-                BufferManager = this.BufferManager,
-                OnHttpNegotiation = this.OnHttpNegotiation,
-                UseNagleAlgorithm = this.UseNagleAlgorithm,
-                PingMode = this.PingMode,
-                HttpFallback = this.HttpFallback
-            };
+            var cloned = (WebSocketListenerOptions)this.MemberwiseClone();
+            cloned.SubProtocols = (string[])this.SubProtocols.Clone();
+            cloned.Transports = this.Transports.Clone();
+            cloned.Standards = this.Standards.Clone();
+            cloned.ConnectionExtensions = this.ConnectionExtensions.Clone();
+            return cloned;
+        }
+        public void SetUsed(bool isUsed)
+        {
+            this.Standards.SetUsed(isUsed);
+            foreach (var standard in this.Standards)
+                standard.MessageExtensions.SetUsed(true);
+            this.ConnectionExtensions.SetUsed(isUsed);
+            this.Transports.SetUsed(isUsed);
         }
     }
 }

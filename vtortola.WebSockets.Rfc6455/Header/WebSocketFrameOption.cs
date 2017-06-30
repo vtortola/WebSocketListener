@@ -1,7 +1,7 @@
 ﻿
 namespace vtortola.WebSockets.Rfc6455
 {
-    public enum WebSocketFrameOption
+    internal enum WebSocketFrameOption
     {
         Continuation = 0,
         Text = 1,

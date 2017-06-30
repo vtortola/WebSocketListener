@@ -1,31 +1,36 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
 
 namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketMessageReadRfc6455Stream : WebSocketMessageReadStream
     {
-        readonly WebSocketRfc6455 _webSocket;
-        Boolean _hasPendingFrames;
-        readonly WebSocketMessageType _messageType;
-        readonly WebSocketExtensionFlags _flags;
-        public override WebSocketMessageType MessageType { get { return _messageType; } }
-        public override WebSocketExtensionFlags Flags { get { return _flags; } }
+        private const int STATE_OPEN = 0;
+        private const int STATE_CLOSED = 1;
+        private const int STATE_DISPOSED = 2;
+
+        private readonly WebSocketRfc6455 _webSocket;
+        private bool _hasPendingFrames;
+        private volatile int state = STATE_OPEN;
+
+        public override WebSocketMessageType MessageType { get; }
+        public override WebSocketExtensionFlags Flags { get; }
 
         public WebSocketMessageReadRfc6455Stream(WebSocketRfc6455 webSocket)
         {
-            Guard.ParameterCannotBeNull(webSocket, "webSocket");
+            if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));
 
             _webSocket = webSocket;
-            _messageType = (WebSocketMessageType)_webSocket.Connection.CurrentHeader.Flags.Option;
-            _flags = GetExtensionFlags(_webSocket.Connection.CurrentHeader.Flags);
+            this.MessageType = (WebSocketMessageType)_webSocket.Connection.CurrentHeader.Flags.Option;
+            this.Flags = GetExtensionFlags(_webSocket.Connection.CurrentHeader.Flags);
             _hasPendingFrames = !_webSocket.Connection.CurrentHeader.Flags.FIN;
             if (_webSocket.Connection.CurrentHeader.Flags.Option != WebSocketFrameOption.Binary && _webSocket.Connection.CurrentHeader.Flags.Option != WebSocketFrameOption.Text)
-                throw new WebSocketException("WebSocketMessageReadNetworkStream can only start with a Text or Binary frame, not " + _webSocket.Connection.CurrentHeader.Flags.Option.ToString());
+                throw new WebSocketException($"WebSocketMessageReadNetworkStream can only start with a Text or Binary frame, not {_webSocket.Connection.CurrentHeader.Flags.Option}.");
         }
 
-        private WebSocketExtensionFlags GetExtensionFlags(WebSocketFrameHeaderFlags webSocketFrameHeaderFlags)
+        private static WebSocketExtensionFlags GetExtensionFlags(WebSocketFrameHeaderFlags webSocketFrameHeaderFlags)
         {
             var flags = new WebSocketExtensionFlags();
             flags.Rsv1 = webSocketFrameHeaderFlags.RSV1;
@@ -34,90 +39,81 @@ namespace vtortola.WebSockets.Rfc6455
             return flags;
         }
 
-        private Int32 CheckBoundaries(Byte[] buffer, Int32 offset, Int32 count)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            if (count > buffer.Length - offset)
-                throw new ArgumentException("There is not space in the array for that length considering that offset.");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
 
-            if (_webSocket.Connection.CurrentHeader == null)
+            this.ThrowIfDisposed();
+
+            if (count == 0)
                 return 0;
 
-            if (_webSocket.Connection.CurrentHeader.ContentLength < (Int64)count)
-                count = (Int32)_webSocket.Connection.CurrentHeader.ContentLength;
-
-            if (_webSocket.Connection.CurrentHeader.RemainingBytes < (Int64)count)
-                count = (Int32)_webSocket.Connection.CurrentHeader.RemainingBytes;
-
-            return count;
-        }
-
-        public override Int32 Read(Byte[] buffer, Int32 offset, Int32 count)
-        {
-            Int32 readed = 0;
-            do
-            {
-                if (!_webSocket.IsConnected)
-                    break;
-
-                var checkedcount = CheckBoundaries(buffer, offset, count);
-
-                if (checkedcount == 0 && !_hasPendingFrames)
-                {
-                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
-                    break;
-                }
-                else if (checkedcount == 0 && _hasPendingFrames)
-                    LoadNewHeader();
-                else
-                {
-                    readed = _webSocket.Connection.ReadInternal(buffer, offset, checkedcount);
-                    _webSocket.Connection.DisposeCurrentHeaderIfFinished();
-                    if (_webSocket.Connection.CurrentHeader == null && _hasPendingFrames)
-                        LoadNewHeader();
-                }
-            } while (readed == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0);
-
-            return readed;
-        }
-
-        public override async Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
-        {
-            Int32 readed = 0;
+            var read = 0;
             do
             {
                 if (!_webSocket.IsConnected || cancellationToken.IsCancellationRequested)
                     break;
 
-                var checkedcount = CheckBoundaries(buffer, offset, count);
-
-                if (checkedcount == 0 && !_hasPendingFrames)
+                var bytesToRead = this.GetBytesToRead(this._webSocket.Connection.CurrentHeader, count);
+                if (bytesToRead == 0 && !_hasPendingFrames)
                 {
                     _webSocket.Connection.DisposeCurrentHeaderIfFinished();
                     break;
                 }
-                else if (checkedcount == 0 && _hasPendingFrames)
+                else if (bytesToRead == 0 && _hasPendingFrames)
+                {
                     await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
+                }
                 else
                 {
-                    readed = await _webSocket.Connection.ReadInternalAsync(buffer, offset, checkedcount, cancellationToken).ConfigureAwait(false);
+                    read = await _webSocket.Connection.ReceiveAsync(buffer, offset, bytesToRead, cancellationToken).ConfigureAwait(false);
+
+                    offset += read;
+                    count -= read;
+
                     _webSocket.Connection.DisposeCurrentHeaderIfFinished();
+
                     if (_webSocket.Connection.CurrentHeader == null && _hasPendingFrames)
                         await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
                 }
-            } while (readed == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0);
+            } while (read == 0 && _webSocket.Connection.CurrentHeader.RemainingBytes != 0 && count > 0);
 
-            return readed;
+            return read;
         }
 
-        private void LoadNewHeader()
+        private int GetBytesToRead(WebSocketFrameHeader header, int bufferSize)
         {
-            _webSocket.Connection.AwaitHeader();
-            _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
+            if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+
+            if (header == null)
+                return 0;
+
+            return (int)Math.Min(bufferSize, header.RemainingBytes);
         }
         private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
         {
             await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
             _hasPendingFrames = _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this.state >= STATE_DISPOSED)
+                throw new WebSocketException("The read stream has been disposed.");
+            if (this.state >= STATE_CLOSED)
+                throw new WebSocketException("The read stream has been closed.");
+        }
+
+        public override Task CloseAsync()
+        {
+            Interlocked.CompareExchange(ref this.state, STATE_CLOSED, STATE_OPEN);
+            return TaskHelper.CompletedTask;
+        }
+        protected override void Dispose(bool disposing)
+        {
+            Interlocked.Exchange(ref this.state, STATE_DISPOSED);
         }
     }
 

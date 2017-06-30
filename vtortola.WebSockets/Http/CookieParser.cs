@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 
 
@@ -7,40 +6,40 @@ namespace vtortola.WebSockets
 {
     public static class CookieParser
     {
-        public static IEnumerable<Cookie> Parse(String cookieString)
+        public static IEnumerable<Cookie> Parse(string cookieString)
         {
-            if (String.IsNullOrWhiteSpace(cookieString))
+            if (string.IsNullOrWhiteSpace(cookieString))
                 yield break;
 
-            String part = String.Empty, name = String.Empty;
+            string part = string.Empty, name = string.Empty;
             for (int i = 0; i < cookieString.Length; i++)
             {
-                Char c = cookieString[i];
-                if (c == '=' && String.IsNullOrWhiteSpace(name))
+                char c = cookieString[i];
+                if (c == '=' && string.IsNullOrWhiteSpace(name))
                 {
                     name = part;
-                    part = String.Empty;
+                    part = string.Empty;
                     continue;
                 }
                 else if (c == ';')
                 {
-                    if (!String.IsNullOrWhiteSpace(name))
+                    if (!string.IsNullOrWhiteSpace(name))
                         yield return CreateCookie(name, part);
                     else
-                        yield return CreateCookie(part, String.Empty);
+                        yield return CreateCookie(part, string.Empty);
 
-                    name = String.Empty;
-                    part = String.Empty;
+                    name = string.Empty;
+                    part = string.Empty;
                     continue;
                 }
                 part += c;
             }
-            if (!String.IsNullOrWhiteSpace(name) && !String.IsNullOrWhiteSpace(part))
+            if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(part))
             {
                 yield return CreateCookie(name, part);
             }
         }
-        static Cookie CreateCookie(String key, String value)
+        private static Cookie CreateCookie(string key, string value)
         {
             return new Cookie(key.Trim(), WebUtility.UrlDecode(value.Trim()));
         }

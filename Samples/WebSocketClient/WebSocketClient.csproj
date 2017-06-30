@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net45</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\EchoServer\Log4NetLogger.cs" Link="Log4NetLogger.cs" />
+  </ItemGroup>
+  <ItemGroup>
+  <PackageReference Include="log4net" Version="2.0.5" />
+</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj" />
+    <ProjectReference Include="..\..\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj" />
+    <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>
+

@@ -1,33 +1,45 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Tools;
+
+#pragma warning disable 420
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
+    internal class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
     {
-        Boolean _isHeaderSent, _isFinished;
-        Int32 _internalUsedBufferLength;
+        private const int STATE_OPEN = 0;
+        private const int STATE_CLOSED = 1;
+        private const int STATE_DISPOSED = 2;
 
-        readonly WebSocketRfc6455 _webSocket;
-        readonly WebSocketMessageType _messageType;
+        private bool _isHeaderSent;
+        private int _internalUsedBufferLength;
+        private volatile int state = STATE_OPEN;
+
+        private readonly WebSocketRfc6455 _webSocket;
+        private readonly WebSocketMessageType _messageType;
+
         public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 webSocket, WebSocketMessageType messageType)
         {
-            Guard.ParameterCannotBeNull(webSocket, "webSocket");
+            if (webSocket == null) throw new ArgumentNullException(nameof(webSocket));
 
             _internalUsedBufferLength = 0;
             _messageType = messageType;
             _webSocket = webSocket;
         }
-        public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 client, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
-            : this(client, messageType)
+        public WebSocketMessageWriteRfc6455Stream(WebSocketRfc6455 webSocket, WebSocketMessageType messageType, WebSocketExtensionFlags extensionFlags)
+            : this(webSocket, messageType)
         {
             ExtensionFlags.Rsv1 = extensionFlags.Rsv1;
             ExtensionFlags.Rsv2 = extensionFlags.Rsv2;
             ExtensionFlags.Rsv3 = extensionFlags.Rsv3;
         }
-        private void BufferData(Byte[] buffer, ref Int32 offset, ref Int32 count)
+
+        private void BufferData(byte[] buffer, ref int offset, ref int count)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+
             var read = Math.Min(count, _webSocket.Connection.SendBuffer.Count - _internalUsedBufferLength);
             if (read == 0)
                 return;
@@ -36,12 +48,14 @@ namespace vtortola.WebSockets.Rfc6455
             offset += read;
             count -= read;
         }
-        public override void Write(Byte[] buffer, Int32 offset, Int32 count)
-        {
-            if (_isFinished)
-                throw new WebSocketException("The write stream has been already flushed or disposed.");
 
-            RemoveUTF8BOM(buffer, ref offset, ref count);
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+
+            this.ThrowIfDisposed();
 
             while (count > 0)
             {
@@ -49,60 +63,65 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (_internalUsedBufferLength == _webSocket.Connection.SendBuffer.Count && count > 0)
                 {
-                    _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags);
+                    var dataFrame = _webSocket.Connection.PrepareFrame(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags);
+                    await _webSocket.Connection.SendFrameAsync(dataFrame, cancellationToken).ConfigureAwait(false);
                     _internalUsedBufferLength = 0;
                     _isHeaderSent = true;
                 }
             }
         }
-        public override async Task WriteAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken)
-        {
-            if (_isFinished)
-                throw new WebSocketException("The write stream has been already flushed or disposed.");
 
-            RemoveUTF8BOM(buffer, ref offset, ref count);
-
-            while (count > 0)
-            {
-                BufferData(buffer, ref offset, ref count);
-
-                if (_internalUsedBufferLength == _webSocket.Connection.SendBuffer.Count && count > 0)
-                {
-                    await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken).ConfigureAwait(false);
-                    _internalUsedBufferLength = 0;
-                    _isHeaderSent = true;
-                }
-            }
-        }
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, false, _isHeaderSent, _messageType, ExtensionFlags, cancellationToken).ConfigureAwait(false);
-            _internalUsedBufferLength = 0;
-            _isHeaderSent = true;
-        }
-#if (NET45 || NET451 || NET452 || NET46 || DNX451 || DNX452 || DNX46)
-        public override void Close()
-#else
-        // NETSTANDARD, UAP10_0 and DOTNET5_4 don't support Close, so just override Dispose(bool disposing).
-        protected override void Dispose(bool disposing)
-#endif
-        {
-            if (!_isFinished)
-            {
-                _isFinished = true;
-                _webSocket.Connection.WriteInternal(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags);
-                _webSocket.Connection.EndWriting();
-            }
+            this.ThrowIfDisposed();
+
+            if (this._internalUsedBufferLength <= 0 && this._isHeaderSent)
+                return;
+
+            var dataFrame = this._webSocket.Connection.PrepareFrame(this._webSocket.Connection.SendBuffer, this._internalUsedBufferLength, false, this._isHeaderSent, this._messageType, this.ExtensionFlags);
+            await this._webSocket.Connection.SendFrameAsync(dataFrame, cancellationToken).ConfigureAwait(false);
+            this._internalUsedBufferLength = 0;
+            this._isHeaderSent = true;
         }
 
-        public override async Task CloseAsync(CancellationToken cancellation)
+        private void ThrowIfDisposed()
         {
-            if (!_isFinished)
+            if (this.state >= STATE_DISPOSED)
+                throw new WebSocketException("The write stream has been disposed.");
+            if (this.state >= STATE_CLOSED)
+                throw new WebSocketException("The write stream has been closed.");
+        }
+
+        public override Task CloseAsync()
+        {
+            if (Interlocked.CompareExchange(ref this.state, STATE_CLOSED, STATE_OPEN) != STATE_OPEN)
+                return TaskHelper.CompletedTask;
+
+            var dataFrame = this._webSocket.Connection.PrepareFrame(this._webSocket.Connection.SendBuffer, this._internalUsedBufferLength, true,
+                this._isHeaderSent, this._messageType, this.ExtensionFlags);
+            return this._webSocket.Connection.SendFrameAsync(dataFrame, CancellationToken.None).ContinueWith(
+                (sendTask, s) => ((WebSocketConnectionRfc6455)s).EndWriting(),
+                this._webSocket.Connection,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            // don't do flush on close if connection is broken
+            if (this._webSocket.Connection.IsConnected) 
             {
-                _isFinished = true;
-                await _webSocket.Connection.WriteInternalAsync(_webSocket.Connection.SendBuffer, _internalUsedBufferLength, true, _isHeaderSent, _messageType, ExtensionFlags, cancellation).ConfigureAwait(false);
-                _webSocket.Connection.EndWriting();
+                var closeTask = this.CloseAsync();
+                if (closeTask.IsCompleted == false && this._webSocket.Connection.Log.IsWarningEnabled)
+                    this._webSocket.Connection.Log.Warning(
+                        $"Invoking asynchronous operation '{nameof(this.CloseAsync)}()' from synchronous method '{nameof(Dispose)}(bool {nameof(disposing)})'. " +
+                        $"Call and await {nameof(this.CloseAsync)}() before disposing stream.");
+
+                if (closeTask.Status != TaskStatus.RanToCompletion)
+                    closeTask.Wait();
             }
+            Interlocked.Exchange(ref this.state, STATE_DISPOSED);
         }
     }
 }

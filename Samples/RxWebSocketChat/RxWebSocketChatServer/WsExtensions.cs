@@ -27,7 +27,7 @@ namespace ChatServer
 
         public static void WriteDynamic(this WebSocket ws, dynamic data)
         {
-            JsonSerializer serializer = new JsonSerializer();
+            var serializer = new JsonSerializer();
             using (var writer = ws.CreateMessageWriter(WebSocketMessageType.Text))
             using (var sw = new StreamWriter(writer, Encoding.UTF8))
                 serializer.Serialize(sw, data);

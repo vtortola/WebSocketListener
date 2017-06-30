@@ -1,149 +1,175 @@
-﻿using log4net;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using log4net.Config;
 using vtortola.WebSockets;
 using vtortola.WebSockets.Deflate;
+using vtortola.WebSockets.Rfc6455;
 
 namespace WebSocketListenerTests.Echo
 {
     class Program
     {
-        static ILog _log = log4net.LogManager.GetLogger("Main");
+        private static readonly Log4NetLogger Log = new Log4NetLogger(typeof(Program));
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
+            // configuring logging
+            XmlConfigurator.Configure();
+
             if (PerformanceCounters.CreatePerformanceCounters())
                 return;
 
-            // reseting peformance counter
+            // reset
             PerformanceCounters.Connected.RawValue = 0;
 
-            // configuring logging
-            log4net.Config.XmlConfigurator.Configure();
-            _log.Info("Starting Echo Server");
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            // opening TLS certificate
-            //X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            //store.Open(OpenFlags.ReadOnly);
-            //store.Certificates.Count.ToString();
-            //var certificate = store.Certificates[1];
-            //store.Close();
-            
-            CancellationTokenSource cancellation = new CancellationTokenSource();
-            
-            // local endpoint
-            var endpoint = new IPEndPoint(IPAddress.Any, 8005);
-            
-            // starting the server
-            WebSocketListener server = new WebSocketListener(endpoint, new WebSocketListenerOptions() 
+            Log.Warning("Starting Echo Server");
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
+            var cancellation = new CancellationTokenSource();
+
+            var bufferSize = 1024 * 8; // 8KiB
+            var bufferPoolSize = 100 * bufferSize; // 800KiB pool
+
+            var options = new WebSocketListenerOptions
             {
-                SubProtocols = new []{"text"},
+                SubProtocols = new[] { "text" },
                 PingTimeout = TimeSpan.FromSeconds(5),
                 NegotiationTimeout = TimeSpan.FromSeconds(5),
                 ParallelNegotiations = 16,
                 NegotiationQueueCapacity = 256,
-                TcpBacklog = 1000,
-                BufferManager = BufferManager.CreateBufferManager((8192 + 1024)*1000, 8192 + 1024)
+                BufferManager = BufferManager.CreateBufferManager(bufferPoolSize, bufferSize),
+                Logger = Log
+            };
+            options.Standards.RegisterRfc6455(factory =>
+            {
+                factory.MessageExtensions.RegisterDeflateCompression();
             });
-            var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
-            // adding the deflate extension
-            rfc6455.MessageExtensions.RegisterExtension(new WebSocketDeflateExtension());
-            server.Standards.RegisterStandard(rfc6455);
-            // adding the WSS extension
-            //server.ConnectionExtensions.RegisterExtension(new WebSocketSecureConnectionExtension(certificate));
+            // configure tcp transport
+            options.Transports.ConfigureTcp(tcp =>
+            {
+                tcp.BacklogSize = 100; // max pending connections waiting to be accepted
+                tcp.ReceiveBufferSize = bufferSize;
+                tcp.SendBufferSize = bufferSize;
+            });
 
-            server.Start();
+            
+            var listenEndPoints = new Uri[] {
+                new Uri("ws://localhost") // will listen both IPv4 and IPv6
+            };
 
-            Log("Echo Server started at " + endpoint.ToString());
+            // starting the server
+            var server = new WebSocketListener(listenEndPoints, options);
 
-            var acceptingTask = Task.Run(()=> AcceptWebSocketClients(server, cancellation.Token));
+            server.StartAsync().Wait();
 
+            Log.Warning("Echo Server listening: " + string.Join(", ", Array.ConvertAll(listenEndPoints, e => e.ToString())) + ".");
+            Log.Warning("You can test echo server at http://www.websocket.org/echo.html.");
+
+            var acceptingTask = AcceptWebSocketsAsync(server, cancellation.Token);
+
+            Log.Warning("Press any key to stop.");
             Console.ReadKey(true);
-            Log("Server stoping");
-            server.Stop();
+
+            Log.Warning("Server stopping.");
             cancellation.Cancel();
+            server.StopAsync().Wait();
             acceptingTask.Wait();
-
-            Console.ReadKey(true);
         }
 
-        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            _log.Fatal("Unhandled Exception: ", e.ExceptionObject as Exception);
-        }
 
-        static async Task AcceptWebSocketClients(WebSocketListener server, CancellationToken token)
+        private static async Task AcceptWebSocketsAsync(WebSocketListener server, CancellationToken cancellation)
         {
-            while (!token.IsCancellationRequested)
+            await Task.Yield();
+
+            while (!cancellation.IsCancellationRequested)
             {
                 try
                 {
-                    var ws = await server.AcceptWebSocketAsync(token).ConfigureAwait(false);
-                    if (ws == null)
-                        continue;
+                    var webSocket = await server.AcceptWebSocketAsync(cancellation).ConfigureAwait(false);
+                    if (webSocket == null)
+                    {
+                        if (cancellation.IsCancellationRequested || !server.IsStarted)
+                            break; // stopped
 
-                    Task.Run(() => HandleConnectionAsync(ws, token));
+                        continue; // retry
+                    }
+
+#pragma warning disable 4014
+                    EchoAllIncomingMessagesAsync(webSocket, cancellation);
+#pragma warning restore 4014
                 }
-                catch (Exception aex)
+                catch (OperationCanceledException)
                 {
-                    var ex = aex.GetBaseException();
-                    _log.Error("AcceptWebSocketClients", ex);
-                    Log("Error Accepting client: " + ex.GetType().Name +": " + ex.Message);
+                    /* server is stopped */
+                    break;
+                }
+                catch (Exception acceptError)
+                {
+                    Log.Error("An error occurred while accepting client.", acceptError);
                 }
             }
-            Log("Server Stop accepting clients");
+
+            Log.Warning("Server has stopped accepting new clients.");
         }
 
-        static async Task HandleConnectionAsync(WebSocket ws, CancellationToken cancellation)
+        private static async Task EchoAllIncomingMessagesAsync(WebSocket webSocket, CancellationToken cancellation)
         {
+            Log.Warning("Client '" + webSocket.RemoteEndpoint + "' connected.");
+            var sw = new Stopwatch();
+            PerformanceCounters.Connected.Increment();
             try
             {
-                PerformanceCounters.Connected.Increment();
-                while (ws.IsConnected && !cancellation.IsCancellationRequested)
+                while (webSocket.IsConnected && !cancellation.IsCancellationRequested)
                 {
-                    String msg = await ws.ReadStringAsync(cancellation).ConfigureAwait(false);
-                    if (msg == null)
-                        continue;
+                    try
+                    {
+                        var messageText = await webSocket.ReadStringAsync(cancellation).ConfigureAwait(false);
+                        if (messageText == null)
+                            break; // webSocket is disconnected
 
-                    PerformanceCounters.MessagesIn.Increment();
+                        sw.Restart();
+                        PerformanceCounters.MessagesIn.Increment();
 
-                    ws.WriteString(msg);
-                    PerformanceCounters.MessagesOut.Increment();
+                        await webSocket.WriteStringAsync(messageText, cancellation).ConfigureAwait(false);
 
-                    PerformanceCounters.Delay.IncrementBy(ws.Latency.Ticks * Stopwatch.Frequency / 10000);
-                    PerformanceCounters.DelayBase.Increment();
+                        Log.Warning("Client '" + webSocket.RemoteEndpoint + "' sent: " + messageText + ".");
+
+                        PerformanceCounters.MessagesOut.Increment();
+                        sw.Stop();
+
+                        PerformanceCounters.Delay.IncrementBy(sw.ElapsedTicks);
+                        PerformanceCounters.DelayBase.Increment();
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception readWriteError)
+                    {
+                        Log.Error("An error occurred while reading/writing echo message.", readWriteError);
+                        await webSocket.CloseAsync().ConfigureAwait(false);
+                    }
                 }
-            }
-            catch (TaskCanceledException)
-            {
-
-            }
-            catch (Exception aex)
-            {
-                Log("Error Handling connection: " + aex.GetBaseException().Message);
-                try { ws.Close(); }
-                catch { }
             }
             finally
             {
-                ws.Dispose();
+                webSocket.Dispose();
                 PerformanceCounters.Connected.Decrement();
+                Log.Warning("Client '" + webSocket.RemoteEndpoint + "' disconnected.");
             }
         }
 
-        static void Log(String line)
+        private static void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
-            Console.WriteLine(DateTime.Now.ToString("dd/MM/yyy hh:mm:ss.fff ") + line);
+            Log.Error("Unobserved Exception: ", e.Exception);
         }
-
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Log.Error("Unhandled Exception: ", e.ExceptionObject as Exception);
+        }
     }
 }

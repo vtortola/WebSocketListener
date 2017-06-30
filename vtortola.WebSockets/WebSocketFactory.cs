@@ -1,22 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
+﻿using System.Collections.Generic;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
     public abstract class WebSocketFactory
     {
-        public abstract Int16 Version { get; }
+        public abstract short Version { get; }
+
         public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
-        public WebSocketFactory()
+
+        protected WebSocketFactory()
         {
             MessageExtensions = new WebSocketMessageExtensionCollection();
         }
-        public WebSocketFactory(WebSocketListener listener)
+
+        public abstract WebSocket CreateWebSocket(NetworkConnection networkConnection, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions);
+
+        /// <inheritdoc />
+        public virtual WebSocketFactory Clone()
         {
-            MessageExtensions = new WebSocketMessageExtensionCollection(listener);
+            var clone = (WebSocketFactory)this.MemberwiseClone();
+            clone.MessageExtensions = new WebSocketMessageExtensionCollection();
+            foreach (var extension in this.MessageExtensions)
+                clone.MessageExtensions.Add(extension.Clone());
+            return clone;
         }
-        public abstract WebSocket CreateWebSocket(Stream stream, WebSocketListenerOptions options, IPEndPoint localEndpoint, IPEndPoint remoteEndpoint, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, List<IWebSocketMessageExtensionContext> negotiatedExtensions);
     }
 }

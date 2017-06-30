@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+		<PackageId>deniszykov.WebSocketListener</PackageId>
+		<Description>A lightweight and highly scalable asynchronous WebSocket listener for .NET Core, .NET and Mono.
+https://github.com/deniszykov/WebSocketListener</Description>
+		<Company>deniszykov</Company>
+		<Product>deniszykov.WebSocketListener</Product>
+		<Version>4.0.3-beta</Version>
+		<Authors>Valeriano Tortola, Denis Zykov</Authors>
+		<PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+		<PackageProjectUrl>https://github.com/deniszykov/WebSocketListener</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/deniszykov/WebSocketListener</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>websockets HTML5 realtime streaming sockets server client async asynchronous</PackageTags>
+		<SignAssembly>True</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\WebSocketListener.snk</AssemblyOriginatorKeyFile>
+		<AssemblyVersion>4.0.3.0</AssemblyVersion>
+		<FileVersion>4.0.3.0</FileVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\WebSocketListener.snk" Link="WebSocketListener.snk" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj">
+			<PrivateAssets>All</PrivateAssets>
+		</ProjectReference>
+		<ProjectReference Include="..\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj">
+			<PrivateAssets>All</PrivateAssets>
+		</ProjectReference>
+		<ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj">
+			<PrivateAssets>All</PrivateAssets>
+		</ProjectReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ILRepack" Version="2.1.0-beta1">
+			<PrivateAssets>All</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<Target Name="Repack" AfterTargets="BuiltProjectOutputGroup" Condition="' $(TargetFramework)'!='' ">
+		<GetFrameworkPath>
+			<Output TaskParameter="Path" PropertyName="FrameworkPath" />
+		</GetFrameworkPath>
+		<PropertyGroup>
+			<ILRepack Condition="'$(ILRepack)' == ''">$(NuGetPackageFolders)ilrepack\2.1.0-beta1\tools\ILRepack.exe</ILRepack>
+			<ILRepackTargetPlatform Condition="'$(TargetFramework)' == 'net45'">v4,$(FrameworkPath)</ILRepackTargetPlatform>
+			<ILRepackTargetPlatform Condition="'$(TargetFramework)' == 'netstandard1.3'">v4</ILRepackTargetPlatform>
+			<WSLSignKey>$(ProjectDir)../WebSocketListener.snk</WSLSignKey>
+		</PropertyGroup>		
+		<Exec Command="&quot;$(ILRepack)&quot; /target:library &quot;/targetplatform:$(ILRepackTargetPlatform)&quot; &quot;/keyfile:$(WSLSignKey)&quot; /xmldocs /union /parallel &quot;/out:$(TargetPath)&quot; &quot;$(TargetPath)&quot; &quot;$(TargetDir)vtortola.WebSockets.Deflate.dll&quot; &quot;$(TargetDir)vtortola.WebSockets.dll&quot; &quot;$(TargetDir)vtortola.WebSockets.Rfc6455.dll&quot;" WorkingDirectory="$(ProjectDir)" />
+		<Delete Files="$(TargetDir)vtortola.WebSockets.Deflate.dll;$(TargetDir)vtortola.WebSockets.dll;$(TargetDir)vtortola.WebSockets.Rfc6455.dll" />
+	</Target>
+</Project>

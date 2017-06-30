@@ -1,11 +1,12 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets
 {
     public interface IWebSocketConnectionExtension
     {
-        Stream ExtendConnection(Stream stream);
-        Task<Stream> ExtendConnectionAsync(Stream stream);
+        Task<NetworkConnection> ExtendConnectionAsync(NetworkConnection networkConnection);
+
+        IWebSocketConnectionExtension Clone();
     }
 }

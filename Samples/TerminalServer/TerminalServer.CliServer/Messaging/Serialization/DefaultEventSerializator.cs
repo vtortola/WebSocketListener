@@ -11,7 +11,7 @@ namespace TerminalServer.CliServer
     {
         public void Serialize(IConnectionEvent eventObject, Stream output)
         {
-            JsonSerializer serializer = new JsonSerializer();
+            var serializer = new JsonSerializer();
             serializer.ContractResolver = new CamelCasePropertyNamesContractResolver();
 
             var json= JObject.FromObject(eventObject, serializer);
@@ -30,7 +30,7 @@ namespace TerminalServer.CliServer
             using (var reader = new StreamReader(source, Encoding.UTF8))
             {
                 var json = JObject.Load(new JsonTextReader(reader));
-                String typeName = json.Property("type").Value.ToString();
+                var typeName = json.Property("type").Value.ToString();
                 return Build(typeName, json, out type);
             }
         }

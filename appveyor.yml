@@ -1,4 +1,4 @@
-os: Visual Studio 2015
+os: Visual Studio 2017
 
 version: 3.0.0.{build}
 
@@ -20,46 +20,32 @@ environment:
 
 build_script:
 # Restore NuGet
-- appveyor-retry dotnet restore .\Core\vtortola.Core.WebSocketListener -v Minimal
-- appveyor-retry dotnet restore .\Core\vtortola.Core.WebSockets -v Minimal
-- appveyor-retry dotnet restore .\Core\vtortola.Core.WebSockets.Deflate -v Minimal
-- appveyor-retry dotnet restore .\Core\vtortola.Core.WebSockets.Rfc6455 -v Minimal
+- appveyor-retry dotnet restore .\deniszykov.WebSocketListener\deniszykov.WebSocketListener.csproj -v Minimal
+- appveyor-retry dotnet restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -v Minimal
+- appveyor-retry dotnet restore .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj -v Minimal
+- appveyor-retry dotnet restore .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj -v Minimal
 
-- appveyor-retry dotnet restore .\Tests\WebSocketListener.Core.UnitTests -v Minimal
-
-- appveyor-retry nuget restore .\Tests\WebSocketListener.UnitTests -PackagesDirectory packages
-- appveyor-retry nuget restore .\vtortola.WebSockets\vtortola.WebSockets.csproj -PackagesDirectory packages
-- appveyor-retry nuget restore .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj -PackagesDirectory packages
-- appveyor-retry nuget restore .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj -PackagesDirectory packages
-
+- appveyor-retry dotnet restore .\Tests\WebSocketListener.UnitTests\vtortola.WebSockets.UnitTests.csproj -v Minimal
 
 # Build dll (Core)
-- dotnet build .\Core\vtortola.Core.WebSocketListener\project.json -c %CONFIGURATION%
-- dotnet build .\Core\vtortola.Core.WebSockets\project.json -c %CONFIGURATION%
-- dotnet build .\Core\vtortola.Core.WebSockets.Deflate\project.json -c %CONFIGURATION%
-- dotnet build .\Core\vtortola.Core.WebSockets.Rfc6455\project.json -c %CONFIGURATION%
-
-# Build dll (legacy)
-- cmd: msbuild .\vtortola.WebSockets\vtortola.WebSockets.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
-- cmd: msbuild .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
-- cmd: msbuild .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj /p:Configuration=%CONFIGURATION% /p:Platform=AnyCPU
-
+- dotnet build .\deniszykov.WebSocketListener\deniszykov.WebSocketListener.csproj -c %CONFIGURATION%
+- dotnet build .\vtortola.WebSockets\vtortola.WebSockets.csproj -c %CONFIGURATION%
+- dotnet build .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj -c %CONFIGURATION%
+- dotnet build .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj -c %CONFIGURATION%
 
 # Build UnitTests
-- cmd: msbuild .\Tests\WebSocketListener.UnitTests\WebSocketListener.UnitTests.csproj /p:Configuration=%CONFIGURATION%  /p:Platform=AnyCPU
-- dotnet build .\Tests\WebSocketListener.Core.UnitTests\project.json -c %CONFIGURATION%
+- dotnet build .\Tests\WebSocketListener.UnitTests\vtortola.WebSockets.UnitTests.csproj -c %CONFIGURATION%
 
 
 # Pack NuGets
-- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\Core\vtortola.Core.WebSocketListener\project.json
-- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\Core\vtortola.Core.WebSockets\project.json
-- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\Core\vtortola.Core.WebSockets.Deflate\project.json
-- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\Core\vtortola.Core.WebSockets.Rfc6455\project.json
-
+- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\deniszykov.WebSocketListener\deniszykov.WebSocketListener.csproj
+- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\vtortola.WebSockets\vtortola.WebSockets.csproj
+- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj
+- dotnet pack -c %CONFIGURATION% --no-build --version-suffix %LABEL% -o .\artifacts .\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj
 
 # Run tests
 test_script:
-- dotnet test -c %CONFIGURATION% --no-build .\Tests\WebSocketListener.Core.UnitTests
+- dotnet test -c %CONFIGURATION% --no-build .\Tests\WebSocketListener.UnitTests\vtortola.WebSockets.UnitTests.csproj
 
 artifacts:
 - path: artifacts\**\*.*

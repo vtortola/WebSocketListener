@@ -1,93 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using vtortola.WebSockets.Http;
+using vtortola.WebSockets.Transports;
 
 namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455 : WebSocket
     {
-        readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
-        readonly IPEndPoint _remoteEndpoint, _localEndpoint;
-        readonly String _subprotocol;
+        private readonly ILogger log;
+        private readonly IReadOnlyList<IWebSocketMessageExtensionContext> extensions;
 
-        internal WebSocketConnectionRfc6455 Connection { get; private set; }
+        internal WebSocketConnectionRfc6455 Connection { get; }
 
-        public override IPEndPoint RemoteEndpoint { get { return _remoteEndpoint; } }
-        public override IPEndPoint LocalEndpoint { get { return _localEndpoint; } }
-        public override Boolean IsConnected { get { return Connection.IsConnected; } }
-        public override TimeSpan Latency { get { return Connection.Latency; } }
-        public override String SubProtocol { get { return _subprotocol; } }
-
-        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
-            :base(httpRequest, httpResponse)
+        public override EndPoint RemoteEndpoint { get; }
+        public override EndPoint LocalEndpoint { get; }
+        public override bool IsConnected => this.Connection.IsConnected;
+        public override TimeSpan Latency => this.Connection.Latency;
+        public override string SubProtocol { get; }
+        
+        public WebSocketRfc6455(NetworkConnection networkConnection, WebSocketListenerOptions options, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+            : base(httpRequest, httpResponse)
         {
-            Guard.ParameterCannotBeNull(clientStream, "clientStream");
-            Guard.ParameterCannotBeNull(options, "options");
-            Guard.ParameterCannotBeNull(local, "local");
-            Guard.ParameterCannotBeNull(remote, "remote");
-            Guard.ParameterCannotBeNull(extensions, "extensions");
-            Guard.ParameterCannotBeNull(httpRequest, "httpRequest");
+            if (networkConnection == null) throw new ArgumentNullException(nameof(networkConnection));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (httpRequest == null) throw new ArgumentNullException(nameof(httpRequest));
+            if (httpResponse == null) throw new ArgumentNullException(nameof(httpResponse));
+            if (extensions == null) throw new ArgumentNullException(nameof(extensions));
 
-            _remoteEndpoint = remote;
-            _localEndpoint = local;
+            this.log = options.Logger;
 
-            Connection = new WebSocketConnectionRfc6455(clientStream, options);
-            _extensions = extensions;
-            _subprotocol = httpResponse.WebSocketProtocol;
+            this.RemoteEndpoint = httpRequest.RemoteEndPoint;
+            this.LocalEndpoint = httpRequest.RemoteEndPoint;
+
+            this.Connection = new WebSocketConnectionRfc6455(networkConnection, httpRequest.Direction == HttpRequestDirection.Outgoing, options);
+            this.extensions = extensions;
+            this.SubProtocol = httpResponse.Headers.Contains(ResponseHeader.WebSocketProtocol) ?
+                httpResponse.Headers[ResponseHeader.WebSocketProtocol] : default(string);
         }
         public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
         {
-            using (token.Register(this.Close, false))
-            {
-                await Connection.AwaitHeaderAsync(token).ConfigureAwait(false);
-
-                if (Connection.IsConnected && Connection.CurrentHeader != null)
-                {
-                    WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
-                    foreach (var extension in _extensions)
-                        reader = extension.ExtendReader(reader);
-                    return reader;
-                }
-                return null;
-            }
-        }
-        public override WebSocketMessageReadStream ReadMessage()
-        {
-            Connection.AwaitHeader();
-
-            if (Connection.IsConnected && Connection.CurrentHeader != null)
+            await this.Connection.AwaitHeaderAsync(token).ConfigureAwait(false);
+            if (this.Connection.IsConnected && this.Connection.CurrentHeader != null)
             {
                 WebSocketMessageReadStream reader = new WebSocketMessageReadRfc6455Stream(this);
-                foreach (var extension in _extensions)
+                foreach (var extension in this.extensions)
                     reader = extension.ExtendReader(reader);
                 return reader;
             }
-
             return null;
         }
+
         public override WebSocketMessageWriteStream CreateMessageWriter(WebSocketMessageType messageType)
         {
-            if (!Connection.IsConnected)
-                throw new WebSocketException("The connection is closed");
+            if (!this.Connection.IsConnected)
+                throw new WebSocketException("Unable to write new message because underlying connection is closed.");
 
-            Connection.BeginWriting();
+            this.Connection.BeginWriting();
             WebSocketMessageWriteStream writer = new WebSocketMessageWriteRfc6455Stream(this, messageType);
 
-            foreach (var extension in _extensions)
+            foreach (var extension in this.extensions)
                 writer = extension.ExtendWriter(writer);
 
             return writer;
         }
-        public override void Close()
+        /// <inheritdoc />
+        public override Task SendPingAsync(byte[] data, int offset, int count)
         {
-            Connection.Close();
+            if (data != null)
+            {
+                if (offset < 0 || offset > data.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+                if (count < 0 || count > 125 || offset + count > data.Length) throw new ArgumentOutOfRangeException(nameof(count));
+            }
+
+            return this.Connection.PingAsync(data, offset, count);
         }
+
+        public override Task CloseAsync()
+        {
+            return this.Connection.CloseAsync(WebSocketCloseReasons.NormalClose);
+        }
+
         public override void Dispose()
         {
-            SafeEnd.Dispose(Connection);
+            SafeEnd.Dispose(this.Connection, this.log);
         }
     }
 }
