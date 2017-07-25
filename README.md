@@ -16,12 +16,12 @@ It **does not use** the Microsoft's `System.Net.WebSockets` namespace. It should
 **WebSocketListener** has been designed to provide WebSocket connectivity to other applications, in the same way that `System.Net.TcpListener` provides TCP connectivity. It is not a communication framework on its own and it does not provide any kind of publisher/subscriber pattern or reliable messaging beyond TCP.
 
  * It can work with both **Text or Binary** messages.
- * It supports `wss://`(secure). [More info] (//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
- * It supports **per-message deflate compression**. [More info] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension). 
- * It can work with **multiple WebSocket standards** simultaneously. [More info] (//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support)
+ * It supports `wss://`(secure). [More info](//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
+ * It supports **per-message deflate compression**. [More info](//github.com/vtortola/WebSocketListener/wiki/Deflate-extension). 
+ * It can work with **multiple WebSocket standards** simultaneously. [More info](//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support)
  * It is **extensible**. [More info](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
  * It is **asynchronous**. 
- * It supports **Mono**. [More info] (//github.com/vtortola/WebSocketListener/wiki/Mono-support)
+ * It supports **Mono**. [More info](//github.com/vtortola/WebSocketListener/wiki/Mono-support)
  * It has the [**Ping/Pong** functionality](http://tools.ietf.org/html/rfc6455#section-5.5.2) **built-in**.
  * It can measure **connection latency**. [More info](//github.com/vtortola/WebSocketListener/wiki/Measuring-WebSockets-connection-latency)
  * It can work with **cookies and custom HTTP response statuses**. [More info](//github.com/vtortola/WebSocketListener/wiki/Hooking-into-the-HTTP-negotiation)
@@ -57,7 +57,7 @@ The class ```vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455``` gives suppor
 
 Optionally, you can also:
  * [enable TLS for secure WebSocket connections](//github.com/vtortola/WebSocketListener/wiki/Enabling-WebSocket-Secure-(TLS)).
- * [enable deflate compression for messages] (//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
+ * [enable deflate compression for messages](//github.com/vtortola/WebSocketListener/wiki/Deflate-extension).
  * [customize memory use, subprotocols, queuing and ping behaviours](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-options).
  * [add customized extensions](//github.com/vtortola/WebSocketListener/wiki/WebSocketListener-Extensions).
 
