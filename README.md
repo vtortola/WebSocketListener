@@ -4,7 +4,7 @@ WebSocketListener
 
 ***
 ### Please read
-This project is discontinued due lack of personal time, and therefore there will not be any development from now on, unless it is a very flagrant bug :)
+This project is not in further development anymore due lack of personal time. Reported bugs will be fixed, but no new feature or improvements will be added.
 
 @deniszykov has continued its development, adding performance improvements and support for other platforms in his fork [deniszykov/WebSocketListener](https://github.com/deniszykov/WebSocketListener).
 ***
