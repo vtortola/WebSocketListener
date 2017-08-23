@@ -10,8 +10,7 @@ namespace vtortola.WebSockets.Rfc6455
         readonly ArraySegment<Byte> _pingBuffer;
 
         DateTime _lastActivity;
-        TimeSpan _pingInterval;
-        
+         
         internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
         {
             Guard.ParameterCannotBeNull(connection, "connection");
@@ -24,21 +23,22 @@ namespace vtortola.WebSockets.Rfc6455
         internal override async Task StartPing()
         {
             _lastActivity = DateTime.Now.Add(_pingTimeout);
-            _pingInterval = TimeSpan.FromMilliseconds(Math.Max(500, _pingTimeout.TotalMilliseconds / 2));
+            var pingInterval = TimeSpan.FromMilliseconds(Math.Max(500, _pingTimeout.TotalMilliseconds / 3));
+            var skipInterval = TimeSpan.FromMilliseconds(Math.Max(250, _pingTimeout.TotalMilliseconds / 2));
 
             while (_connection.IsConnected)
             {
-                await Task.Delay(_pingInterval).ConfigureAwait(false);
+                await Task.Delay(pingInterval).ConfigureAwait(false);
 
                 try
                 {
                     var now = DateTime.Now;
 
-                    if (_lastActivity.Add(_pingTimeout) < now)
+                    if (_lastActivity < now.Subtract(_pingTimeout))
                     {
                         _connection.Close(WebSocketCloseReasons.GoingAway);
                     }
-                    else if (_lastActivity.Add(_pingInterval) < now)
+                    else if (_lastActivity < now.Subtract(skipInterval))
                     {
                         _connection.WriteInternal(_pingBuffer, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
                     }
