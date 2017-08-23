@@ -35,6 +35,11 @@ namespace vtortola.WebSockets
             }
         }
 
+        public bool Contains(string header)
+        {
+            return _headers.ContainsKey(header);
+        }
+
         public IEnumerable<String> HeaderNames
         {
             get { return _headers.Keys; }

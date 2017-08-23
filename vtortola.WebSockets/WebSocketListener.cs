@@ -36,10 +36,12 @@ namespace vtortola.WebSockets
 
             _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, options);
         }
+
         public WebSocketListener(IPEndPoint endpoint)
             :this(endpoint,new WebSocketListenerOptions())
         {
         }
+
         private async Task StartAccepting()
         {
             while(IsStarted)
@@ -64,7 +66,7 @@ namespace vtortola.WebSockets
             else
                 _listener.Start();
 
-            Task.Run((Func<Task>)StartAccepting);
+            StartAccepting();
         }
         public void Stop()
         {

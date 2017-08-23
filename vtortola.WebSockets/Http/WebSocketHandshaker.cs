@@ -30,7 +30,7 @@ namespace vtortola.WebSockets
             WebSocketHandshake handshake = new WebSocketHandshake();
             try
             {
-                ReadHttpRequest(clientStream, handshake);
+                await ReadHttpRequestAsync(clientStream, handshake).ConfigureAwait(false);
                 if (!IsHttpHeadersValid(handshake))
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
@@ -74,14 +74,14 @@ namespace vtortola.WebSockets
 
         private static bool IsHttpHeadersValid(WebSocketHandshake handShake)
         {
-            return handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Host) &&
-                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Upgrade) &&
+            return handShake.Request.Headers.Contains(WebSocketHeaders.Host) &&
+                   handShake.Request.Headers.Contains(WebSocketHeaders.Upgrade) &&
                    "websocket".Equals(handShake.Request.Headers[WebSocketHeaders.Upgrade],
                                              StringComparison.InvariantCultureIgnoreCase) &&
-                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Connection) &&
-                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Key) &&
+                   handShake.Request.Headers.Contains(WebSocketHeaders.Connection) &&
+                   handShake.Request.Headers.Contains(WebSocketHeaders.Key) &&
                    !String.IsNullOrWhiteSpace(handShake.Request.Headers[WebSocketHeaders.Key]) &&
-                   handShake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Version);
+                   handShake.Request.Headers.Contains(WebSocketHeaders.Version);
         }
 
         private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
@@ -117,7 +117,7 @@ namespace vtortola.WebSockets
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
@@ -127,7 +127,7 @@ namespace vtortola.WebSockets
         private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, 1024, true))
+            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 writer.Flush();
@@ -156,16 +156,19 @@ namespace vtortola.WebSockets
                 SendNegotiationErrorResponse(writer, handshake.Response.Status);
             }
         }
-        private void ReadHttpRequest(Stream clientStream, WebSocketHandshake handshake)
+        private async Task ReadHttpRequestAsync(Stream clientStream, WebSocketHandshake handshake)
         {
-            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, 1024, true))
+            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, _options.SendBufferSize, true))
             {
-                String line = sr.ReadLine();
+                String line = await sr.ReadLineAsync().ConfigureAwait(false);
 
                 ParseGET(line, handshake);
 
-                while (!String.IsNullOrWhiteSpace(line = sr.ReadLine()))
+                while (!String.IsNullOrWhiteSpace(line))
+                {
+                    line = await sr.ReadLineAsync().ConfigureAwait(false);
                     ParseHeader(line, handshake);
+                }
             }
         }
         private void ParseGET(String line, WebSocketHandshake handshake)
@@ -180,9 +183,13 @@ namespace vtortola.WebSockets
         }
         private void ParseHeader(String line, WebSocketHandshake handshake)
         {
+            if (string.IsNullOrWhiteSpace(line))
+                return;
+
             var separator = line.IndexOf(":");
             if (separator == -1)
                 return;
+
             String key = line.Substring(0, separator);
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             handshake.Request.Headers.Add(key, value);
@@ -297,7 +304,7 @@ namespace vtortola.WebSockets
             if (!_options.SubProtocols.Any())
                 return;
 
-            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Protocol))
+            if (handshake.Request.Headers.Contains(WebSocketHeaders.Protocol))
             {
                 var subprotocolRequest = handshake.Request.Headers[WebSocketHeaders.Protocol];
 
@@ -319,7 +326,7 @@ namespace vtortola.WebSockets
         private void ParseWebSocketExtensions(WebSocketHandshake handshake)
         {
             List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
-            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Extensions))
+            if (handshake.Request.Headers.Contains(WebSocketHeaders.Extensions))
             {
                 var header = handshake.Request.Headers[WebSocketHeaders.Extensions];
                 var extensions = header.Split(',');
@@ -366,12 +373,12 @@ namespace vtortola.WebSockets
         static readonly Uri _dummyCookie = new Uri("http://vtortola.github.io/WebSocketListener/");
         private void ParseCookies(WebSocketHandshake handshake)
         {
-            if (handshake.Request.Headers.HeaderNames.Contains(WebSocketHeaders.Cookie))
+            if (handshake.Request.Headers.Contains(WebSocketHeaders.Cookie))
             {
                 var cookieString = handshake.Request.Headers[WebSocketHeaders.Cookie];
                 try
                 {
-                    CookieParser parser = new CookieParser();
+                    var parser = new CookieParser();
                     foreach (var cookie in parser.Parse(cookieString))
                     {
                         cookie.Domain = handshake.Request.Headers.Host;

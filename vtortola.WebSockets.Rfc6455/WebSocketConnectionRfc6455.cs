@@ -18,7 +18,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         Int32 _ongoingMessageWrite, _ongoingMessageAwaiting, _isClosed;
         
-        Boolean _pingStarted;
+        int _pingStarted;
         TimeSpan _latency;
 
         internal Boolean IsConnected { get { return _isClosed==0; } }
@@ -73,17 +73,18 @@ namespace vtortola.WebSockets.Rfc6455
                     break;
             }
         }
+
         private void StartPing()
         {
-            if (!_pingStarted)
+            if (Interlocked.CompareExchange(ref _pingStarted, 1, 0) == 0)
             {
-                _pingStarted = true;
                 if (_options.PingTimeout != Timeout.InfiniteTimeSpan)
                 {
-                    Task.Run((Func<Task>)_ping.StartPing);
+                    _ping.StartPing();
                 }
             }
         }
+
         internal void AwaitHeader()
         {
             CheckForDoubleRead();
@@ -112,13 +113,14 @@ namespace vtortola.WebSockets.Rfc6455
                 Close(WebSocketCloseReasons.ProtocolError);
             }
         }
+
         internal async Task AwaitHeaderAsync(CancellationToken cancellation)
         {
             CheckForDoubleRead();
             StartPing();
             try
             {
-                while (this.IsConnected && CurrentHeader == null)
+                while (IsConnected && CurrentHeader == null)
                 {
                     // try read minimal frame first
                     Int32 readed = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset, 6, cancellation).ConfigureAwait(false);
@@ -128,7 +130,7 @@ namespace vtortola.WebSockets.Rfc6455
                         return;
                     }
 
-                    ParseHeader(readed);
+                    await ParseHeaderAsync(readed).ConfigureAwait(false);
                 }
             }
             catch (InvalidOperationException)
@@ -230,6 +232,30 @@ namespace vtortola.WebSockets.Rfc6455
                 return;
             }
 
+            ProcessHeaderFrame(headerlength);
+        }
+
+        private async Task ParseHeaderAsync(Int32 readed)
+        {
+            if (await TryReadHeaderUntilAsync(readed, 6).ConfigureAwait(false) == -1)
+            {
+                Close(WebSocketCloseReasons.ProtocolError);
+                return;
+            }
+
+            Int32 headerlength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer.Array, _headerBuffer.Offset);
+
+            if (await TryReadHeaderUntilAsync(readed, headerlength).ConfigureAwait(false) == -1)
+            {
+                Close(WebSocketCloseReasons.ProtocolError);
+                return;
+            }
+
+            await ProcessHeaderFrameAsync(headerlength);
+        }
+
+        private void ProcessHeaderFrame(int headerlength)
+        {
             WebSocketFrameHeader header;
             if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerlength, _keyBuffer, out header))
                 throw new WebSocketException("Cannot understand frame header");
@@ -238,7 +264,7 @@ namespace vtortola.WebSockets.Rfc6455
 
             if (!header.Flags.Option.IsData())
             {
-                ProcessControlFrame(_clientStream);
+                ProcessControlFrame();
                 CurrentHeader = null;
             }
             else
@@ -246,6 +272,26 @@ namespace vtortola.WebSockets.Rfc6455
 
             _ping.NotifyActivity();
         }
+
+        private async Task ProcessHeaderFrameAsync(int headerlength)
+        {
+            WebSocketFrameHeader header;
+            if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerlength, _keyBuffer, out header))
+                throw new WebSocketException("Cannot understand frame header");
+
+            CurrentHeader = header;
+
+            if (!header.Flags.Option.IsData())
+            {
+                await ProcessControlFrameAsync().ConfigureAwait(false);
+                CurrentHeader = null;
+            }
+            else
+                _ongoingMessageAwaiting = 0;
+
+            _ping.NotifyActivity();
+        }
+
         private Boolean TryReadHeaderUntil(ref Int32 readed, Int32 until)
         {
             Int32 r = 0;
@@ -260,6 +306,21 @@ namespace vtortola.WebSockets.Rfc6455
 
             return true;
         }
+        private async Task<int> TryReadHeaderUntilAsync(Int32 readed, Int32 until)
+        {
+            Int32 r = 0;
+            while (readed < until)
+            {
+                r = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset + readed, until - readed).ConfigureAwait(false);
+                if (r == 0)
+                    return -1;
+
+                readed += r;
+            }
+
+            return readed;
+        }
+
         private void CheckForDoubleRead()
         {
             if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting,1,0) == 1)
@@ -268,7 +329,8 @@ namespace vtortola.WebSockets.Rfc6455
             if (CurrentHeader != null)
                 throw new WebSocketException("There is an ongoing message that is being readed from somewhere else");
         }
-        private void ProcessControlFrame(Stream clientStream)
+
+        private void ProcessControlFrame()
         {
             switch (CurrentHeader.Flags.Option)
             {
@@ -278,30 +340,74 @@ namespace vtortola.WebSockets.Rfc6455
                     throw new WebSocketException("Text, Continuation or Binary are not protocol frames");
 
                 case WebSocketFrameOption.ConnectionClose:
-                    this.Close(WebSocketCloseReasons.NormalClose);
+                    Close(WebSocketCloseReasons.NormalClose);
                     break;
 
-                case WebSocketFrameOption.Ping: 
-                case WebSocketFrameOption.Pong: 
-                    Int32 contentLength = _pongBuffer.Count;
-                    if (CurrentHeader.ContentLength < 125)
-                        contentLength = (Int32)CurrentHeader.ContentLength;
-                    Int32 readed = 0;
-                    while (CurrentHeader.RemainingBytes > 0)
-                    {
-                        readed = clientStream.Read(_pongBuffer.Array, _pongBuffer.Offset + readed, contentLength - readed);
-                        CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, readed);
-                    }
-
-                    if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
-                        _ping.NotifyPong(_pongBuffer);
-                    else // pong frames echo what was 'pinged'
-                        this.WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
-                    
+                case WebSocketFrameOption.Ping:
+                case WebSocketFrameOption.Pong:
+                    ProcessPingPong();
                     break;
                 default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
             }
-        }    
+        }
+
+        private async Task ProcessControlFrameAsync()
+        {
+            switch (CurrentHeader.Flags.Option)
+            {
+                case WebSocketFrameOption.Continuation:
+                case WebSocketFrameOption.Text:
+                case WebSocketFrameOption.Binary:
+                    throw new WebSocketException("Text, Continuation or Binary are not protocol frames");
+
+                case WebSocketFrameOption.ConnectionClose:
+                    Close(WebSocketCloseReasons.NormalClose);
+                    break;
+
+                case WebSocketFrameOption.Ping:
+                case WebSocketFrameOption.Pong:
+                    await ProcessPingPongAsync().ConfigureAwait(false);
+                    break;
+                default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
+            }
+        }
+
+        private void ProcessPingPong()
+        {
+            Int32 contentLength = _pongBuffer.Count;
+            if (CurrentHeader.ContentLength < 125)
+                contentLength = (Int32)CurrentHeader.ContentLength;
+            Int32 readed = 0;
+            while (CurrentHeader.RemainingBytes > 0)
+            {
+                readed = _clientStream.Read(_pongBuffer.Array, _pongBuffer.Offset + readed, contentLength - readed);
+                CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, readed);
+            }
+
+            if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
+                _ping.NotifyPong(_pongBuffer);
+            else // pong frames echo what was 'pinged'
+                this.WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
+        }
+
+        private async Task ProcessPingPongAsync()
+        {
+            Int32 contentLength = _pongBuffer.Count;
+            if (CurrentHeader.ContentLength < 125)
+                contentLength = (Int32)CurrentHeader.ContentLength;
+            Int32 readed = 0;
+            while (CurrentHeader.RemainingBytes > 0)
+            {
+                readed = await _clientStream.ReadAsync(_pongBuffer.Array, _pongBuffer.Offset + readed, contentLength - readed).ConfigureAwait(false);
+                CurrentHeader.DecodeBytes(_pongBuffer.Array, _pongBuffer.Offset, readed);
+            }
+
+            if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
+                _ping.NotifyPong(_pongBuffer);
+            else // pong frames echo what was 'pinged'
+                await WriteInternalAsync(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None, CancellationToken.None).ConfigureAwait(false);
+        }
+
         internal void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
         {
             try

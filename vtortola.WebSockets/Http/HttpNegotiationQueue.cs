@@ -47,18 +47,20 @@ namespace vtortola.WebSockets.Http
 
             _handShaker = new WebSocketHandshaker(standards, _options);
 
-            Task.Run((Func<Task>)WorkAsync);
+            WorkAsync();
         }
 
         private async Task WorkAsync()
         {
+            await Task.Yield();
+
             while (!_cancel.IsCancellationRequested)
             {
                 try
                 {
                     await _semaphore.WaitAsync(_cancel.Token).ConfigureAwait(false);
                     var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
-                    Task.Run(() => NegotiateWebSocket(socket));
+                    NegotiateWebSocket(socket);
                 }
                 catch (TaskCanceledException)
                 {
@@ -73,6 +75,8 @@ namespace vtortola.WebSockets.Http
 
         private async Task NegotiateWebSocket(Socket client)
         {
+            await Task.Yield();
+
             WebSocketNegotiationResult result;
             try
             {
