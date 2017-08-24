@@ -438,7 +438,7 @@ namespace vtortola.WebSockets.Rfc6455
                     SafeEnd.ReleaseSemaphore(_writeSemaphore);
             }
         }
-        private async Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
+        internal async Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
         {
             CancellationTokenRegistration reg = cancellation.Register(this.Close, false);
             try
