@@ -189,7 +189,8 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_CanNegotiateASubProtocol()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
+            var options = new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } }.Clone();
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, options);
 
             using (var ms = new MemoryStream())
             {
@@ -237,7 +238,8 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_CanNegotiateAndIgnoreAnExtension()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
+            var options = new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } }.Clone();
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, options);
 
             using (var ms = new MemoryStream())
             {
@@ -297,8 +299,9 @@ namespace WebSocketListenerTests.UnitTests
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
             factories.RegisterStandard(factory);
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
-            
+            var options = new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } }.Clone();
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, options);
+
             using (var ms = new MemoryStream())
             {
                 using (var sw = new StreamWriter(ms, Encoding.ASCII, 1024, true))
@@ -358,7 +361,8 @@ namespace WebSocketListenerTests.UnitTests
             factory.MessageExtensions.RegisterExtension(extension.Object);
             var factories = new WebSocketFactoryCollection();
             factories.RegisterStandard(factory);
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } });
+            var options = new WebSocketListenerOptions() { SubProtocols = new[] { "superchat" } }.Clone();
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(factories, options);
 
             using (var ms = new MemoryStream())
             {
@@ -455,7 +459,8 @@ namespace WebSocketListenerTests.UnitTests
         [TestMethod]
         public void WebSocketHandshaker_DoesNotFailWhenSubProtocolRequestedButNoMatch()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions() { SubProtocols = new[] { "superchat2", "text" } });
+            var options = new WebSocketListenerOptions() { SubProtocols = new[] { "superchatx" } }.Clone();
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, options);
 
             using (var ms = new MemoryStream())
             {

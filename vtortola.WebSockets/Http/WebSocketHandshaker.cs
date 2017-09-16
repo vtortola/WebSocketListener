@@ -175,13 +175,21 @@ namespace vtortola.WebSockets
 
         private void ParseGET(String line, WebSocketHandshake handshake)
         {
-            if (String.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
+            if (String.IsNullOrWhiteSpace(line))
                 throw new WebSocketException("Not GET request");
 
-            var parts = line.Split(' ');
-            handshake.Request.RequestUri = new Uri(parts[1], UriKind.Relative);
-            String version = parts[2];
-            handshake.Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
+            using (var reader = SplitBy(' ', line).GetEnumerator())
+            {
+                reader.MoveNext();
+                if (reader.Current != "GET")
+                    throw new WebSocketException("Not GET request");
+
+                reader.MoveNext();
+                handshake.Request.RequestUri = new Uri(reader.Current, UriKind.Relative);
+                reader.MoveNext();
+                var version = reader.Current;
+                handshake.Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
+            }
         }
 
         private void ParseHeader(String line, WebSocketHandshake handshake)
@@ -189,18 +197,20 @@ namespace vtortola.WebSockets
             if (string.IsNullOrWhiteSpace(line))
                 return;
 
-            var separator = line.IndexOf(":");
-            if (separator == -1)
-                return;
-
-            String key = line.Substring(0, separator);
-            String value = line.Substring(separator + 2, line.Length - (separator + 2));
-            handshake.Request.Headers.Add(key, value);
+            using (var reader = SplitBy(':', line, true).GetEnumerator())
+            {
+                reader.MoveNext();
+                var key = reader.Current;
+                reader.MoveNext();
+                var value = reader.Current;
+                handshake.Request.Headers.Add(key, value);
+            }
         }
 
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
         {
             writer.Write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n");
+
             if (handshake.Response.Cookies.Count > 0)
             {
                 foreach (var cookie in handshake.Response.Cookies)
@@ -312,18 +322,48 @@ namespace vtortola.WebSockets
             {
                 var subprotocolRequest = handshake.Request.Headers[WebSocketHeaders.Protocol];
 
-                String[] sp = subprotocolRequest.Split(',');
-                AssertArrayIsAtLeast(sp, 1, "Cannot understand the 'Sec-WebSocket-Protocol' header '" + subprotocolRequest + "'");
-
-                for (int i = 0; i < sp.Length; i++)
+                foreach (var subprotocol in SplitBy(',', subprotocolRequest))
                 {
-                    var match = _options.SubProtocols.SingleOrDefault(s => s.Equals(sp[i].Trim(), StringComparison.OrdinalIgnoreCase));
-                    if (match != null)
+                    if (_options.SubProtocolsSet.Contains(subprotocol))
                     {
-                        handshake.Response.WebSocketProtocol = match;
-                        break;
+                        handshake.Response.WebSocketProtocol = subprotocol;
+                        return;
                     }
                 }
+            }
+        }
+
+        static IEnumerable<string> SplitBy(char limit, string str, bool firstOnly = false)
+        {
+            var start = 0;
+            while (str[start] == ' ')
+                start++;
+
+            var found = false;
+
+            var list = new List<char>(str.Length);
+            for(; start < str.Length; start++)
+            {
+                var c = str[start];
+                if (c == limit && (!firstOnly || (firstOnly && !found)))
+                {
+                    yield return new string(list.ToArray());
+                    list.Clear();
+                    found = true;
+                }
+                else if (c == ' ')
+                {
+                    continue;
+                }
+                else
+                {
+                    list.Add(c);
+                }
+            }
+
+            if (list.Any())
+            {
+                yield return new string(list.ToArray());
             }
         }
 
@@ -333,44 +373,44 @@ namespace vtortola.WebSockets
             if (handshake.Request.Headers.Contains(WebSocketHeaders.Extensions))
             {
                 var header = handshake.Request.Headers[WebSocketHeaders.Extensions];
-                var extensions = header.Split(',');
-
-                AssertArrayIsAtLeast(extensions, 1, "Cannot parse extension [" + header + "]");
-
-                if (extensions.Any(e => String.IsNullOrWhiteSpace(e)))
-                    throw new WebSocketException("Cannot parse a null extension");
-
-                BuildExtensions(extensionList, header, extensions);
+                BuildExtensions(extensionList, header, SplitBy(',', header));
             }
             handshake.Request.SetExtensions(extensionList);
         }
 
-        private void BuildExtensions(List<WebSocketExtension> extensionList, String header, String[] extensions)
+        private void BuildExtensions(List<WebSocketExtension> extensionList, String header, IEnumerable<String> extensions)
         {
             foreach (var extension in extensions)
             {
                 List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
-                var parts = extension.Split(';');
 
-                AssertArrayIsAtLeast(parts, 1, "Cannot parse extension [" + header + "]");
-
-                if (parts.Any(e => String.IsNullOrWhiteSpace(e)))
-                    throw new WebSocketException("Cannot parse a null extension part");
-
-                foreach (var part in parts.Skip(1))
+                using (var reader = SplitBy(';', extension).GetEnumerator())
                 {
-                    var optParts = part.Split('=');
-                    AssertArrayIsAtLeast(optParts, 1, "Cannot parse extension options [" + header + "]");
+                    reader.MoveNext();
+                    var name = reader.Current;
 
-                    if (optParts.Any(e => String.IsNullOrWhiteSpace(e)))
-                        throw new WebSocketException("Cannot parse a null extension part option");
+                    while (reader.MoveNext())
+                    {
+                        var option = reader.Current;
+                        using (var optReader = SplitBy('=', option).GetEnumerator())
+                        {
+                            optReader.MoveNext();
 
-                    if (optParts.Length == 1)
-                        extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], ClientAvailableOption = true });
-                    else
-                        extOptions.Add(new WebSocketExtensionOption() { Name = optParts[0], Value = optParts[1] });
+                            var optname = optReader.Current;
+                            var value = string.Empty;
+                            if (optReader.MoveNext())
+                            {
+                                value = optReader.Current;
+                            }
+
+                            if (value.Length > 0)
+                                extOptions.Add(new WebSocketExtensionOption() { Name = optname, ClientAvailableOption = true });
+                            else
+                                extOptions.Add(new WebSocketExtensionOption() { Name = optname, Value = value });
+                        }
+                    }
+                    extensionList.Add(new WebSocketExtension(name, extOptions));
                 }
-                extensionList.Add(new WebSocketExtension(parts[0], extOptions));
             }
         }
 
@@ -395,11 +435,6 @@ namespace vtortola.WebSockets
                     throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "' because: " + ex.Message);
                 }
             }
-        }
-        private void AssertArrayIsAtLeast(String[] array, Int32 length, String error)
-        {
-            if (array == null || array.Length < length)
-                throw new WebSocketException(error);
         }
     }
 }
