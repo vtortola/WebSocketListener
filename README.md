@@ -6,7 +6,7 @@ WebSocketListener
 ### Please read
 This project is not in further development anymore due lack of personal time. Reported bugs will be fixed, but no new feature or improvements will be added.
 
-@deniszykov has continued its development, adding performance improvements and support for other platforms in his fork [deniszykov/WebSocketListener](https://github.com/deniszykov/WebSocketListener).
+@deniszykov has continued its development, adding support for other platforms in his fork [deniszykov/WebSocketListener](https://github.com/deniszykov/WebSocketListener).
 ***
 
 The **WebSocketListener** class provides simple methods that listen for and accept incoming WebSocket connection requests asynchronously. It is a lightweight listener with an API very similar to the `System.Net.TcpListener` class.
