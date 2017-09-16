@@ -106,18 +106,19 @@ namespace vtortola.WebSockets
             WebSocketExtension extensionResponse;
             foreach (var extRequest in handshake.Request.WebSocketExtensions)
             {
-                var extension = handshake.Factory.MessageExtensions.SingleOrDefault(x => x.Name.Equals(extRequest.Name, StringComparison.InvariantCultureIgnoreCase));
-                if (extension != null && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
+                IWebSocketMessageExtension extension;
+                if (handshake.Factory.MessageExtensions.TryGetExtension(extRequest.Name, out extension) && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
                 {
                     handshake.NegotiatedMessageExtensions.Add(context);
                     handshake.Response.WebSocketExtensions.Add(extensionResponse);
                 }
             }
         }
+
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
+            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
@@ -127,7 +128,7 @@ namespace vtortola.WebSockets
         private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (StreamWriter writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
+            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 writer.Flush();
@@ -171,6 +172,7 @@ namespace vtortola.WebSockets
                 }
             }
         }
+
         private void ParseGET(String line, WebSocketHandshake handshake)
         {
             if (String.IsNullOrWhiteSpace(line) || !line.StartsWith("GET"))
@@ -181,6 +183,7 @@ namespace vtortola.WebSockets
             String version = parts[2];
             handshake.Request.HttpVersion = version.EndsWith("1.1") ? HttpVersion.Version11 : HttpVersion.Version10;
         }
+
         private void ParseHeader(String line, WebSocketHandshake handshake)
         {
             if (string.IsNullOrWhiteSpace(line))
@@ -194,6 +197,7 @@ namespace vtortola.WebSockets
             String value = line.Substring(separator + 2, line.Length - (separator + 2));
             handshake.Request.Headers.Add(key, value);
         }
+
         private void SendNegotiationResponse(WebSocketHandshake handshake, StreamWriter writer)
         {
             writer.Write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n");

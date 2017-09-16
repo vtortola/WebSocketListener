@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
@@ -9,7 +10,7 @@ namespace vtortola.WebSockets.Rfc6455
         readonly TimeSpan _pingTimeout;
         readonly WebSocketConnectionRfc6455 _connection;
 
-        DateTime _lastPong;
+        DateTime _lastPong, _lastActivity;
         TimeSpan _pingInterval;
 
         internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
@@ -20,9 +21,10 @@ namespace vtortola.WebSockets.Rfc6455
             _pingBuffer = pingBuffer;
             _connection = connection;
         }
+
         internal override async Task StartPing()
         {
-            _lastPong = DateTime.Now.Add(_pingTimeout);
+            _lastPong = _lastActivity = DateTime.Now.Add(_pingTimeout);
             _pingInterval = TimeSpan.FromMilliseconds(Math.Max(500, _pingTimeout.TotalMilliseconds / 2));
 
             while (_connection.IsConnected)
@@ -33,14 +35,14 @@ namespace vtortola.WebSockets.Rfc6455
                 {
                     var now = DateTime.Now;
 
-                    if (_lastPong.Add(_pingTimeout) < now)
+                    if (_lastActivity.Add(_pingTimeout) < now)
                     {
-                        _connection.Close(WebSocketCloseReasons.GoingAway);
+                         _connection.Close(WebSocketCloseReasons.GoingAway);
                     }
                     else
                     {
                         ((UInt64)now.Ticks).ToBytes(_pingBuffer.Array, _pingBuffer.Offset);
-                        _connection.WriteInternal(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+                        await _connection.WriteInternalAsync(_pingBuffer, 8, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 catch(Exception ex)
@@ -49,6 +51,11 @@ namespace vtortola.WebSockets.Rfc6455
                     _connection.Close(WebSocketCloseReasons.ProtocolError);
                 }
             }
+        }
+
+        internal override void NotifyActivity()
+        {
+            _lastActivity = DateTime.Now;
         }
 
         internal override void NotifyPong(ArraySegment<Byte> frameContent)

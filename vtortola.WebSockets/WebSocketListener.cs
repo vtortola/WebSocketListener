@@ -18,6 +18,7 @@ namespace vtortola.WebSockets
         public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
         public WebSocketFactoryCollection Standards { get; private set; }
         public EndPoint LocalEndpoint { get { return _listener.LocalEndpoint; } }
+
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
             Guard.ParameterCannotBeNull(endpoint, "endpoint");
@@ -68,11 +69,13 @@ namespace vtortola.WebSockets
 
             StartAccepting();
         }
+
         public void Stop()
         {
             IsStarted = false;
             _listener.Stop();
         }
+
         private void ConfigureSocket(Socket client)
         {
             if(_options.UseNagleAlgorithm.HasValue)
@@ -100,6 +103,7 @@ namespace vtortola.WebSockets
                 return null;
             }
         }
+
         public void Dispose()
         {
             this.Stop();

@@ -2,14 +2,14 @@
 
 namespace vtortola.WebSockets
 {
-    public sealed class WebSocketMessageExtensionCollection : IReadOnlyCollection<IWebSocketMessageExtension>
+    public sealed class WebSocketMessageExtensionCollection
     {
-        readonly List<IWebSocketMessageExtension> _extensions;
+        readonly Dictionary<string, IWebSocketMessageExtension> _extensions;
         readonly WebSocketListener _listener;
 
         public WebSocketMessageExtensionCollection()
         {
-            _extensions = new List<IWebSocketMessageExtension>();
+            _extensions = new Dictionary<string, IWebSocketMessageExtension>();
         }
 
         public WebSocketMessageExtensionCollection(WebSocketListener webSocketListener)
@@ -23,22 +23,17 @@ namespace vtortola.WebSockets
             if (_listener != null && _listener.IsStarted)
                 throw new WebSocketException("Extensions cannot be added after the service is started");
 
-            _extensions.Add(extension);
+            _extensions.Add(extension.Name.ToLowerInvariant(), extension);
+        }
+
+        public bool TryGetExtension(string name, out IWebSocketMessageExtension extension) 
+        {
+            return _extensions.TryGetValue(name, out extension);
         }
 
         public int Count
         {
             get { return _extensions.Count; }
-        }
-
-        public IEnumerator<IWebSocketMessageExtension> GetEnumerator()
-        {
-            return _extensions.GetEnumerator();
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return _extensions.GetEnumerator();
         }
     }
 }

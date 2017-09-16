@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
@@ -40,7 +41,7 @@ namespace vtortola.WebSockets.Rfc6455
                     }
                     else if (_lastActivity < now.Subtract(skipInterval))
                     {
-                        _connection.WriteInternal(_pingBuffer, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None);
+                        await _connection.WriteInternalAsync(_pingBuffer, 0, true, false, WebSocketFrameOption.Ping, WebSocketExtensionFlags.None, CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 catch(Exception ex)
@@ -49,7 +50,6 @@ namespace vtortola.WebSockets.Rfc6455
                     _connection.Close(WebSocketCloseReasons.ProtocolError);
                 }
             }
-
         }
 
         internal override void NotifyActivity()

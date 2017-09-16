@@ -67,6 +67,7 @@ namespace vtortola.WebSockets.Rfc6455
                 case PingModes.BandwidthSaving:
                     _ping = new BandwidthSavingPing(this, _options.PingTimeout, _pingBuffer);
                     break;
+
                 case PingModes.LatencyControl:
                 default:
                     _ping = new LatencyControlPing(this, _options.PingTimeout, _pingBuffer);
@@ -186,36 +187,42 @@ namespace vtortola.WebSockets.Rfc6455
             }
             catch (InvalidOperationException)
             {
-                this.Close(WebSocketCloseReasons.UnexpectedCondition);
+                Close(WebSocketCloseReasons.UnexpectedCondition);
                 return 0;
             }
             catch (IOException)
             {
-                this.Close(WebSocketCloseReasons.UnexpectedCondition);
+                Close(WebSocketCloseReasons.UnexpectedCondition);
                 return 0;
             }
         }
+
         internal void EndWritting()
         {
             _ongoingMessageWrite = 0;
         }
+
         internal void BeginWritting()
         {
             if(Interlocked.CompareExchange(ref _ongoingMessageWrite, 1 , 0) == 1)
                 throw new WebSocketException("There is an ongoing message that is being written from somewhere else. Only a single write is allowed at the time.");
         }
+
         internal void WriteInternal(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags)
         {
             WriteInternal(buffer, count, isCompleted, headerSent, (WebSocketFrameOption)type, extensionFlags);
         }
+
         internal Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
         {
             return WriteInternalAsync(buffer, count, isCompleted, headerSent, (WebSocketFrameOption)type, extensionFlags, cancellation);
         }
+
         internal void Close()
         {
             this.Close(WebSocketCloseReasons.NormalClose);
         }
+
         private void ParseHeader(Int32 readed)
         {
             if (!TryReadHeaderUntil(ref readed, 6))
@@ -434,21 +441,24 @@ namespace vtortola.WebSockets.Rfc6455
             }
             finally
             {
-                if(_isClosed == 0)
-                    SafeEnd.ReleaseSemaphore(_writeSemaphore);
+                SafeEnd.ReleaseSemaphore(_writeSemaphore);
             }
         }
-        private async Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
+
+        internal async Task WriteInternalAsync(ArraySegment<Byte> buffer, Int32 count, Boolean isCompleted, Boolean headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
         {
-            CancellationTokenRegistration reg = cancellation.Register(this.Close, false);
             try
             {
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 header.ToBytes(buffer.Array, buffer.Offset - header.HeaderLength);
 
-                if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
+                if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout).ConfigureAwait(false))
                     throw new WebSocketException("Write timeout");
                 await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation).ConfigureAwait(false);
+            }
+            catch(OperationCanceledException)
+            {
+                Close(WebSocketCloseReasons.GoingAway);
             }
             catch (InvalidOperationException)
             {
@@ -465,11 +475,10 @@ namespace vtortola.WebSockets.Rfc6455
             }
             finally
             {
-                reg.Dispose();
-                if (_isClosed == 0)
-                    SafeEnd.ReleaseSemaphore(_writeSemaphore);
+                SafeEnd.ReleaseSemaphore(_writeSemaphore);
             }
         }
+
         internal void Close(WebSocketCloseReasons reason)
         {
             try
