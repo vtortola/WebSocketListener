@@ -45,13 +45,12 @@ namespace vtortola.WebSockets
 
         private async Task StartAccepting()
         {
-            while(IsStarted)
+            while(IsStarted && !_cancel.IsCancellationRequested)
             {
                 var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
                 if (client != null)
                 {
-                    ConfigureSocket(client);
-                    _negotiationQueue.Queue(client);
+                    await _negotiationQueue.QueueAsync(client, _cancel.Token).ConfigureAwait(false);
                 }
             }
         }
@@ -74,14 +73,6 @@ namespace vtortola.WebSockets
         {
             IsStarted = false;
             _listener.Stop();
-        }
-
-        private void ConfigureSocket(Socket client)
-        {
-            if(_options.UseNagleAlgorithm.HasValue)
-                client.NoDelay = !_options.UseNagleAlgorithm.Value;
-            client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
-            client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
         }
 
         public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
