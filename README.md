@@ -77,7 +77,7 @@ The client provides means to read and write messages. With the client, as in the
 With the client we can *await* a message as a readonly stream:
 
 ```cs
-WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
+var messageReadStream = await client.ReadMessageAsync(cancellationToken);
 ```
 
 Messages are a stream-like objects, so is it possible to use regular .NET framework tools to work with them. The `WebSocketMessageReadStream.MessageType` property indicates the kind of content the message contains, so it can be used to select a different handling approach.
@@ -113,7 +113,7 @@ if(messageReadStream.MessageType == WebSocketMessageType.Binary)
 Writing messages is also easy. The `WebSocketMessageReadStream.CreateMessageWriter` method allows to create a write only  message:
 
 ```cs
-using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
+using (var messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
 ```
 
 Once a message writer is created, regular .NET tools can be used to write in it:
