@@ -66,7 +66,7 @@ Optionally, you can also:
 Once the server has started, clients can be awaited asynchronously. When a client connects, a `WebSocket` object will be returned:
 
 ```cs
-WebSocket client = await server.AcceptWebSocketAsync(cancellationToken);
+var client = await server.AcceptWebSocketAsync(cancellationToken);
 ```
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
