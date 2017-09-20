@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ServiceModel.Channels;
 using System.Threading;
 
 namespace vtortola.WebSockets
@@ -21,12 +20,13 @@ namespace vtortola.WebSockets
         public Int32 SendBufferSize { get; set; }
         public String[] SubProtocols { get; set; }
         internal HashSet<String> SubProtocolsSet { get; private set; }
-        public BufferManager BufferManager { get; set; }
+        public IBufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
         public Boolean? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
+
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
@@ -39,7 +39,7 @@ namespace vtortola.WebSockets
             SubProtocols = _noSubProtocols;
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
-            PingMode = PingModes.LatencyControl;
+            PingMode = PingModes.BandwidthSaving;
         }
         public void CheckCoherence()
         {

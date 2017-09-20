@@ -286,9 +286,10 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
-            writer.Write(HttpWorkerRequest.GetStatusDescription(intCode));
+            writer.Write(code.GetDescription());
             writer.Write("\r\n\r\n");
         }
+
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)
         {
             writer.Write("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: ");

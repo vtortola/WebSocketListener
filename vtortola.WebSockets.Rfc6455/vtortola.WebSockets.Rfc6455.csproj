@@ -1,83 +1,29 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{72114F0D-EC56-43D5-8C13-43FB013C0C1D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>vtortola.WebSockets.Rfc6455</RootNamespace>
-    <AssemblyName>vtortola.WebSockets.Rfc6455</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>3.0.0</Version>
+    <Description>Lightweight and highly scalable asynchronous WebSocket listener, compilant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.</Description>
+    <Authors>vtortola</Authors>
+    <PackageLicenseUrl>http://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageIconUrl>http://vtortola.github.io/WebSocketListener/images/WSOrange_small.png</PackageIconUrl>
+    <PackageProjectUrl>http://vtortola.github.io/WebSocketListener/</PackageProjectUrl>
+    <PackageReleaseNotes>The MIT License (MIT)
+
+Copyright (c) 2014 vtortola
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER EALINGS IN THE SOFTWARE.</PackageReleaseNotes>
+    <PackageTags>websockets HTML5 realtime streaming sockets server async asynchronous</PackageTags>
+    <RepositoryUrl>https://github.com/vtortola/WebSocketListener</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>WebSocketListener.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Header\ByteArrayExtensions.cs" />
-    <Compile Include="Ping\BandwidthSavingPing.cs" />
-    <Compile Include="Ping\PingStrategy.cs" />
-    <Compile Include="Ping\LatencyControlPing.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Streams\WebSocketMessageReadRfc6455Stream.cs" />
-    <Compile Include="Streams\WebSocketMessageWriteRfc6455Stream.cs" />
-    <Compile Include="WebSocketCloseReasons.cs" />
-    <Compile Include="WebSocketFactoryRfc6455.cs" />
-    <Compile Include="Header\WebSocketFrameHeader.cs" />
-    <Compile Include="Header\WebSocketFrameHeaderFlags.cs" />
-    <Compile Include="Header\WebSocketFrameOption.cs" />
-    <Compile Include="WebSocketConnectionRfc6455.cs" />
-    <Compile Include="WebSocketRfc6455.cs" />
-    <Compile Include="Header\_ExtensionMethods.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj">
-      <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
-      <Name>vtortola.WebSockets</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="WebSocketListener.snk" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

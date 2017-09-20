@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using vtortola.WebSockets;
-using System.Net;
 using System.IO;
 using System.Text;
 using System.Linq;
@@ -111,7 +110,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.AreEqual(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.AreEqual("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
+                Assert.AreEqual("server.example.com", result.Request.Headers["Host"]);
                 Assert.AreEqual(@"/chat", result.Request.RequestUri.ToString());
                 Assert.AreEqual(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies[0];
@@ -162,7 +161,7 @@ namespace WebSocketListenerTests.UnitTests
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
                 Assert.AreEqual(new Uri("http://example.com"), result.Request.Headers.Origin);
-                Assert.AreEqual("server.example.com", result.Request.Headers[HttpRequestHeader.Host]);
+                Assert.AreEqual("server.example.com", result.Request.Headers["Host"]);
                 Assert.AreEqual(@"/chat", result.Request.RequestUri.ToString());
                 Assert.AreEqual(1, result.Request.Cookies.Count);
                 var cookie = result.Request.Cookies[0];
@@ -720,8 +719,8 @@ namespace WebSocketListenerTests.UnitTests
                 {
                     OnHttpNegotiation = (request, response) => 
                         {
-                            response.Cookies.Add(new Cookie("name1", "value1"));
-                            response.Cookies.Add(new Cookie("name2", "value2"));
+                            response.Cookies.Add(new System.Net.Cookie("name1", "value1"));
+                            response.Cookies.Add(new System.Net.Cookie("name2", "value2"));
                         }
                 });
 
