@@ -6,7 +6,6 @@ using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
@@ -52,7 +51,7 @@ namespace vtortola.WebSockets
 
                 SelectExtensions(handshake);
 
-                RunHttpNegotiationHandler(handshake);
+                await RunHttpNegotiationHandler(handshake).ConfigureAwait(false);
 
                 await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
             }
@@ -84,13 +83,13 @@ namespace vtortola.WebSockets
                    handShake.Request.Headers.Contains(WebSocketHeaders.Version);
         }
 
-        private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
+        private async Task RunHttpNegotiationHandler(WebSocketHandshake handshake)
         {
             if (_options.OnHttpNegotiation != null)
             {
                 try
                 {
-                    _options.OnHttpNegotiation(handshake.Request, handshake.Response);
+                    await _options.OnHttpNegotiation(handshake.Request, handshake.Response).ConfigureAwait(false);
                 }
                 catch (Exception onNegotiationHandlerError)
                 {
@@ -410,6 +409,7 @@ namespace vtortola.WebSockets
                                 extOptions.Add(new WebSocketExtensionOption() { Name = optname, Value = value });
                         }
                     }
+
                     extensionList.Add(new WebSocketExtension(name, extOptions));
                 }
             }

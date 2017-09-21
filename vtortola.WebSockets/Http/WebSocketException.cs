@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketExtension
+    public sealed class WebSocketExtension
     {
         public String Name { get; private set; }
         public IReadOnlyList<WebSocketExtensionOption> Options { get; private set; }
@@ -14,16 +14,18 @@ namespace vtortola.WebSockets
         public WebSocketExtension(String name, List<WebSocketExtensionOption> options)
         {
             Name = name;
-            Options = new ReadOnlyCollection<WebSocketExtensionOption>(options);
-        }
-        public WebSocketExtension(String name)
-        {
-            Name = name;
-            Options = _empty;
+            if (options.Count >= 1)
+            {
+                Options = new ReadOnlyCollection<WebSocketExtensionOption>(options);
+            }
+            else
+            {
+                Options = _empty;
+            }
         }
     }
 
-    public class WebSocketExtensionOption
+    public sealed class WebSocketExtensionOption
     {
         public String Name { get; set; }
         public String Value { get; set; }

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
+    public delegate Task OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
 
     public enum PingModes { LatencyControl, BandwidthSaving }
 
@@ -30,8 +31,8 @@ namespace vtortola.WebSockets
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
-            NegotiationQueueCapacity = Environment.ProcessorCount * 10;
-            ParallelNegotiations = Environment.ProcessorCount * 2;
+            NegotiationQueueCapacity = Environment.ProcessorCount * 1024;
+            ParallelNegotiations = Environment.ProcessorCount * 128;
             NegotiationTimeout = TimeSpan.FromSeconds(5);
             WebSocketSendTimeout = TimeSpan.FromSeconds(5);
             WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
