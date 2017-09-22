@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace vtortola.WebSockets
@@ -16,7 +17,7 @@ namespace vtortola.WebSockets
                 }
                 catch (Exception ex)
                 {
-                    DebugLog.Fail(typeof(T).Name + ".Dispose", ex);
+                    Debug.Fail(typeof(T).Name + ".Dispose: " + ex.Message);
                 }
             }
         }
@@ -34,7 +35,7 @@ namespace vtortola.WebSockets
             }
             catch (Exception ex)
             {
-                DebugLog.Fail("SemaphoreSlim.Release: ", ex);
+                Debug.Fail("SemaphoreSlim.Release: " + ex.Message);
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -64,7 +65,7 @@ namespace vtortola.WebSockets
                     try { WriteHttpResponse(handshake, clientStream); }
                     catch(Exception ex2) 
                     {
-                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse)", ex2);
+                        Debug.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse): " + ex2.Message);
                     };
                 }
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,7 +48,7 @@ namespace vtortola.WebSockets.Rfc6455
                 }
                 catch(Exception ex)
                 {
-                    DebugLog.Fail("LatencyControlPing.StartPing", ex);
+                    Debug.Fail("LatencyControlPing.StartPing " + ex.Message);
                     _connection.Close(WebSocketCloseReasons.ProtocolError);
                 }
             }

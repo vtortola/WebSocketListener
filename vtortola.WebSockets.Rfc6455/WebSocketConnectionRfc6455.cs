@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -492,7 +493,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
             catch (Exception ex)
             {
-                DebugLog.Fail("WebSocketConnectionRfc6455.Close", ex);
+                Debug.Fail("WebSocketConnectionRfc6455.Close: " + ex.Message);
             }
         }
 

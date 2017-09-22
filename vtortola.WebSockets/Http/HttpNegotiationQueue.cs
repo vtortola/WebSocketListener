@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -67,7 +68,7 @@ namespace vtortola.WebSockets.Http
                 }
                 catch (Exception ex)
                 {
-                    DebugLog.Fail("HttpNegotiationQueue.WorkAsync", ex);
+                    Debug.Fail("HttpNegotiationQueue.WorkAsync: " + ex.Message);
                     _cancel.Cancel();
                 }
             }
