@@ -26,4 +26,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <ProjectReference Include="..\vtortola.WebSockets\vtortola.WebSockets.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Header\" />
+    <Folder Include="Ping\" />
+    <Folder Include="Streams\" />
+  </ItemGroup>
+
 </Project>
