@@ -695,7 +695,7 @@ namespace WebSocketListenerTests.UnitTests
                 var result = handshaker.HandshakeAsync(ms).Result;
                 Assert.IsTrue(result.IsWebSocketRequest);
                 Assert.IsTrue(result.IsVersionSupported);
-                Assert.IsTrue(result.NegotiatedMessageExtensions.Count == 0);
+                Assert.IsTrue(result.NegotiatedMessageExtensions.Count() == 0);
 
                 ms.Seek(position, SeekOrigin.Begin);
 
@@ -717,11 +717,11 @@ namespace WebSocketListenerTests.UnitTests
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
                 new WebSocketListenerOptions()
                 {
-                    OnHttpNegotiation = (request, response) => 
-                        {
-                            response.Cookies.Add(new System.Net.Cookie("name1", "value1"));
-                            response.Cookies.Add(new System.Net.Cookie("name2", "value2"));
-                        }
+                    OnHttpNegotiation = async (request, response) => 
+                    {
+                        response.Cookies.Add(new System.Net.Cookie("name1", "value1"));
+                        response.Cookies.Add(new System.Net.Cookie("name2", "value2"));
+                    }
                 });
 
             using (var ms = new MemoryStream())
@@ -884,7 +884,7 @@ namespace WebSocketListenerTests.UnitTests
             WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories,
                 new WebSocketListenerOptions()
                 {
-                    OnHttpNegotiation = (req, res) => { res.Status = HttpStatusCode.Unauthorized; }
+                    OnHttpNegotiation = async (req, res) => { res.Status = HttpStatusCode.Unauthorized; }
                 });
 
             using (var ms = new MemoryStream())

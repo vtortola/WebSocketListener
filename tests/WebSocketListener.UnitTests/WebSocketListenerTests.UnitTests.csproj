@@ -69,14 +69,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj">
-      <Project>{6018a524-44f1-4cd1-b52e-a22cc8b8e96e}</Project>
-      <Name>vtortola.WebSockets.Deflate</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj">
-      <Project>{39594cf8-e5df-43a7-be84-29afe2536811}</Project>
-      <Name>vtortola.WebSockets.Rfc6455</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
       <Project>{c6639962-c8a4-433f-84b2-e7549c8708cf}</Project>
       <Name>vtortola.WebSockets</Name>

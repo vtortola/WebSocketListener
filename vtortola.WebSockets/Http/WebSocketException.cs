@@ -11,6 +11,12 @@ namespace vtortola.WebSockets
 
         static readonly ReadOnlyCollection<WebSocketExtensionOption> _empty = new ReadOnlyCollection<WebSocketExtensionOption>(new List<WebSocketExtensionOption>());
 
+        public WebSocketExtension(String name)
+        {
+            Name = name;
+            Options = _empty;
+        }
+
         public WebSocketExtension(String name, List<WebSocketExtensionOption> options)
         {
             Name = name;
