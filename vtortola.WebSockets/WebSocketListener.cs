@@ -22,18 +22,17 @@ namespace vtortola.WebSockets
 
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(endpoint, "endpoint");
-            Guard.ParameterCannotBeNull(options, "options");
-            
-            options.CheckCoherence();
-            options = options.Clone();
+            Guard.ParameterCannotBeNull(endpoint, nameof(endpoint));
+            Guard.ParameterCannotBeNull(options, nameof(options));
+
+            _configuration = new WebSocketListenerConfig(options);
+
             _disposing = new CancellationTokenSource();
 
             _listener = new TcpListener(endpoint);
-            if(options.UseNagleAlgorithm.HasValue)
-                _listener.Server.NoDelay = !options.UseNagleAlgorithm.Value;
+            if(_configuration.Options.UseNagleAlgorithm.HasValue)
+                _listener.Server.NoDelay = !_configuration.Options.UseNagleAlgorithm.Value;
 
-            _configuration = new WebSocketListenerConfig(options);
             _negotiationQueue = new HttpNegotiationQueue(_configuration);
         }
 

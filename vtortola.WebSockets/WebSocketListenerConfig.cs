@@ -9,7 +9,8 @@
 
         public WebSocketListenerConfig(WebSocketListenerOptions options)
         {
-            Options = options;
+            options.CheckCoherence();
+            Options = options.Clone();
             ConnectionExtensions = new WebSocketConnectionExtensionCollection();
             Standards = new WebSocketFactoryCollection();
             MessageExtensions = new WebSocketMessageExtensionCollection();

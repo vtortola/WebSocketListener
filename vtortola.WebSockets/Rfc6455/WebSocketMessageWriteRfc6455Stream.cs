@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    internal class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
+    internal sealed class WebSocketMessageWriteRfc6455Stream : WebSocketMessageWriteStream
     {
         bool _isHeaderSent, _isFinished;
         int _internalUsedBufferLength;

@@ -40,7 +40,7 @@ namespace vtortola.WebSockets
             return Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes(Request.Headers[WebSocketHeaders.Key] + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
         }
 
-        static readonly List<IWebSocketMessageExtensionContext> _empy = new List<IWebSocketMessageExtensionContext>();
+        static readonly List<IWebSocketMessageExtensionContext> _empy = new List<IWebSocketMessageExtensionContext>(0);
         List<IWebSocketMessageExtensionContext> _negotiatedExtensions = null;
         public IEnumerable<IWebSocketMessageExtensionContext> NegotiatedMessageExtensions => _negotiatedExtensions ?? _empy;
 

@@ -7,16 +7,17 @@ namespace vtortola.WebSockets.Deflate
 {
     public sealed class WebSocketDeflateWriteStream: WebSocketMessageWriteStream
     {
-        readonly static Byte[] _BFINAL = new Byte[] { 0 };
+        readonly static byte[] _BFINAL = new byte[] { 0 };
         readonly WebSocketMessageWriteStream _inner;
         readonly DeflateStream _deflate;
-        Boolean _isClosed;
+        bool _isClosed;
 
         public WebSocketDeflateWriteStream(WebSocketMessageWriteStream inner)
         {
             _inner = inner;
             _deflate = new DeflateStream(_inner, CompressionMode.Compress, true);
         }
+
         public override void Write(byte[] buffer, int offset, int count)
         {
             RemoveUTF8BOM(buffer, ref offset, ref count);
@@ -24,6 +25,7 @@ namespace vtortola.WebSockets.Deflate
                 return;
             _deflate.Write(buffer, offset, count);
         }
+
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             RemoveUTF8BOM(buffer, ref offset, ref count);

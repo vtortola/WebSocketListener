@@ -4,7 +4,7 @@ using System.Net.Sockets;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public class WebSocketFactoryRfc6455 : WebSocketFactory
+    public sealed class WebSocketFactoryRfc6455 : WebSocketFactory
     {
         public override short Version { get { return 13; } }
 

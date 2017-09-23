@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public class WebSocketRfc6455 : WebSocket
+    public sealed class WebSocketRfc6455 : WebSocket
     {
         readonly IEnumerable<IWebSocketMessageExtensionContext> _extensions;
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;

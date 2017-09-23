@@ -15,9 +15,9 @@ namespace vtortola.WebSockets.Tools
         }
 
         readonly IAsyncResult _ia;
-        readonly Object _state;
+        readonly object _state;
 
-        public AsyncResultTask(Task<T> task, Object state)
+        public AsyncResultTask(Task<T> task, object state)
         {
             _task = task;
             _ia = task;
@@ -51,9 +51,9 @@ namespace vtortola.WebSockets.Tools
         }
 
         readonly IAsyncResult _ia;
-        readonly Object _state;
+        readonly object _state;
 
-        public AsyncResultTask(Task task, Object state)
+        public AsyncResultTask(Task task, object state)
         {
             _task = task;
             _ia = task;

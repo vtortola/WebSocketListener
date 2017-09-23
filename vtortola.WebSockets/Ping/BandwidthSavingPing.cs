@@ -9,11 +9,11 @@ namespace vtortola.WebSockets.Rfc6455
     {
         readonly TimeSpan _pingTimeout;
         readonly WebSocketConnectionRfc6455 _connection;
-        readonly ArraySegment<Byte> _pingBuffer;
+        readonly ArraySegment<byte> _pingBuffer;
 
         DateTime _lastActivity;
          
-        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
+        internal BandwidthSavingPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<byte> pingBuffer)
         {
             Guard.ParameterCannotBeNull(connection, "connection");
 

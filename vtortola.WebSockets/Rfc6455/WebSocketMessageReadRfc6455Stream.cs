@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    internal class WebSocketMessageReadRfc6455Stream : WebSocketMessageReadStream
+    internal sealed class WebSocketMessageReadRfc6455Stream : WebSocketMessageReadStream
     {
         readonly WebSocketConnectionRfc6455 _webSocket;
         readonly WebSocketMessageType _messageType;

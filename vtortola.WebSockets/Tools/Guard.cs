@@ -4,7 +4,7 @@ namespace vtortola.WebSockets
 {
     public static class Guard
     {
-        public static void ParameterCannotBeNull<T>(T obj, String paramenterName)
+        public static void ParameterCannotBeNull<T>(T obj, string paramenterName)
         {
             if (obj == null)
             {
