@@ -57,6 +57,7 @@ namespace vtortola.WebSockets
             {
                 writer.Write(data);
                 await writer.FlushAsync().ConfigureAwait(false);
+                await msg.CloseAsync(cancel).ConfigureAwait(false);
             }
         }
     }
