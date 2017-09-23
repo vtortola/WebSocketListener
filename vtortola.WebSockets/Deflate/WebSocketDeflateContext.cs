@@ -10,6 +10,7 @@ namespace vtortola.WebSockets.Deflate
             else
                 return message;
         }
+
         public WebSocketMessageWriteStream ExtendWriter(WebSocketMessageWriteStream message)
         {
             message.ExtensionFlags.Rsv1 = true;
