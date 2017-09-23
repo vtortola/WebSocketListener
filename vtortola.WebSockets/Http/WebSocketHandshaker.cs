@@ -11,18 +11,15 @@ using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketHandshaker
+    internal class WebSocketHandshaker
     {
-        readonly WebSocketListenerOptions _options;
-        readonly WebSocketFactoryCollection _factories;
+        readonly WebSocketListenerConfig _configuration;
 
-        public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
+        public WebSocketHandshaker(WebSocketListenerConfig configuration)
         {
-            Guard.ParameterCannotBeNull(factories, "factories");
-            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(configuration, nameof(configuration));
 
-            _factories = factories;
-            _options = options;
+            _configuration = configuration;
         }
 
         public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream)
@@ -39,7 +36,7 @@ namespace vtortola.WebSockets
 
                 handshake.IsWebSocketRequest = true;
 
-                handshake.Factory = _factories.GetWebSocketFactory(handshake.Request);
+                handshake.Factory = _configuration.Standards.GetWebSocketFactory(handshake.Request);
                 if (handshake.Factory == null)
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
@@ -86,11 +83,11 @@ namespace vtortola.WebSockets
 
         private async Task RunHttpNegotiationHandler(WebSocketHandshake handshake)
         {
-            if (_options.OnHttpNegotiation != null)
+            if (_configuration.Options.OnHttpNegotiation != null)
             {
                 try
                 {
-                    await _options.OnHttpNegotiation(handshake.Request, handshake.Response).ConfigureAwait(false);
+                    await _configuration.Options.OnHttpNegotiation(handshake.Request, handshake.Response).ConfigureAwait(false);
                 }
                 catch (Exception onNegotiationHandlerError)
                 {
@@ -107,7 +104,7 @@ namespace vtortola.WebSockets
             foreach (var extRequest in handshake.Request.WebSocketExtensions)
             {
                 IWebSocketMessageExtension extension;
-                if (handshake.Factory.MessageExtensions.TryGetExtension(extRequest.Name, out extension) && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
+                if (_configuration.MessageExtensions.TryGetExtension(extRequest.Name, out extension) && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
                 {
                     handshake.AddExtension(context);
                     handshake.Response.AddExtension(extensionResponse);
@@ -118,7 +115,7 @@ namespace vtortola.WebSockets
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
+            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _configuration.Options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
@@ -128,7 +125,7 @@ namespace vtortola.WebSockets
         private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
+            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _configuration.Options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 writer.Flush();
@@ -159,7 +156,7 @@ namespace vtortola.WebSockets
         }
         private async Task ReadHttpRequestAsync(Stream clientStream, WebSocketHandshake handshake)
         {
-            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, _options.SendBufferSize, true))
+            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, _configuration.Options.SendBufferSize, true))
             {
                 String line = await sr.ReadLineAsync().ConfigureAwait(false);
 
@@ -295,7 +292,7 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: ");
 
             Boolean first = true;
-            foreach (var standard in _factories)
+            foreach (var standard in _configuration.Standards)
             {
                 if(!first)
                     writer.Write(",");
@@ -316,7 +313,7 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
-            if (!_options.SubProtocols.Any())
+            if (!_configuration.Options.SubProtocols.Any())
                 return;
 
             if (handshake.Request.Headers.Contains(WebSocketHeaders.Protocol))
@@ -325,7 +322,7 @@ namespace vtortola.WebSockets
 
                 foreach (var subprotocol in SplitBy(',', subprotocolRequest))
                 {
-                    if (_options.SubProtocolsSet.Contains(subprotocol))
+                    if (_configuration.Options.SubProtocolsSet.Contains(subprotocol))
                     {
                         handshake.Response.WebSocketProtocol = subprotocol;
                         return;
