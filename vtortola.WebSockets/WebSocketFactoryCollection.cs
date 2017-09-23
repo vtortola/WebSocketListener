@@ -12,11 +12,13 @@ namespace vtortola.WebSockets
         {
             _factories = new Dictionary<Int16, WebSocketFactory>();
         }
+
         public WebSocketFactoryCollection(WebSocketListener webSocketListener)
             : this()
         {
             _listener = webSocketListener;
         }
+
         public void RegisterStandard(WebSocketFactory factory)
         {
             if (_listener != null && _listener.IsStarted)
@@ -26,18 +28,22 @@ namespace vtortola.WebSockets
            
             _factories.Add(factory.Version, factory);
         }
+
         public int Count
         {
             get { return _factories.Count; }
         }
+
         public IEnumerator<WebSocketFactory> GetEnumerator()
         {
             return _factories.Values.GetEnumerator();
         }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _factories.GetEnumerator();
         }
+
         public WebSocketFactory GetWebSocketFactory(WebSocketHttpRequest Request)
         {
             WebSocketFactory factory;

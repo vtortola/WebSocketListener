@@ -14,7 +14,7 @@ namespace vtortola.WebSockets
         public WebSocketExtension(String name, List<WebSocketExtensionOption> options)
         {
             Name = name;
-            if (options.Count >= 1)
+            if (options !=null && options.Count > 0)
             {
                 Options = new ReadOnlyCollection<WebSocketExtensionOption>(options);
             }

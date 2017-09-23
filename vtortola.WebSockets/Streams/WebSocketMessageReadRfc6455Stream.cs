@@ -67,7 +67,9 @@ namespace vtortola.WebSockets.Rfc6455
                     break;
                 }
                 else if (checkedcount == 0 && _hasPendingFrames)
+                {
                     LoadNewHeader();
+                }
                 else
                 {
                     readed = _webSocket.Connection.ReadInternal(buffer, offset, checkedcount);
@@ -96,7 +98,9 @@ namespace vtortola.WebSockets.Rfc6455
                     break;
                 }
                 else if (checkedcount == 0 && _hasPendingFrames)
+                {
                     await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
+                }
                 else
                 {
                     readed = await _webSocket.Connection.ReadInternalAsync(buffer, offset, checkedcount, cancellationToken).ConfigureAwait(false);
@@ -114,6 +118,7 @@ namespace vtortola.WebSockets.Rfc6455
             _webSocket.Connection.AwaitHeader();
             _hasPendingFrames = HasPendingFrames();
         }
+
         private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
         {
             await _webSocket.Connection.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
@@ -124,5 +129,4 @@ namespace vtortola.WebSockets.Rfc6455
             => _webSocket.Connection.CurrentHeader != null && !_webSocket.Connection.CurrentHeader.Flags.FIN && _webSocket.Connection.CurrentHeader.Flags.Option == WebSocketFrameOption.Continuation;
 
     }
-
 }

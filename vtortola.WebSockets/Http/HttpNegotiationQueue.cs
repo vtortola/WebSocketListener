@@ -63,9 +63,7 @@ namespace vtortola.WebSockets.Http
                     var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
                     NegotiateWebSocket(socket);
                 }
-                catch (TaskCanceledException)
-                {
-                }
+                catch (OperationCanceledException){}
                 catch (Exception ex)
                 {
                     Debug.Fail("HttpNegotiationQueue.WorkAsync: " + ex.Message);

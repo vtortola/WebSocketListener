@@ -9,7 +9,7 @@ namespace vtortola.WebSockets.Rfc6455
 {
     public class WebSocketRfc6455 : WebSocket
     {
-        readonly IReadOnlyList<IWebSocketMessageExtensionContext> _extensions;
+        readonly IEnumerable<IWebSocketMessageExtensionContext> _extensions;
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
         readonly String _subprotocol;
 
@@ -21,7 +21,7 @@ namespace vtortola.WebSockets.Rfc6455
         public override TimeSpan Latency { get { return Connection.Latency; } }
         public override String SubProtocol { get { return _subprotocol; } }
 
-        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IReadOnlyList<IWebSocketMessageExtensionContext> extensions)
+        public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IEnumerable<IWebSocketMessageExtensionContext> extensions)
             :base(httpRequest, httpResponse)
         {
             Guard.ParameterCannotBeNull(clientStream, "clientStream");

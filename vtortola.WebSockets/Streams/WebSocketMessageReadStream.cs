@@ -17,13 +17,10 @@ namespace vtortola.WebSockets
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             var wrapper = new AsyncResultTask<Int32>(ReadAsync(buffer, offset, count), state);
-            wrapper.Task.ContinueWith(t =>
-            {
-                if (callback != null)
-                    callback(wrapper);
-            });
+            wrapper.Task.ContinueWith(t => callback?.Invoke(wrapper));
             return wrapper;
         }
+
         public override sealed int EndRead(IAsyncResult asyncResult)
         {
             try

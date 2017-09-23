@@ -18,6 +18,7 @@ namespace vtortola.WebSockets
         {
             ExtensionFlags = new WebSocketExtensionFlags();
         }
+
         public override sealed IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             var wrapper = new AsyncResultTask(WriteAsync(buffer, offset, count),state);
@@ -28,6 +29,7 @@ namespace vtortola.WebSockets
             });
             return wrapper;
         }
+
         public override sealed void EndWrite(IAsyncResult asyncResult)
         {
             try

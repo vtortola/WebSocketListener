@@ -109,8 +109,8 @@ namespace vtortola.WebSockets
                 IWebSocketMessageExtension extension;
                 if (handshake.Factory.MessageExtensions.TryGetExtension(extRequest.Name, out extension) && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
                 {
-                    handshake.NegotiatedMessageExtensions.Add(context);
-                    handshake.Response.WebSocketExtensions.Add(extensionResponse);
+                    handshake.AddExtension(context);
+                    handshake.Response.AddExtension(extensionResponse);
                 }
             }
         }
@@ -336,20 +336,22 @@ namespace vtortola.WebSockets
 
         static IEnumerable<string> SplitBy(char limit, string str, bool firstOnly = false)
         {
+            var buffer = new char[str.Length];
+            var count = 0;
             var start = 0;
+
             while (str[start] == ' ')
                 start++;
 
             var found = false;
 
-            var list = new List<char>(str.Length);
             for(; start < str.Length; start++)
             {
                 var c = str[start];
                 if (c == limit && (!firstOnly || (firstOnly && !found)))
                 {
-                    yield return new string(list.ToArray());
-                    list.Clear();
+                    yield return new string(buffer, 0, count);
+                    count = 0;
                     found = true;
                 }
                 else if (c == ' ')
@@ -358,22 +360,23 @@ namespace vtortola.WebSockets
                 }
                 else
                 {
-                    list.Add(c);
+                    buffer[count++] = c;
                 }
             }
 
-            if (list.Any())
+            if (count > 0)
             {
-                yield return new string(list.ToArray());
+                yield return new string(buffer, 0, count);
             }
         }
 
         private void ParseWebSocketExtensions(WebSocketHandshake handshake)
         {
-            List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
+            List<WebSocketExtension> extensionList = null;
             if (handshake.Request.Headers.Contains(WebSocketHeaders.Extensions))
             {
                 var header = handshake.Request.Headers[WebSocketHeaders.Extensions];
+                extensionList = extensionList ?? new List<WebSocketExtension>();
                 BuildExtensions(extensionList, header, SplitBy(',', header));
             }
             handshake.Request.SetExtensions(extensionList);
@@ -383,7 +386,7 @@ namespace vtortola.WebSockets
         {
             foreach (var extension in extensions)
             {
-                List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
+                List<WebSocketExtensionOption> extOptions = null;
 
                 using (var reader = SplitBy(';', extension).GetEnumerator())
                 {
@@ -404,10 +407,15 @@ namespace vtortola.WebSockets
                                 value = optReader.Current;
                             }
 
+                            extOptions = extOptions ?? new List<WebSocketExtensionOption>();
                             if (value.Length > 0)
+                            {
                                 extOptions.Add(new WebSocketExtensionOption() { Name = optname, ClientAvailableOption = true });
+                            }
                             else
+                            {
                                 extOptions.Add(new WebSocketExtensionOption() { Name = optname, Value = value });
+                            }
                         }
                     }
 
@@ -434,7 +442,7 @@ namespace vtortola.WebSockets
                 }
                 catch (Exception ex)
                 {
-                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "' because: " + ex.Message);
+                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "' because: " + ex.Message, ex);
                 }
             }
         }

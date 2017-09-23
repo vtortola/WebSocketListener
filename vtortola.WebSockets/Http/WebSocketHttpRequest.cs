@@ -28,7 +28,7 @@ namespace vtortola.WebSockets
 
         internal void SetExtensions(List<WebSocketExtension> extensions)
         {
-            if (extensions.Count >= 1)
+            if (extensions != null && extensions.Count >= 1)
             {
                 WebSocketExtensions = new ReadOnlyCollection<WebSocketExtension>(extensions);
             }
