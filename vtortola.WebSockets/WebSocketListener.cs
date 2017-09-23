@@ -11,7 +11,7 @@ namespace vtortola.WebSockets
     {
         readonly TcpListener _listener;
         readonly HttpNegotiationQueue _negotiationQueue;
-        readonly CancellationTokenSource _cancel;
+        readonly CancellationTokenSource _disposing;
         readonly WebSocketListenerOptions _options;
 
         public Boolean IsStarted { get; private set; }
@@ -26,7 +26,7 @@ namespace vtortola.WebSockets
             
             options.CheckCoherence();
             _options = options.Clone();
-            _cancel = new CancellationTokenSource();
+            _disposing = new CancellationTokenSource();
 
             _listener = new TcpListener(endpoint);
             if(_options.UseNagleAlgorithm.HasValue)
@@ -34,6 +34,8 @@ namespace vtortola.WebSockets
 
             ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
             Standards = new WebSocketFactoryCollection(this);
+            var rfc6455 = new Rfc6455.WebSocketFactoryRfc6455(this);
+            Standards.RegisterStandard(rfc6455);
 
             _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, options);
         }
@@ -43,19 +45,24 @@ namespace vtortola.WebSockets
         {
         }
 
-        private async Task StartAccepting()
+        private async Task StartAccepting(CancellationToken cancel)
         {
-            while(IsStarted && !_cancel.IsCancellationRequested)
+            while(IsStarted && !cancel.IsCancellationRequested)
             {
                 var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
                 if (client != null)
                 {
-                    await _negotiationQueue.QueueAsync(client, _cancel.Token).ConfigureAwait(false);
+                    await _negotiationQueue.QueueAsync(client, cancel).ConfigureAwait(false);
                 }
             }
         }
 
-        public void Start()
+        public Task StartAsync()
+        {
+            return StartAsync(CancellationToken.None);
+        }
+
+        public Task StartAsync(CancellationToken cancel)
         {
             if (Standards.Count <= 0)
                 throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
@@ -66,7 +73,8 @@ namespace vtortola.WebSockets
             else
                 _listener.Start();
 
-            StartAccepting();
+            cancel = CancellationTokenSource.CreateLinkedTokenSource(_disposing.Token, cancel).Token;
+            return StartAccepting(cancel);
         }
 
         public void Stop()
@@ -102,10 +110,10 @@ namespace vtortola.WebSockets
             if (_listener != null)
                 SafeEnd.Dispose(_listener.Server);
 
-            if (_cancel != null)
+            if (_disposing != null)
             {
-                _cancel.Cancel();
-                SafeEnd.Dispose(_cancel);
+                _disposing.Cancel();
+                SafeEnd.Dispose(_disposing);
             }
 
             SafeEnd.Dispose(_negotiationQueue);

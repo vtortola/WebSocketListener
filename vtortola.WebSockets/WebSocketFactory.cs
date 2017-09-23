@@ -9,10 +9,7 @@ namespace vtortola.WebSockets
     {
         public abstract Int16 Version { get; }
         public WebSocketMessageExtensionCollection MessageExtensions { get; private set; }
-        public WebSocketFactory()
-        {
-            MessageExtensions = new WebSocketMessageExtensionCollection();
-        }
+
         public WebSocketFactory(WebSocketListener listener)
         {
             MessageExtensions = new WebSocketMessageExtensionCollection(listener);
