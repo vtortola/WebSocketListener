@@ -452,7 +452,7 @@ namespace vtortola.WebSockets.Rfc6455
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 header.ToBytes(buffer.Array, buffer.Offset - header.HeaderLength);
 
-                if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
+                if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancellation).ConfigureAwait(false))
                     throw new WebSocketException("Write timeout");
                 await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation).ConfigureAwait(false);
             }
