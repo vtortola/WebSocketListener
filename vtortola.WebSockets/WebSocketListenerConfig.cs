@@ -1,4 +1,8 @@
-﻿namespace vtortola.WebSockets
+﻿
+using System.Runtime.CompilerServices;
+[assembly:InternalsVisibleTo("WebSocketListener.UnitTests")]
+
+namespace vtortola.WebSockets
 {
     internal class WebSocketListenerConfig
     {

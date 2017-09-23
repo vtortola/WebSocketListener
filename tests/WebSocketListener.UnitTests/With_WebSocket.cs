@@ -12,13 +12,6 @@ namespace WebSocketListenerTests.UnitTests
     [TestClass]
     public class With_WebSocket
     {
-        WebSocketFactoryCollection _factories;
-        public With_WebSocket()
-        {
-            _factories = new WebSocketFactoryCollection();
-            _factories.RegisterStandard(new WebSocketFactoryRfc6455());
-        }
-
         [TestMethod]
         public void With_WebSocket_CanReadSmallFrame()
         {
@@ -268,7 +261,9 @@ namespace WebSocketListenerTests.UnitTests
 
         WebSocketHandshake GenerateSimpleHandshake()
         {
-            WebSocketHandshaker handshaker = new WebSocketHandshaker(_factories, new WebSocketListenerOptions());
+            var config = new WebSocketListenerConfig(new WebSocketListenerOptions());
+            config.Standards.RegisterStandard(new WebSocketFactoryRfc6455());
+            WebSocketHandshaker handshaker = new WebSocketHandshaker(config);
 
             using (var ms = new MemoryStream())
             {
