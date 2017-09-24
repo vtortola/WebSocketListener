@@ -10,20 +10,17 @@ namespace vtortola.WebSockets
     {
         public abstract WebSocketMessageType MessageType {get;}
         public abstract WebSocketExtensionFlags Flags { get; }
-        public override sealed Boolean CanRead { get { return true; } }
-        public override abstract Int32 Read(Byte[] buffer, Int32 offset, Int32 count);
-        public override abstract Task<Int32> ReadAsync(Byte[] buffer, Int32 offset, Int32 count, CancellationToken cancellationToken);
+        public override sealed bool CanRead { get { return true; } }
+        public override abstract int Read(byte[] buffer, int offset, int count);
+        public override abstract Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancel);
         
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             var wrapper = new AsyncResultTask<Int32>(ReadAsync(buffer, offset, count), state);
-            wrapper.Task.ContinueWith(t =>
-            {
-                if (callback != null)
-                    callback(wrapper);
-            });
+            wrapper.Task.ContinueWith(t => callback?.Invoke(wrapper));
             return wrapper;
         }
+
         public override sealed int EndRead(IAsyncResult asyncResult)
         {
             try

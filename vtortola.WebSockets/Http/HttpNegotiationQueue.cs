@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -9,43 +9,41 @@ using System.Threading.Tasks.Dataflow;
 
 namespace vtortola.WebSockets.Http
 {
-    public sealed class HttpNegotiationQueue:IDisposable
+    internal sealed class HttpNegotiationQueue : IDisposable
     {
         readonly BufferBlock<Socket> _sockets;
         readonly BufferBlock<WebSocketNegotiationResult> _negotiations;
         readonly CancellationTokenSource _cancel;
         readonly WebSocketHandshaker _handShaker;
-        readonly WebSocketListenerOptions _options;
-        readonly WebSocketConnectionExtensionCollection _extensions;
         readonly SemaphoreSlim _semaphore;
 
-        public HttpNegotiationQueue(WebSocketFactoryCollection standards, WebSocketConnectionExtensionCollection extensions, WebSocketListenerOptions options)
-        {
-            Guard.ParameterCannotBeNull(standards, "standards");
-            Guard.ParameterCannotBeNull(extensions, "extensions");
-            Guard.ParameterCannotBeNull(options, "options");
+        readonly WebSocketListenerConfig _configuration;
 
-            _options = options;
-            _extensions = extensions;
+        public HttpNegotiationQueue(WebSocketListenerConfig configuration)
+        {
+            Guard.ParameterCannotBeNull(configuration, nameof(configuration));
+
+            _configuration = configuration;
+
             _cancel = new CancellationTokenSource();
-            _semaphore = new SemaphoreSlim(options.ParallelNegotiations);
+            _semaphore = new SemaphoreSlim(configuration.Options.ParallelNegotiations);
             
             _sockets = new BufferBlock<Socket>(new DataflowBlockOptions()
             {
-                BoundedCapacity = options.NegotiationQueueCapacity,
+                BoundedCapacity = configuration.Options.NegotiationQueueCapacity,
                 CancellationToken = _cancel.Token
             });
 
             _negotiations = new BufferBlock<WebSocketNegotiationResult>(new DataflowBlockOptions()
             {
-                BoundedCapacity = options.NegotiationQueueCapacity,
+                BoundedCapacity = configuration.Options.NegotiationQueueCapacity,
                 CancellationToken = _cancel.Token
             });
 
             _cancel.Token.Register(_sockets.Complete);
             _cancel.Token.Register(_negotiations.Complete);
 
-            _handShaker = new WebSocketHandshaker(standards, _options);
+            _handShaker = new WebSocketHandshaker(configuration);
 
             WorkAsync();
         }
@@ -62,12 +60,10 @@ namespace vtortola.WebSockets.Http
                     var socket = await _sockets.ReceiveAsync(_cancel.Token).ConfigureAwait(false);
                     NegotiateWebSocket(socket);
                 }
-                catch (TaskCanceledException)
-                {
-                }
+                catch (OperationCanceledException){}
                 catch (Exception ex)
                 {
-                    DebugLog.Fail("HttpNegotiationQueue.WorkAsync", ex);
+                    Debug.Fail("HttpNegotiationQueue.WorkAsync: " + ex.Message);
                     _cancel.Cancel();
                 }
             }
@@ -75,10 +71,10 @@ namespace vtortola.WebSockets.Http
 
         private void ConfigureSocket(Socket client)
         {
-            if (_options.UseNagleAlgorithm.HasValue)
-                client.NoDelay = !_options.UseNagleAlgorithm.Value;
-            client.SendTimeout = (Int32)Math.Round(_options.WebSocketSendTimeout.TotalMilliseconds);
-            client.ReceiveTimeout = (Int32)Math.Round(_options.WebSocketReceiveTimeout.TotalMilliseconds);
+            if (_configuration.Options.UseNagleAlgorithm.HasValue)
+                client.NoDelay = !_configuration.Options.UseNagleAlgorithm.Value;
+            client.SendTimeout = (Int32)Math.Round(_configuration.Options.WebSocketSendTimeout.TotalMilliseconds);
+            client.ReceiveTimeout = (Int32)Math.Round(_configuration.Options.WebSocketReceiveTimeout.TotalMilliseconds);
         }
 
         private async Task NegotiateWebSocket(Socket client)
@@ -90,13 +86,13 @@ namespace vtortola.WebSockets.Http
             WebSocketNegotiationResult result;
             try
             {
-                var timeoutTask = Task.Delay(_options.NegotiationTimeout);
+                var timeoutTask = Task.Delay(_configuration.Options.NegotiationTimeout);
                 var stream = await NegotiateStreamAsync(client, timeoutTask).ConfigureAwait(false);
                 var handshake = await HandshakeAsync(stream, timeoutTask).ConfigureAwait(false);
 
                 if (handshake.IsValid)
                 {
-                    var ws = handshake.Factory.CreateWebSocket(stream, _options, (IPEndPoint)client.LocalEndPoint, (IPEndPoint)client.RemoteEndPoint, handshake.Request, handshake.Response, handshake.NegotiatedMessageExtensions);
+                    var ws = handshake.Factory.CreateWebSocket(stream, client, _configuration.Options, handshake);
                     result = new WebSocketNegotiationResult(ws);
                 }
                 else
@@ -140,7 +136,7 @@ namespace vtortola.WebSockets.Http
         private async Task<Stream> NegotiateStreamAsync(Socket client, Task timeoutTask)
         {
             Stream stream = new NetworkStream(client, FileAccess.ReadWrite, true);
-            foreach (var conExt in _extensions)
+            foreach (var conExt in _configuration.ConnectionExtensions)
             {
                 var extTask = conExt.ExtendConnectionAsync(stream);
                 await Task.WhenAny(timeoutTask, extTask).ConfigureAwait(false);

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Net;
 using vtortola.WebSockets.Http;
 
@@ -11,24 +10,24 @@ namespace vtortola.WebSockets
         private Dictionary<String, String> _headers;
 
         public Uri Origin { get; private set; }
-        public String Host { get; private set; }
-        public Int16 WebSocketVersion { get; internal set; }
+        public string Host { get; private set; }
+        public short WebSocketVersion { get; internal set; }
 
-        public HttpHeadersCollection()
+        internal HttpHeadersCollection()
         {
-            _headers = new Dictionary<String, String>(StringComparer.InvariantCultureIgnoreCase); 
+            _headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); 
         }
 
-        public String this[HttpRequestHeader header]
+        public string this[HttpRequestHeader header]
         {
             get { return this[header.ToString()]; }
         }
 
-        public String this[String header]
+        public string this[string header]
         {
             get 
             {
-                String result;
+                string result;
                 if (_headers.TryGetValue(header, out result))
                     return result;
                 return null; 
@@ -40,14 +39,14 @@ namespace vtortola.WebSockets
             return _headers.ContainsKey(header);
         }
 
-        public IEnumerable<String> HeaderNames
+        public IEnumerable<string> HeaderNames
         {
             get { return _headers.Keys; }
         }
 
-        public void Add(String name, String value)
+        public void Add(string name, string value)
         {
-            Guard.ParameterCannotBeNull(name, "name");
+            Guard.ParameterCannotBeNull(name, nameof(name));
             name = name.ToLowerInvariant();
 
             _headers.Add(name, value);

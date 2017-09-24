@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WebSocketListener.UnitTests</RootNamespace>
     <AssemblyName>WebSocketListener.UnitTests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -16,6 +16,9 @@
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,6 +59,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="With_Bytes.cs" />
     <Compile Include="With_WebSocketFrameHeader.cs" />
     <Compile Include="With_WebSocket.cs" />
     <Compile Include="With_WebSocketFrameHeaderFlags.cs" />
@@ -63,21 +67,13 @@
     <Compile Include="With_WebSocketHandshaker.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Deflate\vtortola.WebSockets.Deflate.csproj">
-      <Project>{3bfdae73-a6a9-40b9-9026-84dd005bbac9}</Project>
-      <Name>vtortola.WebSockets.Deflate</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vtortola.WebSockets.Rfc6455\vtortola.WebSockets.Rfc6455.csproj">
-      <Project>{72114f0d-ec56-43d5-8c13-43fb013c0c1d}</Project>
-      <Name>vtortola.WebSockets.Rfc6455</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
-      <Project>{1bd8e3c1-ef7d-4d58-89e2-33e5ec7c9406}</Project>
-      <Name>vtortola.WebSockets</Name>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\..\vtortola.WebSockets\vtortola.WebSockets.csproj">
+      <Project>{c6639962-c8a4-433f-84b2-e7549c8708cf}</Project>
+      <Name>vtortola.WebSockets</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

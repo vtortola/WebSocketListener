@@ -4,11 +4,11 @@ namespace vtortola.WebSockets
 {
     public class WebSocketException : Exception
     {
-        public WebSocketException(String message)
+        public WebSocketException(string message)
             : base(message)
         {
         }
-        public WebSocketException(String message, Exception inner)
+        public WebSocketException(string message, Exception inner)
             :base(message,inner)
         {
         }

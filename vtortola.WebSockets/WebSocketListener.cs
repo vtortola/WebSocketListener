@@ -11,31 +11,29 @@ namespace vtortola.WebSockets
     {
         readonly TcpListener _listener;
         readonly HttpNegotiationQueue _negotiationQueue;
-        readonly CancellationTokenSource _cancel;
-        readonly WebSocketListenerOptions _options;
+        readonly CancellationTokenSource _disposing;
+        readonly WebSocketListenerConfig _configuration;
 
-        public Boolean IsStarted { get; private set; }
-        public WebSocketConnectionExtensionCollection ConnectionExtensions { get; private set; }
-        public WebSocketFactoryCollection Standards { get; private set; }
+        public WebSocketConnectionExtensionCollection ConnectionExtensions => _configuration.ConnectionExtensions;
+        public WebSocketMessageExtensionCollection MessageExtensions => _configuration.MessageExtensions;
+        public WebSocketFactoryCollection Standards => _configuration.Standards;
+
         public EndPoint LocalEndpoint { get { return _listener.LocalEndpoint; } }
 
         public WebSocketListener(IPEndPoint endpoint, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(endpoint, "endpoint");
-            Guard.ParameterCannotBeNull(options, "options");
-            
-            options.CheckCoherence();
-            _options = options.Clone();
-            _cancel = new CancellationTokenSource();
+            Guard.ParameterCannotBeNull(endpoint, nameof(endpoint));
+            Guard.ParameterCannotBeNull(options, nameof(options));
+
+            _configuration = new WebSocketListenerConfig(options);
+
+            _disposing = new CancellationTokenSource();
 
             _listener = new TcpListener(endpoint);
-            if(_options.UseNagleAlgorithm.HasValue)
-                _listener.Server.NoDelay = !_options.UseNagleAlgorithm.Value;
+            if(_configuration.Options.UseNagleAlgorithm.HasValue)
+                _listener.Server.NoDelay = !_configuration.Options.UseNagleAlgorithm.Value;
 
-            ConnectionExtensions = new WebSocketConnectionExtensionCollection(this);
-            Standards = new WebSocketFactoryCollection(this);
-
-            _negotiationQueue = new HttpNegotiationQueue(Standards, ConnectionExtensions, options);
+            _negotiationQueue = new HttpNegotiationQueue(_configuration);
         }
 
         public WebSocketListener(IPEndPoint endpoint)
@@ -43,43 +41,50 @@ namespace vtortola.WebSockets
         {
         }
 
-        private async Task StartAccepting()
+        private async Task StartAccepting(CancellationToken cancel)
         {
-            while(IsStarted && !_cancel.IsCancellationRequested)
+            while(!cancel.IsCancellationRequested)
             {
                 var client = await _listener.AcceptSocketAsync().ConfigureAwait(false);
                 if (client != null)
                 {
-                    await _negotiationQueue.QueueAsync(client, _cancel.Token).ConfigureAwait(false);
+                    await _negotiationQueue.QueueAsync(client, cancel).ConfigureAwait(false);
                 }
             }
         }
 
-        public void Start()
+        public Task StartAsync()
+        {
+            return StartAsync(CancellationToken.None);
+        }
+
+        public Task StartAsync(CancellationToken cancel)
         {
             if (Standards.Count <= 0)
                 throw new WebSocketException("There are no WebSocket standards. Please, register standards using WebSocketListener.Standards");
 
-            IsStarted = true;
-            if (_options.TcpBacklog.HasValue)
-                _listener.Start(_options.TcpBacklog.Value);
+            _configuration.SetReadOnly();
+
+            if (_configuration.Options.TcpBacklog.HasValue)
+                _listener.Start(_configuration.Options.TcpBacklog.Value);
             else
                 _listener.Start();
 
-            StartAccepting();
+            cancel = CancellationTokenSource.CreateLinkedTokenSource(_disposing.Token, cancel).Token;
+            cancel.Register(_listener.Stop);
+            return StartAccepting(cancel);
         }
 
         public void Stop()
         {
-            IsStarted = false;
             _listener.Stop();
         }
 
-        public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
+        public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken cancel)
         {
             try
             {
-                var result = await _negotiationQueue.DequeueAsync(token).ConfigureAwait(false);
+                var result = await _negotiationQueue.DequeueAsync(cancel).ConfigureAwait(false);
 
                 if (result.Error != null)
                 {
@@ -97,15 +102,15 @@ namespace vtortola.WebSockets
 
         public void Dispose()
         {
-            this.Stop();
+            Stop();
 
             if (_listener != null)
                 SafeEnd.Dispose(_listener.Server);
 
-            if (_cancel != null)
+            if (_disposing != null)
             {
-                _cancel.Cancel();
-                SafeEnd.Dispose(_cancel);
+                _disposing.Cancel();
+                SafeEnd.Dispose(_disposing);
             }
 
             SafeEnd.Dispose(_negotiationQueue);

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace vtortola.WebSockets.Tools
 {
     //http://blog.stephencleary.com/2012/07/async-interop-with-iasyncresult.html
-    public sealed class AsyncResultTask<T> : IAsyncResult
+    internal sealed class AsyncResultTask<T> : IAsyncResult
     {
         readonly Task<T> _task;
 
@@ -15,9 +15,9 @@ namespace vtortola.WebSockets.Tools
         }
 
         readonly IAsyncResult _ia;
-        readonly Object _state;
+        readonly object _state;
 
-        public AsyncResultTask(Task<T> task, Object state)
+        public AsyncResultTask(Task<T> task, object state)
         {
             _task = task;
             _ia = task;
@@ -41,7 +41,7 @@ namespace vtortola.WebSockets.Tools
         }
     }
 
-    public sealed class AsyncResultTask : IAsyncResult
+    internal sealed class AsyncResultTask : IAsyncResult
     {
         readonly Task _task;
 
@@ -51,9 +51,9 @@ namespace vtortola.WebSockets.Tools
         }
 
         readonly IAsyncResult _ia;
-        readonly Object _state;
+        readonly object _state;
 
-        public AsyncResultTask(Task task, Object state)
+        public AsyncResultTask(Task task, object state)
         {
             _task = task;
             _ia = task;

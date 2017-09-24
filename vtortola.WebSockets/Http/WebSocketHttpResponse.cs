@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 
 namespace vtortola.WebSockets
@@ -8,13 +7,22 @@ namespace vtortola.WebSockets
     {
         public CookieCollection Cookies { get; private set; }
         public HttpStatusCode Status { get; set; }
-        public List<WebSocketExtension> WebSocketExtensions { get; private set; }
-        public String WebSocketProtocol { get; internal set; }
-        public WebSocketHttpResponse()
+        public string WebSocketProtocol { get; internal set; }
+
+        internal WebSocketHttpResponse()
         {
             Cookies = new CookieCollection();
-            WebSocketExtensions = new List<WebSocketExtension>();
             Status = HttpStatusCode.SwitchingProtocols;
+        }
+
+        static readonly List<WebSocketExtension> _empy = new List<WebSocketExtension>();
+        List<WebSocketExtension> _extension = null;
+        public IEnumerable<WebSocketExtension> WebSocketExtensions => _extension ?? _empy;
+
+        public void AddExtension(WebSocketExtension extension)
+        {
+            _extension = _extension ?? new List<WebSocketExtension>();
+            _extension.Add(extension);
         }
     }
 }

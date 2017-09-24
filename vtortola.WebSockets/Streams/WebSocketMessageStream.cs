@@ -7,11 +7,11 @@ namespace vtortola.WebSockets
 {
     public abstract class WebSocketMessageStream:Stream
     {
-        public override Boolean CanRead { get { return false; } }
-        public override sealed Boolean CanSeek { get { return false; } }
-        public override Boolean CanWrite { get { return false; } }
-        public override sealed Int64 Length { get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } }
-        public override sealed Int64 Position 
+        public override bool CanRead { get { return false; } }
+        public override sealed bool CanSeek { get { return false; } }
+        public override bool CanWrite { get { return false; } }
+        public override sealed long Length { get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } }
+        public override sealed long Position 
         { 
             get { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } 
             set { throw new NotSupportedException("WebSocketMessageStream does not support this operation."); } 
@@ -22,9 +22,9 @@ namespace vtortola.WebSockets
             
         }
 
-        public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+        public override Task FlushAsync(System.Threading.CancellationToken cancel)
         {
-            return CompletedTasks.Void;
+            return Task.FromResult<object>(null);
         }
 
         public override sealed int ReadByte()
@@ -42,7 +42,7 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancel)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
@@ -57,7 +57,7 @@ namespace vtortola.WebSockets
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }
 
-        public override Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+        public override Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancel)
         {
             throw new NotSupportedException("WebSocketMessageStream does not support this operation.");
         }

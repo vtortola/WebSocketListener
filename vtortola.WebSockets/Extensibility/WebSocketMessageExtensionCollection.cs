@@ -4,36 +4,27 @@ namespace vtortola.WebSockets
 {
     public sealed class WebSocketMessageExtensionCollection
     {
-        readonly Dictionary<string, IWebSocketMessageExtension> _extensions;
-        readonly WebSocketListener _listener;
+        bool _isReadOnly;
+        Dictionary<string, IWebSocketMessageExtension> _extensions;
 
-        public WebSocketMessageExtensionCollection()
-        {
-            _extensions = new Dictionary<string, IWebSocketMessageExtension>();
-        }
-
-        public WebSocketMessageExtensionCollection(WebSocketListener webSocketListener)
-            :this()
-        {
-            _listener = webSocketListener;
-        }
+        public int Count => _extensions.Count;
 
         public void RegisterExtension(IWebSocketMessageExtension extension)
-        {  
-            if (_listener != null && _listener.IsStarted)
+        {
+            if (_isReadOnly)
                 throw new WebSocketException("Extensions cannot be added after the service is started");
 
+            _extensions = _extensions ?? new Dictionary<string, IWebSocketMessageExtension>();
             _extensions.Add(extension.Name.ToLowerInvariant(), extension);
         }
 
-        public bool TryGetExtension(string name, out IWebSocketMessageExtension extension) 
+        internal bool TryGetExtension(string name, out IWebSocketMessageExtension extension)
         {
-            return _extensions.TryGetValue(name, out extension);
+            extension = null;
+            return _extensions == null ? false : _extensions.TryGetValue(name, out extension);
         }
 
-        public int Count
-        {
-            get { return _extensions.Count; }
-        }
+        internal void SetAsReadOnly()
+            => _isReadOnly = true;
     }
 }

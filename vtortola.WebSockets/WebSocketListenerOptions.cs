@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ServiceModel.Channels;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public delegate void OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
+    public delegate Task OnHttpNegotiationDelegate(WebSocketHttpRequest request, WebSocketHttpResponse response);
 
     public enum PingModes { LatencyControl, BandwidthSaving }
 
@@ -21,17 +21,18 @@ namespace vtortola.WebSockets
         public Int32 SendBufferSize { get; set; }
         public String[] SubProtocols { get; set; }
         internal HashSet<String> SubProtocolsSet { get; private set; }
-        public BufferManager BufferManager { get; set; }
+        public IBufferManager BufferManager { get; set; }
         public OnHttpNegotiationDelegate OnHttpNegotiation { get; set; }
         public Boolean? UseNagleAlgorithm { get; set; }
         public PingModes PingMode { get; set; }
 
         static readonly String[] _noSubProtocols = new String[0];
+
         public WebSocketListenerOptions()
         {
             PingTimeout = TimeSpan.FromSeconds(5);
-            NegotiationQueueCapacity = Environment.ProcessorCount * 10;
-            ParallelNegotiations = Environment.ProcessorCount * 2;
+            NegotiationQueueCapacity = Environment.ProcessorCount * 1024;
+            ParallelNegotiations = Environment.ProcessorCount * 128;
             NegotiationTimeout = TimeSpan.FromSeconds(5);
             WebSocketSendTimeout = TimeSpan.FromSeconds(5);
             WebSocketReceiveTimeout = TimeSpan.FromSeconds(5);
@@ -39,9 +40,10 @@ namespace vtortola.WebSockets
             SubProtocols = _noSubProtocols;
             OnHttpNegotiation = null;
             UseNagleAlgorithm = true;
-            PingMode = PingModes.LatencyControl;
+            PingMode = PingModes.BandwidthSaving;
         }
-        public void CheckCoherence()
+
+        internal void CheckCoherence()
         {
             if (PingTimeout == TimeSpan.Zero)
                 PingTimeout = Timeout.InfiniteTimeSpan;
@@ -67,7 +69,8 @@ namespace vtortola.WebSockets
             if(SendBufferSize <= 0)
                 throw new WebSocketException("SendBufferSize must be bigger than 0.");
         }
-        public WebSocketListenerOptions Clone()
+
+        internal WebSocketListenerOptions Clone()
         {
             return new WebSocketListenerOptions()
             {
@@ -83,7 +86,7 @@ namespace vtortola.WebSockets
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,
                 PingMode = this.PingMode,
-                SubProtocolsSet = new HashSet<string>(this.SubProtocols, StringComparer.InvariantCultureIgnoreCase)
+                SubProtocolsSet = new HashSet<string>(SubProtocols, StringComparer.OrdinalIgnoreCase)
             };
         }
     }

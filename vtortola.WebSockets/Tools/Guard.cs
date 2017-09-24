@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace vtortola.WebSockets
 {
-    public static class Guard
+    internal static class Guard
     {
-        public static void ParameterCannotBeNull<T>(T obj, String paramenterName)
+        public static void ParameterCannotBeNull<T>(T obj, string paramenterName)
         {
             if (obj == null)
             {

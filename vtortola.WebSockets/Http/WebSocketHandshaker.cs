@@ -1,28 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using vtortola.WebSockets.Http;
 
 namespace vtortola.WebSockets
 {
-    public class WebSocketHandshaker
+    internal class WebSocketHandshaker
     {
-        readonly WebSocketListenerOptions _options;
-        readonly WebSocketFactoryCollection _factories;
+        readonly WebSocketListenerConfig _configuration;
 
-        public WebSocketHandshaker(WebSocketFactoryCollection factories, WebSocketListenerOptions options)
+        public WebSocketHandshaker(WebSocketListenerConfig configuration)
         {
-            Guard.ParameterCannotBeNull(factories, "factories");
-            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(configuration, nameof(configuration));
 
-            _factories = factories;
-            _options = options;
+            _configuration = configuration;
         }
 
         public async Task<WebSocketHandshake> HandshakeAsync(Stream clientStream)
@@ -39,7 +36,7 @@ namespace vtortola.WebSockets
 
                 handshake.IsWebSocketRequest = true;
 
-                handshake.Factory = _factories.GetWebSocketFactory(handshake.Request);
+                handshake.Factory = _configuration.Standards.GetWebSocketFactory(handshake.Request);
                 if (handshake.Factory == null)
                 {
                     await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
@@ -52,7 +49,7 @@ namespace vtortola.WebSockets
 
                 SelectExtensions(handshake);
 
-                RunHttpNegotiationHandler(handshake);
+                await RunHttpNegotiationHandler(handshake).ConfigureAwait(false);
 
                 await WriteHttpResponseAsync(handshake, clientStream).ConfigureAwait(false);
             }
@@ -65,7 +62,7 @@ namespace vtortola.WebSockets
                     try { WriteHttpResponse(handshake, clientStream); }
                     catch(Exception ex2) 
                     {
-                        DebugLog.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse)", ex2);
+                        Debug.Fail("HttpNegotiationQueue.WorkAsync (Writting error esponse): " + ex2.Message);
                     };
                 }
             }
@@ -84,13 +81,13 @@ namespace vtortola.WebSockets
                    handShake.Request.Headers.Contains(WebSocketHeaders.Version);
         }
 
-        private void RunHttpNegotiationHandler(WebSocketHandshake handshake)
+        private async Task RunHttpNegotiationHandler(WebSocketHandshake handshake)
         {
-            if (_options.OnHttpNegotiation != null)
+            if (_configuration.Options.OnHttpNegotiation != null)
             {
                 try
                 {
-                    _options.OnHttpNegotiation(handshake.Request, handshake.Response);
+                    await _configuration.Options.OnHttpNegotiation(handshake.Request, handshake.Response).ConfigureAwait(false);
                 }
                 catch (Exception onNegotiationHandlerError)
                 {
@@ -102,15 +99,15 @@ namespace vtortola.WebSockets
 
         private void SelectExtensions(WebSocketHandshake handshake)
         {
-            IWebSocketMessageExtensionContext context;
-            WebSocketExtension extensionResponse;
             foreach (var extRequest in handshake.Request.WebSocketExtensions)
             {
-                IWebSocketMessageExtension extension;
-                if (handshake.Factory.MessageExtensions.TryGetExtension(extRequest.Name, out extension) && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
+                if (_configuration.MessageExtensions.TryGetExtension(extRequest.Name, out IWebSocketMessageExtension extension))
                 {
-                    handshake.NegotiatedMessageExtensions.Add(context);
-                    handshake.Response.WebSocketExtensions.Add(extensionResponse);
+                    if (extension.TryNegotiate(handshake.Request, out WebSocketExtension extensionResponse, out IWebSocketMessageExtensionContext context))
+                    {
+                        handshake.AddExtension(context);
+                        handshake.Response.AddExtension(extensionResponse);
+                    }
                 }
             }
         }
@@ -118,7 +115,7 @@ namespace vtortola.WebSockets
         private async Task WriteHttpResponseAsync(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
+            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _configuration.Options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 await writer.FlushAsync().ConfigureAwait(false);
@@ -128,7 +125,7 @@ namespace vtortola.WebSockets
         private void WriteHttpResponse(WebSocketHandshake handshake, Stream clientStream)
         {
             handshake.IsResponseSent = true;
-            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _options.SendBufferSize, true))
+            using (var writer = new StreamWriter(clientStream, Encoding.ASCII, _configuration.Options.SendBufferSize, true))
             {
                 WriteResponseInternal(handshake, writer);
                 writer.Flush();
@@ -159,13 +156,13 @@ namespace vtortola.WebSockets
         }
         private async Task ReadHttpRequestAsync(Stream clientStream, WebSocketHandshake handshake)
         {
-            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, _options.SendBufferSize, true))
+            using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, _configuration.Options.SendBufferSize, true))
             {
-                String line = await sr.ReadLineAsync().ConfigureAwait(false);
+                string line = await sr.ReadLineAsync().ConfigureAwait(false);
 
                 ParseGET(line, handshake);
 
-                while (!String.IsNullOrWhiteSpace(line))
+                while (!string.IsNullOrWhiteSpace(line))
                 {
                     line = await sr.ReadLineAsync().ConfigureAwait(false);
                     ParseHeader(line, handshake);
@@ -173,9 +170,9 @@ namespace vtortola.WebSockets
             }
         }
 
-        private void ParseGET(String line, WebSocketHandshake handshake)
+        private void ParseGET(string line, WebSocketHandshake handshake)
         {
-            if (String.IsNullOrWhiteSpace(line))
+            if (string.IsNullOrWhiteSpace(line))
                 throw new WebSocketException("Not GET request");
 
             using (var reader = SplitBy(' ', line).GetEnumerator())
@@ -192,7 +189,7 @@ namespace vtortola.WebSockets
             }
         }
 
-        private void ParseHeader(String line, WebSocketHandshake handshake)
+        private void ParseHeader(string line, WebSocketHandshake handshake)
         {
             if (string.IsNullOrWhiteSpace(line))
                 return;
@@ -286,15 +283,16 @@ namespace vtortola.WebSockets
             writer.Write("HTTP/1.1 ");
             writer.Write(intCode);
             writer.Write(" ");
-            writer.Write(HttpWorkerRequest.GetStatusDescription(intCode));
+            writer.Write(code.GetDescription());
             writer.Write("\r\n\r\n");
         }
+
         private void SendVersionNegotiationErrorResponse(StreamWriter writer)
         {
             writer.Write("HTTP/1.1 426 Upgrade Required\r\nSec-WebSocket-Version: ");
 
             Boolean first = true;
-            foreach (var standard in _factories)
+            foreach (var standard in _configuration.Standards)
             {
                 if(!first)
                     writer.Write(",");
@@ -315,7 +313,7 @@ namespace vtortola.WebSockets
 
         private void ParseWebSocketProtocol(WebSocketHandshake handshake)
         {
-            if (!_options.SubProtocols.Any())
+            if (!_configuration.Options.SubProtocols.Any())
                 return;
 
             if (handshake.Request.Headers.Contains(WebSocketHeaders.Protocol))
@@ -324,7 +322,7 @@ namespace vtortola.WebSockets
 
                 foreach (var subprotocol in SplitBy(',', subprotocolRequest))
                 {
-                    if (_options.SubProtocolsSet.Contains(subprotocol))
+                    if (_configuration.Options.SubProtocolsSet.Contains(subprotocol))
                     {
                         handshake.Response.WebSocketProtocol = subprotocol;
                         return;
@@ -335,20 +333,22 @@ namespace vtortola.WebSockets
 
         static IEnumerable<string> SplitBy(char limit, string str, bool firstOnly = false)
         {
+            var buffer = new char[str.Length];
+            var count = 0;
             var start = 0;
+
             while (str[start] == ' ')
                 start++;
 
             var found = false;
 
-            var list = new List<char>(str.Length);
             for(; start < str.Length; start++)
             {
                 var c = str[start];
                 if (c == limit && (!firstOnly || (firstOnly && !found)))
                 {
-                    yield return new string(list.ToArray());
-                    list.Clear();
+                    yield return new string(buffer, 0, count);
+                    count = 0;
                     found = true;
                 }
                 else if (c == ' ')
@@ -357,22 +357,23 @@ namespace vtortola.WebSockets
                 }
                 else
                 {
-                    list.Add(c);
+                    buffer[count++] = c;
                 }
             }
 
-            if (list.Any())
+            if (count > 0)
             {
-                yield return new string(list.ToArray());
+                yield return new string(buffer, 0, count);
             }
         }
 
         private void ParseWebSocketExtensions(WebSocketHandshake handshake)
         {
-            List<WebSocketExtension> extensionList = new List<WebSocketExtension>();
+            List<WebSocketExtension> extensionList = null;
             if (handshake.Request.Headers.Contains(WebSocketHeaders.Extensions))
             {
                 var header = handshake.Request.Headers[WebSocketHeaders.Extensions];
+                extensionList = extensionList ?? new List<WebSocketExtension>();
                 BuildExtensions(extensionList, header, SplitBy(',', header));
             }
             handshake.Request.SetExtensions(extensionList);
@@ -382,7 +383,7 @@ namespace vtortola.WebSockets
         {
             foreach (var extension in extensions)
             {
-                List<WebSocketExtensionOption> extOptions = new List<WebSocketExtensionOption>();
+                List<WebSocketExtensionOption> extOptions = null;
 
                 using (var reader = SplitBy(';', extension).GetEnumerator())
                 {
@@ -403,12 +404,18 @@ namespace vtortola.WebSockets
                                 value = optReader.Current;
                             }
 
+                            extOptions = extOptions ?? new List<WebSocketExtensionOption>();
                             if (value.Length > 0)
+                            {
                                 extOptions.Add(new WebSocketExtensionOption() { Name = optname, ClientAvailableOption = true });
+                            }
                             else
+                            {
                                 extOptions.Add(new WebSocketExtensionOption() { Name = optname, Value = value });
+                            }
                         }
                     }
+
                     extensionList.Add(new WebSocketExtension(name, extOptions));
                 }
             }
@@ -432,7 +439,7 @@ namespace vtortola.WebSockets
                 }
                 catch (Exception ex)
                 {
-                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "' because: " + ex.Message);
+                    throw new WebSocketException("Cannot parse cookie string: '" + (cookieString ?? "") + "' because: " + ex.Message, ex);
                 }
             }
         }

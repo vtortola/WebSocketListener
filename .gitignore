@@ -1,7 +1,7 @@
 #################
-## Eclipse
+## Eclipse 
 #################
-
+ 
 *.pydevproject
 .project
 .metadata
@@ -216,3 +216,4 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+/.vs/vtortola.WebSockets.Solution/v15/sqlite3/storage.ide
