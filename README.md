@@ -48,9 +48,8 @@ Setting up a server and start listening for clients is very similar to a `TcpLis
 
 ```cs
 var server = new WebSocketListener(new IPEndPoint(IPAddress.Any, 8006));
-var rfc6455 = new vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455(server);
-server.Standards.RegisterStandard(rfc6455);
-server.Start();
+server.Standards.RegisterStandard(new WebSocketFactoryRfc6455());
+server.StartAsync();
 ```
 
 The class ```vtortola.WebSockets.Rfc6455.WebSocketFactoryRfc6455``` gives support to the [RFC 6455](http://tools.ietf.org/html/rfc6455), that is the WebSocket standard used at the moment. Future standards can be added in the [same way](//github.com/vtortola/WebSocketListener/wiki/Multiple-WebSocket-standard-support).
@@ -66,7 +65,7 @@ Optionally, you can also:
 Once the server has started, clients can be awaited asynchronously. When a client connects, a `WebSocket` object will be returned:
 
 ```cs
-WebSocket client = await server.AcceptWebSocketAsync(cancellationToken);
+var client = await server.AcceptWebSocketAsync(cancellationToken);
 ```
 
 The client provides means to read and write messages. With the client, as in the underlying `NetworkStream`, is possible to write and read at the same time even from different threads, but is not possible to read from two or more threads at the same time, same for writing.
@@ -77,7 +76,7 @@ The client provides means to read and write messages. With the client, as in the
 With the client we can *await* a message as a readonly stream:
 
 ```cs
-WebSocketMessageReadStream messageReadStream = await client.ReadMessageAsync(cancellationToken);
+var messageReadStream = await client.ReadMessageAsync(cancellationToken);
 ```
 
 Messages are a stream-like objects, so is it possible to use regular .NET framework tools to work with them. The `WebSocketMessageReadStream.MessageType` property indicates the kind of content the message contains, so it can be used to select a different handling approach.
@@ -89,7 +88,7 @@ A text message can be read with a simple `StreamReader`.  It is worth remember t
 ```cs
 if(messageReadStream.MessageType == WebSocketMessageType.Text)
 {
-   String msgContent = String.Empty;
+   vara msgContent = string.Empty;
    using (var sr = new StreamReader(messageReadStream, Encoding.UTF8))
         msgContent = await sr.ReadToEndAsync();
 }
@@ -113,7 +112,7 @@ if(messageReadStream.MessageType == WebSocketMessageType.Binary)
 Writing messages is also easy. The `WebSocketMessageReadStream.CreateMessageWriter` method allows to create a write only  message:
 
 ```cs
-using (WebSocketMessageWriteStream messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
+using (var messageWriterStream = client.CreateMessageWriter(WebSocketMessageType.Text))
 ```
 
 Once a message writer is created, regular .NET tools can be used to write in it:
