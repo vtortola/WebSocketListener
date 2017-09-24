@@ -20,7 +20,7 @@ namespace vtortola.WebSockets
             MessageExtensions = new WebSocketMessageExtensionCollection();
         }
 
-        public void SetReadOnly()
+        internal void SetReadOnly()
         {
             ConnectionExtensions.SetAsReadOnly();
             Standards.SetAsReadOnly();

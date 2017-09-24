@@ -46,7 +46,7 @@ namespace vtortola.WebSockets
 
         public void Add(string name, string value)
         {
-            Guard.ParameterCannotBeNull(name, "name");
+            Guard.ParameterCannotBeNull(name, nameof(name));
             name = name.ToLowerInvariant();
 
             _headers.Add(name, value);

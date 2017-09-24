@@ -18,7 +18,7 @@ namespace vtortola.WebSockets
             _extensions.Add(extension.Name.ToLowerInvariant(), extension);
         }
 
-        public bool TryGetExtension(string name, out IWebSocketMessageExtension extension)
+        internal bool TryGetExtension(string name, out IWebSocketMessageExtension extension)
         {
             extension = null;
             return _extensions == null ? false : _extensions.TryGetValue(name, out extension);

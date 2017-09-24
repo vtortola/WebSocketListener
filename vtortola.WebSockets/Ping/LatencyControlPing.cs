@@ -16,7 +16,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal LatencyControlPing(WebSocketConnectionRfc6455 connection, TimeSpan pingTimeout, ArraySegment<Byte> pingBuffer)
         {
-            Guard.ParameterCannotBeNull(connection, "connection");
+            Guard.ParameterCannotBeNull(connection, nameof(connection));
 
             _pingTimeout = pingTimeout;
             _pingBuffer = pingBuffer;

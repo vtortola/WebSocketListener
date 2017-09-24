@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateReadStream: WebSocketMessageReadStream
+    internal sealed class WebSocketDeflateReadStream: WebSocketMessageReadStream
     {
         readonly WebSocketMessageReadStream _inner;
         readonly DeflateStream _deflate;

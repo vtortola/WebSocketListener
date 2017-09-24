@@ -1,8 +1,9 @@
 ﻿using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using vtortola.WebSockets.Rfc6455;
 
-namespace vtortola.WebSockets.Rfc6455
+namespace vtortola.WebSockets
 {
     public sealed class WebSocketFactoryRfc6455 : WebSocketFactory
     {

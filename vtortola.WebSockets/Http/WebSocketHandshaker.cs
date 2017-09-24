@@ -99,15 +99,15 @@ namespace vtortola.WebSockets
 
         private void SelectExtensions(WebSocketHandshake handshake)
         {
-            IWebSocketMessageExtensionContext context;
-            WebSocketExtension extensionResponse;
             foreach (var extRequest in handshake.Request.WebSocketExtensions)
             {
-                IWebSocketMessageExtension extension;
-                if (_configuration.MessageExtensions.TryGetExtension(extRequest.Name, out extension) && extension.TryNegotiate(handshake.Request, out extensionResponse, out context))
+                if (_configuration.MessageExtensions.TryGetExtension(extRequest.Name, out IWebSocketMessageExtension extension))
                 {
-                    handshake.AddExtension(context);
-                    handshake.Response.AddExtension(extensionResponse);
+                    if (extension.TryNegotiate(handshake.Request, out WebSocketExtension extensionResponse, out IWebSocketMessageExtensionContext context))
+                    {
+                        handshake.AddExtension(context);
+                        handshake.Response.AddExtension(extensionResponse);
+                    }
                 }
             }
         }

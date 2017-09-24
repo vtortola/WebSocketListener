@@ -17,6 +17,8 @@ namespace vtortola.WebSockets
 
         public void RegisterStandard(WebSocketFactory factory)
         {
+            Guard.ParameterCannotBeNull(factory, nameof(factory));
+
             if (_isReadonly)
                 throw new WebSocketException("Factories cannot be added after the service is started.");
 
@@ -35,16 +37,12 @@ namespace vtortola.WebSockets
         IEnumerator IEnumerable.GetEnumerator()
             => _factories.GetEnumerator();
 
-        public WebSocketFactory GetWebSocketFactory(WebSocketHttpRequest Request)
-        {
-            WebSocketFactory factory;
-            if (_factories.TryGetValue(Request.WebSocketVersion, out factory))
-                return factory;
-            else
-                return null;
-        }
+        internal WebSocketFactory GetWebSocketFactory(WebSocketHttpRequest Request)
+            => _factories.TryGetValue(Request.WebSocketVersion, out WebSocketFactory factory)
+                ? factory
+                : null;
 
-        public void SetAsReadOnly()
+        internal void SetAsReadOnly()
             => _isReadonly = true;
     }
 }

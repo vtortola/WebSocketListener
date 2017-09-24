@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 
 namespace vtortola.WebSockets
@@ -8,7 +7,7 @@ namespace vtortola.WebSockets
     {
         public CookieCollection Cookies { get; private set; }
         public HttpStatusCode Status { get; set; }
-        public String WebSocketProtocol { get; internal set; }
+        public string WebSocketProtocol { get; internal set; }
 
         internal WebSocketHttpResponse()
         {

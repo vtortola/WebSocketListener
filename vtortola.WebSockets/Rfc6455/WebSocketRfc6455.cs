@@ -23,12 +23,12 @@ namespace vtortola.WebSockets.Rfc6455
         public WebSocketRfc6455(Stream clientStream, WebSocketListenerOptions options, IPEndPoint local, IPEndPoint remote, WebSocketHttpRequest httpRequest, WebSocketHttpResponse httpResponse, IEnumerable<IWebSocketMessageExtensionContext> extensions)
             :base(httpRequest, httpResponse)
         {
-            Guard.ParameterCannotBeNull(clientStream, "clientStream");
-            Guard.ParameterCannotBeNull(options, "options");
-            Guard.ParameterCannotBeNull(local, "local");
-            Guard.ParameterCannotBeNull(remote, "remote");
-            Guard.ParameterCannotBeNull(extensions, "extensions");
-            Guard.ParameterCannotBeNull(httpRequest, "httpRequest");
+            Guard.ParameterCannotBeNull(clientStream, nameof(clientStream));
+            Guard.ParameterCannotBeNull(options, nameof(options));
+            Guard.ParameterCannotBeNull(local, nameof(local));
+            Guard.ParameterCannotBeNull(remote, nameof(remote));
+            Guard.ParameterCannotBeNull(extensions, nameof(extensions));
+            Guard.ParameterCannotBeNull(httpRequest, nameof(httpRequest));
 
             _remoteEndpoint = remote;
             _localEndpoint = local;

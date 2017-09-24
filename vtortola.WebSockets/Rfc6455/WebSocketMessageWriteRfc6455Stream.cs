@@ -14,7 +14,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         public WebSocketMessageWriteRfc6455Stream(WebSocketConnectionRfc6455 webSocket, WebSocketMessageType messageType)
         {
-            Guard.ParameterCannotBeNull(webSocket, "webSocket");
+            Guard.ParameterCannotBeNull(webSocket, nameof(webSocket));
 
             _internalUsedBufferLength = 0;
             _messageType = messageType;

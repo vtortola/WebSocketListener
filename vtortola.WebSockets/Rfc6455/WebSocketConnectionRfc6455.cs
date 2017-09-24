@@ -42,8 +42,8 @@ namespace vtortola.WebSockets.Rfc6455
 
         internal WebSocketConnectionRfc6455(Stream clientStream, WebSocketListenerOptions options)
         {
-            Guard.ParameterCannotBeNull(clientStream, "clientStream");
-            Guard.ParameterCannotBeNull(options, "options");
+            Guard.ParameterCannotBeNull(clientStream, nameof(clientStream));
+            Guard.ParameterCannotBeNull(options, nameof(options));
 
             _writeSemaphore = new SemaphoreSlim(1);
             _options = options;

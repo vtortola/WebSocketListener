@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using vtortola.WebSockets.Deflate;
 
-namespace vtortola.WebSockets.Deflate
+namespace vtortola.WebSockets
 {
-    public sealed class WebSocketDeflateExtension:IWebSocketMessageExtension
+    public sealed class WebSocketDeflateExtension : IWebSocketMessageExtension
     {
         static readonly WebSocketExtension _response = new WebSocketExtension("permessage-deflate", new List<WebSocketExtensionOption>(new[] { new WebSocketExtensionOption() { Name = "client_no_context_takeover" } }));
 

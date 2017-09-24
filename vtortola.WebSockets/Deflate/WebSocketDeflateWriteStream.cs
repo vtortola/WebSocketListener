@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateWriteStream: WebSocketMessageWriteStream
+    internal sealed class WebSocketDeflateWriteStream: WebSocketMessageWriteStream
     {
         readonly static byte[] _BFINAL = new byte[] { 0 };
         readonly WebSocketMessageWriteStream _inner;

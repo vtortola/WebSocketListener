@@ -1,7 +1,7 @@
 ﻿
 namespace vtortola.WebSockets.Deflate
 {
-    public sealed class WebSocketDeflateContext : IWebSocketMessageExtensionContext
+    internal sealed class WebSocketDeflateContext : IWebSocketMessageExtensionContext
     {
         public WebSocketMessageReadStream ExtendReader(WebSocketMessageReadStream message)
         {
