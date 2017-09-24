@@ -59,6 +59,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="With_Bytes.cs" />
     <Compile Include="With_WebSocketFrameHeader.cs" />
     <Compile Include="With_WebSocket.cs" />
     <Compile Include="With_WebSocketFrameHeaderFlags.cs" />

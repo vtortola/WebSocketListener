@@ -105,20 +105,15 @@ namespace vtortola.WebSockets.Rfc6455
             {
                 if (frameStart.Length < headerLength)
                     return false;
-
-                if (BitConverter.IsLittleEndian)
-                    frameStart.ReversePortion(offset + 2, 2);
-                contentLength = BitConverter.ToUInt16(frameStart, 2);
+                
+                contentLength = frameStart.ToUInt16(2, BitConverter.IsLittleEndian);
             }
             else if (contentLength == 127)
             {
                 if (frameStart.Length < headerLength)
                     return false;
 
-                if (BitConverter.IsLittleEndian)
-                    frameStart.ReversePortion(offset + 2, 8);
-
-                var length = BitConverter.ToUInt64(frameStart, 2);
+                var length = frameStart.ToUInt64(2, BitConverter.IsLittleEndian);
                 if (length > long.MaxValue)
                 {
                     throw new WebSocketException("The maximum supported frame length is 9223372036854775807, current frame is " + length.ToString());
