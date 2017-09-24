@@ -26,23 +26,25 @@ namespace vtortola.WebSockets.Deflate
             _deflate.Write(buffer, offset, count);
         }
 
-        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
         {
             RemoveUTF8BOM(buffer, ref offset, ref count);
             if (count == 0)
-                return;
-            await _deflate.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+                return Task.FromResult<object>(null);
+
+            return _deflate.WriteAsync(buffer, offset, count, cancel);
         }
 
-        public override async Task CloseAsync(CancellationToken cancellation)
+        public override Task CloseAsync(CancellationToken cancellation)
         {
             if (_isClosed)
-                return;
+                return Task.FromResult<object>(null);
 
             _isClosed = true;
             _deflate.Close();
             _inner.Write(_BFINAL, 0, 1);
-            await _inner.CloseAsync(cancellation).ConfigureAwait(false);
+
+            return _inner.CloseAsync(cancellation);
         }
 
         public override void Close()

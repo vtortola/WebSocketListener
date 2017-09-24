@@ -26,19 +26,19 @@ namespace vtortola.WebSockets
             }
         }
 
+        internal WebSocketHttpRequest()
+        {
+            Headers = new HttpHeadersCollection();
+            Cookies = new CookieCollection();
+            WebSocketExtensions = _empty;
+        }
+
         internal void SetExtensions(List<WebSocketExtension> extensions)
         {
             if (extensions != null && extensions.Count >= 1)
             {
                 WebSocketExtensions = new ReadOnlyCollection<WebSocketExtension>(extensions);
             }
-        }
-
-        public WebSocketHttpRequest()
-        {
-            Headers = new HttpHeadersCollection();
-            Cookies = new CookieCollection();
-            WebSocketExtensions= _empty;
         }
     }
 }

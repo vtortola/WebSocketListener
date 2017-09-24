@@ -16,18 +16,18 @@ namespace vtortola.WebSockets.Deflate
             _deflate = new DeflateStream(_inner, CompressionMode.Decompress, true);
         }
 
-        public override WebSocketMessageType MessageType { get { return _inner.MessageType; } }
-        public override WebSocketExtensionFlags Flags { get { return _inner.Flags; } }
+        public override WebSocketMessageType MessageType 
+            => _inner.MessageType;
+
+        public override WebSocketExtensionFlags Flags 
+            => _inner.Flags;
+
         public override int Read(byte[] buffer, int offset, int count)
-        {
-            return _deflate.Read(buffer, offset, count);
-        }
+            => _deflate.Read(buffer, offset, count);
 
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return _deflate.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
+            => _deflate.ReadAsync(buffer, offset, count, cancel);
+ 
         protected override void Dispose(bool disposing)
         {
             if (!_isDisposed)

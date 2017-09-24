@@ -42,7 +42,8 @@ namespace vtortola.WebSockets
             UseNagleAlgorithm = true;
             PingMode = PingModes.BandwidthSaving;
         }
-        public void CheckCoherence()
+
+        internal void CheckCoherence()
         {
             if (PingTimeout == TimeSpan.Zero)
                 PingTimeout = Timeout.InfiniteTimeSpan;
@@ -68,7 +69,8 @@ namespace vtortola.WebSockets
             if(SendBufferSize <= 0)
                 throw new WebSocketException("SendBufferSize must be bigger than 0.");
         }
-        public WebSocketListenerOptions Clone()
+
+        internal WebSocketListenerOptions Clone()
         {
             return new WebSocketListenerOptions()
             {
@@ -84,7 +86,7 @@ namespace vtortola.WebSockets
                 OnHttpNegotiation = this.OnHttpNegotiation,
                 UseNagleAlgorithm = this.UseNagleAlgorithm,
                 PingMode = this.PingMode,
-                SubProtocolsSet = new HashSet<string>(this.SubProtocols, StringComparer.InvariantCultureIgnoreCase)
+                SubProtocolsSet = new HashSet<string>(SubProtocols, StringComparer.OrdinalIgnoreCase)
             };
         }
     }

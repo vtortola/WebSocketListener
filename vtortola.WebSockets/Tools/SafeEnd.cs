@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace vtortola.WebSockets
 {
-    public static class SafeEnd
+    internal static class SafeEnd
     {
         public static void Dispose<T>(T disposable)
             where T:IDisposable

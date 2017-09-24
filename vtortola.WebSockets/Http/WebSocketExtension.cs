@@ -10,13 +10,13 @@ namespace vtortola.WebSockets
 
         static readonly ReadOnlyCollection<WebSocketExtensionOption> _empty = new ReadOnlyCollection<WebSocketExtensionOption>(new List<WebSocketExtensionOption>());
 
-        public WebSocketExtension(string name)
+        internal WebSocketExtension(string name)
         {
             Name = name;
             Options = _empty;
         }
 
-        public WebSocketExtension(string name, List<WebSocketExtensionOption> options)
+        internal WebSocketExtension(string name, List<WebSocketExtensionOption> options)
         {
             Name = name;
             if (options !=null && options.Count > 0)

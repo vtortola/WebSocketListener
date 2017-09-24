@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace vtortola.WebSockets.Rfc6455
 {
-    public sealed class WebSocketRfc6455 : WebSocket
+    internal sealed class WebSocketRfc6455 : WebSocket
     {
         readonly IEnumerable<IWebSocketMessageExtensionContext> _extensions;
         readonly IPEndPoint _remoteEndpoint, _localEndpoint;
@@ -38,11 +38,11 @@ namespace vtortola.WebSockets.Rfc6455
             _subprotocol = httpResponse.WebSocketProtocol;
         }
 
-        public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken token)
+        public override async Task<WebSocketMessageReadStream> ReadMessageAsync(CancellationToken cancel)
         {
-            using (token.Register(Close, false))
+            using (cancel.Register(Close, false))
             {
-                await _connection.AwaitHeaderAsync(token).ConfigureAwait(false);
+                await _connection.AwaitHeaderAsync(cancel).ConfigureAwait(false);
 
                 if (_connection.IsConnected && _connection.CurrentHeader != null)
                 {

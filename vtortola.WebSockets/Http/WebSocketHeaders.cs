@@ -1,6 +1,6 @@
 ﻿namespace vtortola.WebSockets.Http
 {
-    public static class WebSocketHeaders
+    internal static class WebSocketHeaders
     {
         public const string Host = "host";
         public const string Upgrade = "upgrade";

@@ -84,12 +84,12 @@ namespace vtortola.WebSockets.Rfc6455
             return readed;
         }
 
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
         {
             Int32 readed = 0;
             do
             {
-                if (!_webSocket.IsConnected || cancellationToken.IsCancellationRequested)
+                if (!_webSocket.IsConnected || cancel.IsCancellationRequested)
                     break;
 
                 var checkedcount = CheckBoundaries(buffer, offset, count);
@@ -101,14 +101,14 @@ namespace vtortola.WebSockets.Rfc6455
                 }
                 else if (checkedcount == 0 && _hasPendingFrames)
                 {
-                    await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
+                    await LoadNewHeaderAsync(cancel).ConfigureAwait(false);
                 }
                 else
                 {
-                    readed = await _webSocket.ReadInternalAsync(buffer, offset, checkedcount, cancellationToken).ConfigureAwait(false);
+                    readed = await _webSocket.ReadInternalAsync(buffer, offset, checkedcount, cancel).ConfigureAwait(false);
                     _webSocket.DisposeCurrentHeaderIfFinished();
                     if (_webSocket.CurrentHeader == null && _hasPendingFrames)
-                        await LoadNewHeaderAsync(cancellationToken).ConfigureAwait(false);
+                        await LoadNewHeaderAsync(cancel).ConfigureAwait(false);
                 }
             } while (readed == 0 && _webSocket.CurrentHeader.RemainingBytes != 0);
 
@@ -121,9 +121,9 @@ namespace vtortola.WebSockets.Rfc6455
             _hasPendingFrames = HasPendingFrames();
         }
 
-        private async Task LoadNewHeaderAsync(CancellationToken cancellationToken)
+        private async Task LoadNewHeaderAsync(CancellationToken cancel)
         {
-            await _webSocket.AwaitHeaderAsync(cancellationToken).ConfigureAwait(false);
+            await _webSocket.AwaitHeaderAsync(cancel).ConfigureAwait(false);
             _hasPendingFrames = HasPendingFrames();
         }
 

@@ -12,7 +12,7 @@ namespace vtortola.WebSockets
         public abstract WebSocketExtensionFlags Flags { get; }
         public override sealed bool CanRead { get { return true; } }
         public override abstract int Read(byte[] buffer, int offset, int count);
-        public override abstract Task<Int32> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
+        public override abstract Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancel);
         
         public override sealed IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {

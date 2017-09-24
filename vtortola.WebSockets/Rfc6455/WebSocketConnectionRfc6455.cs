@@ -116,7 +116,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
         }
 
-        internal async Task AwaitHeaderAsync(CancellationToken cancellation)
+        internal async Task AwaitHeaderAsync(CancellationToken cancel)
         {
             CheckForDoubleRead();
             StartPing();
@@ -125,8 +125,8 @@ namespace vtortola.WebSockets.Rfc6455
                 while (IsConnected && CurrentHeader == null)
                 {
                     // try read minimal frame first
-                    var readed = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset, 6, cancellation).ConfigureAwait(false);
-                    if (readed == 0 || cancellation.IsCancellationRequested)
+                    var readed = await _clientStream.ReadAsync(_headerBuffer.Array, _headerBuffer.Offset, 6, cancel).ConfigureAwait(false);
+                    if (readed == 0 || cancel.IsCancellationRequested)
                     {
                         Close(WebSocketCloseReasons.ProtocolError);
                         return;
@@ -156,12 +156,12 @@ namespace vtortola.WebSockets.Rfc6455
                 CurrentHeader = null;
         }
 
-        internal async Task<int> ReadInternalAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        internal async Task<int> ReadInternalAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
         {
-            var reg = cancellationToken.Register(Close, false);
+            var reg = cancel.Register(Close, false);
             try
             {
-                 var readed = await _clientStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+                 var readed = await _clientStream.ReadAsync(buffer, offset, count, cancel).ConfigureAwait(false);
                 CurrentHeader.DecodeBytes(buffer, offset, readed);
                 return readed;
             }
@@ -217,9 +217,9 @@ namespace vtortola.WebSockets.Rfc6455
             WriteInternal(buffer, count, isCompleted, headerSent, (WebSocketFrameOption)type, extensionFlags);
         }
 
-        internal Task WriteInternalAsync(ArraySegment<byte> buffer, int count, bool isCompleted, bool headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
+        internal Task WriteInternalAsync(ArraySegment<byte> buffer, int count, bool isCompleted, bool headerSent, WebSocketMessageType type, WebSocketExtensionFlags extensionFlags, CancellationToken cancel)
         {
-            return WriteInternalAsync(buffer, count, isCompleted, headerSent, (WebSocketFrameOption)type, extensionFlags, cancellation);
+            return WriteInternalAsync(buffer, count, isCompleted, headerSent, (WebSocketFrameOption)type, extensionFlags, cancel);
         }
 
         internal void Close()
@@ -452,7 +452,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
         }
 
-        internal async Task WriteInternalAsync(ArraySegment<byte> buffer, int count, bool isCompleted, bool headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancellation)
+        internal async Task WriteInternalAsync(ArraySegment<byte> buffer, int count, bool isCompleted, bool headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags, CancellationToken cancel)
         {
             try
             {
@@ -461,7 +461,7 @@ namespace vtortola.WebSockets.Rfc6455
 
                 if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
                     throw new WebSocketException("Write timeout");
-                await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancellation).ConfigureAwait(false);
+                await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancel).ConfigureAwait(false);
             }
             catch(OperationCanceledException)
             {

@@ -10,7 +10,7 @@ namespace vtortola.WebSockets
         public HttpStatusCode Status { get; set; }
         public String WebSocketProtocol { get; internal set; }
 
-        public WebSocketHttpResponse()
+        internal WebSocketHttpResponse()
         {
             Cookies = new CookieCollection();
             Status = HttpStatusCode.SwitchingProtocols;

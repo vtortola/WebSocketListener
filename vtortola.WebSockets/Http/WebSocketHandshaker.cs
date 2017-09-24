@@ -158,11 +158,11 @@ namespace vtortola.WebSockets
         {
             using (var sr = new StreamReader(clientStream, Encoding.ASCII, false, _configuration.Options.SendBufferSize, true))
             {
-                String line = await sr.ReadLineAsync().ConfigureAwait(false);
+                string line = await sr.ReadLineAsync().ConfigureAwait(false);
 
                 ParseGET(line, handshake);
 
-                while (!String.IsNullOrWhiteSpace(line))
+                while (!string.IsNullOrWhiteSpace(line))
                 {
                     line = await sr.ReadLineAsync().ConfigureAwait(false);
                     ParseHeader(line, handshake);
@@ -170,9 +170,9 @@ namespace vtortola.WebSockets
             }
         }
 
-        private void ParseGET(String line, WebSocketHandshake handshake)
+        private void ParseGET(string line, WebSocketHandshake handshake)
         {
-            if (String.IsNullOrWhiteSpace(line))
+            if (string.IsNullOrWhiteSpace(line))
                 throw new WebSocketException("Not GET request");
 
             using (var reader = SplitBy(' ', line).GetEnumerator())
@@ -189,7 +189,7 @@ namespace vtortola.WebSockets
             }
         }
 
-        private void ParseHeader(String line, WebSocketHandshake handshake)
+        private void ParseHeader(string line, WebSocketHandshake handshake)
         {
             if (string.IsNullOrWhiteSpace(line))
                 return;
