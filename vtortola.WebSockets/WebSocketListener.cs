@@ -80,11 +80,11 @@ namespace vtortola.WebSockets
             _listener.Stop();
         }
 
-        public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken token)
+        public async Task<WebSocket> AcceptWebSocketAsync(CancellationToken cancel)
         {
             try
             {
-                var result = await _negotiationQueue.DequeueAsync(token).ConfigureAwait(false);
+                var result = await _negotiationQueue.DequeueAsync(cancel).ConfigureAwait(false);
 
                 if (result.Error != null)
                 {

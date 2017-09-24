@@ -10,8 +10,8 @@ namespace vtortola.WebSockets
     {
         public override sealed bool CanWrite { get { return true; } }
         public override abstract void Write(byte[] buffer, int offset, int count);
-        public override abstract Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
-        public abstract Task CloseAsync(CancellationToken cancellation);
+        public override abstract Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancel);
+        public abstract Task CloseAsync(CancellationToken cancel);
         public WebSocketExtensionFlags ExtensionFlags { get; private set; }
 
         public WebSocketMessageWriteStream()

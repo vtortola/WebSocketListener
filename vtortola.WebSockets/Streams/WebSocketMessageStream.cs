@@ -22,7 +22,7 @@ namespace vtortola.WebSockets
             
         }
 
-        public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+        public override Task FlushAsync(System.Threading.CancellationToken cancel)
         {
             return Task.FromResult<object>(null);
         }

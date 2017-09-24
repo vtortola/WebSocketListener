@@ -262,13 +262,12 @@ namespace vtortola.WebSockets.Rfc6455
                 return;
             }
 
-            await ProcessHeaderFrameAsync(headerlength);
+            await ProcessHeaderFrameAsync(headerlength).ConfigureAwait(false);
         }
 
         private void ProcessHeaderFrame(int headerlength)
         {
-            WebSocketFrameHeader header;
-            if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerlength, _keyBuffer, out header))
+            if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerlength, _keyBuffer, out WebSocketFrameHeader header))
                 throw new WebSocketException("Cannot understand frame header");
 
             CurrentHeader = header;
@@ -279,15 +278,16 @@ namespace vtortola.WebSockets.Rfc6455
                 CurrentHeader = null;
             }
             else
+            {
                 _ongoingMessageAwaiting = 0;
+            }
 
             _ping.NotifyActivity();
         }
 
         private async Task ProcessHeaderFrameAsync(int headerlength)
         {
-            WebSocketFrameHeader header;
-            if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerlength, _keyBuffer, out header))
+            if (!WebSocketFrameHeader.TryParse(_headerBuffer.Array, _headerBuffer.Offset, headerlength, _keyBuffer, out WebSocketFrameHeader header))
                 throw new WebSocketException("Cannot understand frame header");
 
             CurrentHeader = header;
@@ -298,7 +298,9 @@ namespace vtortola.WebSockets.Rfc6455
                 CurrentHeader = null;
             }
             else
+            {
                 _ongoingMessageAwaiting = 0;
+            }
 
             _ping.NotifyActivity();
         }
@@ -334,7 +336,7 @@ namespace vtortola.WebSockets.Rfc6455
 
         private void CheckForDoubleRead()
         {
-            if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting,1,0) == 1)
+            if (Interlocked.CompareExchange(ref _ongoingMessageAwaiting, 1, 0) == 1)
                 throw new WebSocketException("There is an ongoing message await from somewhere else. Only a single write is allowed at the time.");
                        
             if (CurrentHeader != null)
@@ -363,7 +365,7 @@ namespace vtortola.WebSockets.Rfc6455
             }
         }
 
-        private async Task ProcessControlFrameAsync()
+        private Task ProcessControlFrameAsync()
         {
             switch (CurrentHeader.Flags.Option)
             {
@@ -378,11 +380,12 @@ namespace vtortola.WebSockets.Rfc6455
 
                 case WebSocketFrameOption.Ping:
                 case WebSocketFrameOption.Pong:
-                    await ProcessPingPongAsync().ConfigureAwait(false);
-                    break;
+                    return ProcessPingPongAsync();
 
                 default: throw new WebSocketException("Unexpected header option '" + CurrentHeader.Flags.Option.ToString() + "'");
             }
+
+            return Task.FromResult<object>(null);
         }
 
         private void ProcessPingPong()
@@ -399,9 +402,13 @@ namespace vtortola.WebSockets.Rfc6455
             }
 
             if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
+            {
                 _ping.NotifyPong(_pongBuffer);
-            else // pong frames echo what was 'pinged'
+            }
+            else
+            {// pong frames echo what was 'pinged'
                 WriteInternal(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None);
+            }
         }
 
         private async Task ProcessPingPongAsync()
@@ -417,9 +424,13 @@ namespace vtortola.WebSockets.Rfc6455
             }
 
             if (CurrentHeader.Flags.Option == WebSocketFrameOption.Pong)
+            {
                 _ping.NotifyPong(_pongBuffer);
-            else // pong frames echo what was 'pinged'
+            }
+            else
+            {// pong frames echo what was 'pinged'
                 await WriteInternalAsync(_pongBuffer, readed, true, false, WebSocketFrameOption.Pong, WebSocketExtensionFlags.None, CancellationToken.None).ConfigureAwait(false);
+            }
         }
 
         internal void WriteInternal(ArraySegment<byte> buffer, int count, bool isCompleted, bool headerSent, WebSocketFrameOption option, WebSocketExtensionFlags extensionFlags)
@@ -430,7 +441,9 @@ namespace vtortola.WebSockets.Rfc6455
                 header.ToBytes(buffer.Array,buffer.Offset - header.HeaderLength);
 
                 if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
+                {
                     throw new WebSocketException("Write timeout");
+                }
                 _clientStream.Write(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength);
             }
             catch (InvalidOperationException)
@@ -459,8 +472,10 @@ namespace vtortola.WebSockets.Rfc6455
                 var header = WebSocketFrameHeader.Create(count, isCompleted, headerSent, option, extensionFlags);
                 header.ToBytes(buffer.Array, buffer.Offset - header.HeaderLength);
 
-                if (!_writeSemaphore.Wait(_options.WebSocketSendTimeout))
+                if (!await _writeSemaphore.WaitAsync(_options.WebSocketSendTimeout, cancel).ConfigureAwait(false))
+                {
                     throw new WebSocketException("Write timeout");
+                }
                 await _clientStream.WriteAsync(buffer.Array, buffer.Offset - header.HeaderLength, count + header.HeaderLength, cancel).ConfigureAwait(false);
             }
             catch(OperationCanceledException)
