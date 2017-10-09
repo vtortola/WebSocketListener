@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+  websocket-app:
+    image: nginx.docker.example
+    build:
+      context: .
+      dockerfile: Dockerfile
+ 
+  proxy:
+    build:
+      context:  ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"
