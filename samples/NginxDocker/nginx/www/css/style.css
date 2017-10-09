@@ -1,3 +1,26 @@
 * {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.connection{
+    color:blue;
+}
+.error{
     color:red;
+}
+.in {
+    color:darkgreen;
+}
+.out {
+    color:darkslategrey;
+}
+.message{
+    font-family:Courier New, Courier, monospace;
+}
+#log {
+    margin: 10px;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 3px;
+    height: 200px;
+    overflow-y: scroll;
 }
