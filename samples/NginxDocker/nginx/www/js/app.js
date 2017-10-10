@@ -25,7 +25,7 @@ $(function(){
         $log.scrollTop($log.prop("scrollHeight"));
     }
 
-    window.socket = new WebSocket("wss://localhost:8081/socket");
+    window.socket = new WebSocket("wss://localhost:8721/socket");
     window.socket.onopen = function(){
         addLog("Connected", "connection");
     }

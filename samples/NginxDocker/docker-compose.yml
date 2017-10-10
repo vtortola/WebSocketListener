@@ -12,4 +12,4 @@ services:
       context:  ./nginx
       dockerfile: Dockerfile
     ports:
-      - "8081:443"
+      - "8721:443"

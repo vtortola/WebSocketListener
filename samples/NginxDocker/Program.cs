@@ -55,6 +55,8 @@ namespace NginxDocker
             try
             {
                 await ws.WriteStringAsync($"Welcome to server {_serverId}.", cancel);
+                await ws.WriteStringAsync($"Running on {Environment.OSVersion}", cancel);
+
                 while (ws.IsConnected && !cancel.IsCancellationRequested)
                 {
                     var msg = await ws.ReadStringAsync(cancel);
