@@ -36,7 +36,7 @@ Take a look on the [performance and load  tests](//github.com/vtortola/WebSocket
 ### Featured example
 <img src="https://cdn-1.wp.nginx.com/wp-content/themes/nginx-theme/assets/img/logo.png" width="100">
 
-[This echo server example]() uses [NGINX](//www.nginx.com/) to serve static files and WebSocket connections through the same port, providing [SSL termination](//en.wikipedia.org/wiki/TLS_termination_proxy) for both. It uses [Docker](//www.docker.com) and .Net Core 2.0.
+[This echo server example](//github.com/vtortola/WebSocketListener/wiki/WebSocket---NGINX---SSL-Termination---Docker) uses [NGINX](//www.nginx.com/) to serve static files and WebSocket connections through the same port, providing [SSL termination](//en.wikipedia.org/wiki/TLS_termination_proxy) for both. It uses [Docker](//www.docker.com) and .Net Core 2.0.
 
 ### Quickstart
 
