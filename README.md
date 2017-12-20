@@ -45,7 +45,7 @@ Take a look on the [performance and load  tests](//github.com/vtortola/WebSocket
 [WebSocketListener is available through NuGet](https://www.nuget.org/packages/vtortola.WebSocketListener/)
 
 ```
-PM> Install-Package vtortola.WebSocketListener -Version 3.0.0-beta
+PM> Install-Package vtortola.WebSocketListener
 ```
 
 #### Set up
