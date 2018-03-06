@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <Version>3.0.0-beta</Version>
     <Description>Lightweight and highly scalable asynchronous WebSocket listener, compilant with the official RFC6455 specification. It supports async/await operations, SSL/TLS (wss://), message compression, customizable HTTP negotiation, built-in keep-alive, latency control, partial frames and have several extensibility points.</Description>
     <Authors>vtortola</Authors>
