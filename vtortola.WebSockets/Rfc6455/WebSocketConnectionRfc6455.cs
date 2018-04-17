@@ -248,19 +248,23 @@ namespace vtortola.WebSockets.Rfc6455
 
         private async Task ParseHeaderAsync(int readed)
         {
-            if (await TryReadHeaderUntilAsync(readed, 6).ConfigureAwait(false) == -1)
+            var bytesRead = await TryReadHeaderUntilAsync(readed, 6).ConfigureAwait(false);
+            if (bytesRead == -1)
             {
                 Close(WebSocketCloseReasons.ProtocolError);
                 return;
             }
+            readed += bytesRead;
 
             var headerlength = WebSocketFrameHeader.GetHeaderLength(_headerBuffer.Array, _headerBuffer.Offset);
 
-            if (await TryReadHeaderUntilAsync(readed, headerlength).ConfigureAwait(false) == -1)
+            bytesRead = await TryReadHeaderUntilAsync(readed, headerlength).ConfigureAwait(false);
+            if (bytesRead == -1)
             {
                 Close(WebSocketCloseReasons.ProtocolError);
                 return;
             }
+            readed += bytesRead;
 
             await ProcessHeaderFrameAsync(headerlength).ConfigureAwait(false);
         }
